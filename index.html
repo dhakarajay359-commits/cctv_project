@@ -576,6 +576,9 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <p>Session-based on-demand video relays. Streams only start when requested by an operator and auto-stop on inactivity to enforce strict WAN bandwidth discipline.</p>
         </div>
         <div class="wall-header-actions">
+          <button class="action-btn" id="btnToggleLiveFovAnalyzer" style="background: rgba(0, 242, 254, 0.12); border-color: var(--accent-cyan); color: var(--accent-cyan); font-size: 0.76rem; padding: 0.35rem 0.75rem;">
+            <i class="fa-solid fa-satellite-dish"></i> Check Range & Blind-Spots
+          </button>
           <div class="wall-grid-toggles">
             <span class="toggle-label">Grid Layout:</span>
             <button class="grid-btn" data-grid="1x1"><i class="fa-solid fa-square"></i> 1 View</button>
@@ -604,6 +607,61 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <button class="action-btn" id="btnStopAllSessions" style="margin-left: auto; font-size: 0.75rem; color: var(--accent-rose);">
           <i class="fa-solid fa-power-off"></i> Terminate All Streams (Free Bandwidth)
         </button>
+      </div>
+
+      <!-- Compact Live Optical Range & Blind-Spot Analyzer Panel (Click Option Type) -->
+      <div class="live-fov-analyzer-panel" id="liveFovAnalyzerPanel" style="display: none; margin-bottom: 1rem; background: rgba(13, 20, 36, 0.95); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: var(--radius-md); padding: 0.8rem 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="node-status-pill online" style="background: rgba(0,242,254,0.15); color: var(--accent-cyan); border-color: var(--accent-cyan); font-size: 0.68rem;">
+              <i class="fa-solid fa-satellite-dish"></i> OPTICAL COVERAGE & BLIND-SPOT ANALYZER
+            </span>
+            <strong id="liveFovCamTitle" style="color: #ffffff; font-size: 0.82rem;">CAM-GJ-0101 &bull; SG Highway Iskcon Overbridge</strong>
+          </div>
+          <button class="action-btn" id="btnCloseLiveFovPanel" style="padding: 0.15rem 0.5rem; font-size: 0.7rem;">&times; Close</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.8rem;">
+          <!-- DORI Standard Range Metrics Card -->
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem;">
+            <div style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; margin-bottom: 0.4rem;">
+              <i class="fa-solid fa-ruler-combined"></i> Standard DORI Optical Range:
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; text-align: center;">
+              <div style="background: rgba(255,255,255,0.02); padding: 0.3rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.62rem; color: var(--text-muted); display: block;">Identification</span>
+                <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 0.78rem;" id="liveFovId">45m</strong>
+              </div>
+              <div style="background: rgba(255,255,255,0.02); padding: 0.3rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.62rem; color: var(--text-muted); display: block;">Recognition</span>
+                <strong style="color: var(--accent-emerald); font-family: var(--font-mono); font-size: 0.78rem;" id="liveFovRec">110m</strong>
+              </div>
+              <div style="background: rgba(255,255,255,0.02); padding: 0.3rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                <span style="font-size: 0.62rem; color: var(--text-muted); display: block;">Max Detection</span>
+                <strong style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.78rem;" id="liveFovDet">280m</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Uncovered Blind-Spot & Installation Recommendation -->
+          <div style="background: rgba(244,63,94,0.06); border: 1px solid rgba(244,63,94,0.25); border-radius: var(--radius-sm); padding: 0.6rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+              <span style="font-size: 0.68rem; color: var(--accent-rose); font-weight: 700; text-transform: uppercase;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Uncovered Space / Blind Spot:
+              </span>
+              <span class="node-status-pill offline" style="font-size: 0.58rem; padding: 0.05rem 0.3rem;">Gap Deficit</span>
+            </div>
+            <p id="liveFovBlindDesc" style="font-size: 0.72rem; color: #ffffff; margin-bottom: 0.35rem; line-height: 1.25;">
+              Service Road South Approach is unmonitored (~2,400 sq.m blind zone).
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.65rem; color: var(--accent-emerald);" id="liveFovRecHw">Recommended: 4K Starlight ANPR</span>
+              <button class="action-btn primary" id="btnLiveFovProposeInstall" style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: linear-gradient(135deg, #10b981, #059669);">
+                <i class="fa-solid fa-plus-circle"></i> Install Camera Here
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Live Video Wall Grid Container -->
@@ -1850,78 +1908,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <button type="button" class="action-btn primary" id="btnAckTacticalModal" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
           <i class="fa-solid fa-check-double"></i> Acknowledge Broadcast & Monitor Live Feeds
         </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================================================= -->
-  <!-- CAMERA DETAIL SLIDE-OVER DRAWER (PHASE 1 & FOV DIAGNOSTICS) -->
-  <!-- ========================================================================= -->
-  <div class="cam-detail-drawer" id="camDetailDrawer">
-    <div class="drawer-header">
-      <div>
-        <span class="node-id" id="detailCamId">CAM-GJ-0101</span>
-        <h3 id="detailCamName" style="margin-top: 0.2rem;">SG Highway Iskcon Crossroad Overbridge</h3>
-      </div>
-      <button class="close-modal-btn" id="closeDetailDrawerBtn">&times;</button>
-    </div>
-    <div class="drawer-body">
-      <!-- Live Video Snapshot / Stream Preview -->
-      <div class="drawer-stream-preview">
-        <div class="video-placeholder" id="detailVideoPlaceholder">
-          <i class="fa-solid fa-video"></i>
-          <span>Live Edge Relay Active (1080p WebRTC)</span>
-        </div>
-      </div>
-
-      <!-- Optical Range & FOV Diagnostics Card -->
-      <div class="card" style="margin-bottom: 1rem; border-color: rgba(0,242,254,0.3);">
-        <h4 style="font-size: 0.82rem; color: var(--accent-cyan); margin-bottom: 0.6rem;">
-          <i class="fa-solid fa-satellite-dish"></i> Optical Range & DORI Standard Coverage:
-        </h4>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center; margin-bottom: 0.6rem;">
-          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color);">
-            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Identification (35px/m)</span>
-            <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 0.85rem;" id="detailIdRange">45 Meters</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color);">
-            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Recognition (125px/m)</span>
-            <strong style="color: var(--accent-emerald); font-family: var(--font-mono); font-size: 0.85rem;" id="detailRecRange">110 Meters</strong>
-          </div>
-          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color);">
-            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Max Detection (25px/m)</span>
-            <strong style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.85rem;" id="detailDetRange">280 Meters</strong>
-          </div>
-        </div>
-        <button class="action-btn" id="btnDrawerInspectFov" style="width: 100%; padding: 0.35rem; font-size: 0.75rem; background: rgba(0,242,254,0.12); border-color: var(--accent-cyan); color: var(--accent-cyan);">
-          <i class="fa-solid fa-eye"></i> View Live Optical FOV Cone on GIS Map
-        </button>
-      </div>
-
-      <!-- Blind-Spot Deficit & Propose Camera Installation Card -->
-      <div class="card" style="margin-bottom: 1rem; border-color: rgba(244,63,94,0.3); background: rgba(244,63,94,0.03);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-          <h4 style="font-size: 0.82rem; color: var(--accent-rose);">
-            <i class="fa-solid fa-triangle-exclamation"></i> Identified Blind-Spot Gap:
-          </h4>
-          <span class="node-status-pill offline" style="font-size: 0.6rem;">Blind Angle Deficit</span>
-        </div>
-        <p id="drawerBlindSpotDesc" style="font-size: 0.78rem; color: #ffffff; line-height: 1.35; margin-bottom: 0.6rem;">
-          Evaluating adjacent 360° perimeter...
-        </p>
-        <button class="action-btn primary" id="btnDrawerProposeInstall" style="width: 100%; padding: 0.45rem; font-size: 0.78rem; background: linear-gradient(135deg, #10b981, #059669);">
-          <i class="fa-solid fa-plus-circle"></i> Propose New Camera Installation Here
-        </button>
-      </div>
-
-      <!-- Heartbeat & Ring Buffer Diagnostics -->
-      <div class="card">
-        <h4 style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-heart-pulse text-emerald"></i> Edge Health Telemetry (24-Hour Pings):
-        </h4>
-        <div class="health-timeline-box" id="detailHealthTimeline">
-          <!-- Populated dynamically -->
-        </div>
       </div>
     </div>
   </div>

@@ -1030,6 +1030,35 @@ async function initLiveWallView() {
   const wallGrid = document.getElementById('videoWallGrid');
   const btnStopAll = document.getElementById('btnStopAllSessions');
 
+  const btnToggleLiveFov = document.getElementById('btnToggleLiveFovAnalyzer');
+  const btnCloseLiveFov = document.getElementById('btnCloseLiveFovPanel');
+  const btnLivePropose = document.getElementById('btnLiveFovProposeInstall');
+
+  if (btnToggleLiveFov) {
+    btnToggleLiveFov.addEventListener('click', async () => {
+      const panel = document.getElementById('liveFovAnalyzerPanel');
+      if (panel) {
+        if (panel.style.display === 'none' || !panel.style.display) {
+          const cameras = await window.apiClient.getCameras();
+          if (cameras.length > 0) inspectLiveFeedFov(cameras[0].id);
+        } else {
+          panel.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  if (btnCloseLiveFov) {
+    btnCloseLiveFov.addEventListener('click', () => {
+      const panel = document.getElementById('liveFovAnalyzerPanel');
+      if (panel) panel.style.display = 'none';
+    });
+  }
+
+  if (btnLivePropose) {
+    btnLivePropose.addEventListener('click', () => openCameraProposalModal());
+  }
+
   gridBtns.forEach(btn => {
     btn.addEventListener('click', async () => {
       gridBtns.forEach(b => b.classList.remove('active'));
@@ -1059,6 +1088,26 @@ async function initLiveWallView() {
 
   await renderLiveWall();
 }
+
+window.inspectLiveFeedFov = async function(camId) {
+  const analysis = await window.apiClient.getCameraFovAnalysis(camId);
+  activeFovAnalysis = analysis;
+
+  const panel = document.getElementById('liveFovAnalyzerPanel');
+  if (!panel) return;
+
+  document.getElementById('liveFovCamTitle').textContent = `${analysis.camera_id} • ${analysis.camera_name}`;
+  document.getElementById('liveFovId').textContent = `${analysis.optical_specs.dori_standards.identification_range_meters}m`;
+  document.getElementById('liveFovRec').textContent = `${analysis.optical_specs.dori_standards.recognition_range_meters}m`;
+  document.getElementById('liveFovDet').textContent = `${analysis.optical_specs.dori_standards.detection_range_meters}m`;
+  
+  const blind = analysis.blind_spot_analysis;
+  document.getElementById('liveFovBlindDesc').textContent = `${blind.location_description} (~${blind.uncovered_area_sqm.toLocaleString()} sq.m unmonitored).`;
+  document.getElementById('liveFovRecHw').textContent = `Recommended: ${blind.recommended_hardware}`;
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
 
 function startSessionInactivityTimer() {
   if (sessionCountdownInterval) clearInterval(sessionCountdownInterval);
@@ -1152,6 +1201,9 @@ async function renderLiveWall() {
       <div class="wall-feed-bottom">
         <div class="feed-controls-group">
           ${isSessionActive ? `
+            <button class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.4);">
+              <i class="fa-solid fa-satellite-dish"></i> Range
+            </button>
             <button class="feed-ctrl-btn" onclick="captureFeedSnapshot('${cam.id}', '${cam.name}')" title="Capture Forensic Snapshot">
               <i class="fa-solid fa-camera"></i> Snapshot
             </button>
@@ -1162,7 +1214,9 @@ async function renderLiveWall() {
               <i class="fa-solid fa-stop"></i> Stop
             </button>
           ` : `
-            <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">Edge Buffer Ready (15 Days)</span>
+            <button class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.4); font-size: 0.7rem;">
+              <i class="fa-solid fa-satellite-dish"></i> Range & Blind-Spot
+            </button>
           `}
         </div>
         <span class="feed-timer-chip">${isSessionActive ? 'Auto-Stop: 05:00' : 'Idle'}</span>
