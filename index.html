@@ -16,81 +16,48 @@
   
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
-  
+
   <!-- Application CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
   <!-- TOP CONTROL ROOM HEADER -->
   <header class="app-header">
-    <div class="header-cards-strip">
-      <!-- Hard Card 1: Brand & Identity -->
-      <div class="hdr-hard-card brand-card">
-        <div class="logo-shield-wrapper">
-          <div class="logo-shield-outer"></div>
-          <div class="logo-shield-inner">
-            <i class="fa-solid fa-shield-halved logo-shield-icon"></i>
-            <span class="logo-radar-sweep"></span>
-          </div>
-        </div>
-        <div class="logo-text-block">
-          <div class="brand-title-row">
-            <span class="brand-title">NIRIKSHAN</span>
-            <span class="guj-script-badge">નિરીક્ષણ</span>
-          </div>
-          <span class="brand-subtitle"><i class="fa-solid fa-landmark text-amber"></i> Govt of Gujarat &bull; 26 Depts</span>
+    <div class="header-left">
+      <div class="logo-badge">
+        <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
+        <div class="logo-text">
+          <div class="brand-title">NIRIKSHAN <span class="guj-script">નિરીક્ષણ</span></div>
+          <span class="brand-subtitle">Unified CCTV Intelligence & Analytics Grid &bull; Govt of Gujarat</span>
         </div>
       </div>
+    </div>
 
-      <!-- Hard Card 2: Sovereign Fleet Health & Telemetry -->
-      <div class="hdr-hard-card fleet-status-card">
-        <div class="telemetry-item live">
-          <span class="live-dot-pulse"></span>
-          <span><strong>80,000+</strong> Nodes</span>
-        </div>
-        <div class="card-v-divider"></div>
-        <div class="telemetry-item network">
-          <i class="fa-solid fa-bolt text-cyan"></i>
-          <span>WAN: <strong>&lt; 5 Kbps</strong></span>
-        </div>
-      </div>
-
-      <!-- Hard Card 3: RBAC Persona Context -->
-      <div class="hdr-hard-card persona-card">
-        <div class="persona-label-box">
-          <i class="fa-solid fa-user-shield text-amber"></i>
-          <span>RBAC:</span>
-        </div>
+    <!-- Header Actions (Clean Horizontal Toolbar) -->
+    <div class="header-actions">
+      <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
+      <div class="persona-switcher-wrap">
+        <label class="persona-label"><i class="fa-solid fa-user-shield text-amber"></i> Active Persona (RBAC):</label>
         <select id="topbarPersonaSelect" class="custom-select persona-select">
-          <option value="superadmin">👑 State Superadmin &bull; IG Jadeja</option>
-          <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO)</option>
-          <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC)</option>
-          <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest)</option>
+          <option value="superadmin">👑 State Superadmin &bull; IG Jadeja (Full Access)</option>
+          <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO Scoped)</option>
+          <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC Scoped)</option>
+          <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
         </select>
       </div>
 
-      <!-- Hard Card 4: Digital Military Clock -->
-      <div class="hdr-hard-card clock-card">
-        <i class="fa-regular fa-clock text-cyan"></i>
-        <span id="liveClock">23:04:40 IST</span>
-      </div>
+      <div class="live-clock" id="liveClock">23:07:00 IST</div>
 
-      <!-- Hard Card 5: User Officer Clearance Pill -->
-      <div class="hdr-hard-card user-card" id="topUserPill">
-        <div class="user-avatar-hex">
-          <i class="fa-solid fa-user-shield"></i>
-        </div>
-        <div class="user-info-text">
-          <strong id="topUserName">IG V. R. Jadeja</strong>
-          <span id="topUserDept">Superadmin &bull; Clearance L1</span>
+      <div class="user-pill" id="topUserPill">
+        <i class="fa-solid fa-user-shield text-cyan" style="font-size: 1.1rem;"></i>
+        <div>
+          <strong id="topUserName">IG V. R. Jadeja</strong><br/>
+          <span id="topUserDept" style="font-size: 0.68rem; color: var(--text-muted);">State Superadmin</span>
         </div>
       </div>
 
-      <!-- Hard Card 6: Dossier Export -->
-      <button class="hdr-hard-card export-card" id="exportPdfBtn" title="Export Certified Surveillance Dossier">
-        <i class="fa-solid fa-file-pdf text-rose"></i>
-        <span>Export Dossier</span>
-      </button>
+      <span class="status-indicator live"><span class="dot"></span> 80,000+ Nodes Ready</span>
+      <button class="export-btn" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Dossier</button>
     </div>
   </header>
 
