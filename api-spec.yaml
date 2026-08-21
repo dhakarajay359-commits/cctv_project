@@ -1,0 +1,371 @@
+openapi: 3.0.3
+info:
+  title: Nirikshan Unified CCTV Intelligence & Analytics API
+  description: |
+    Government of Gujarat Unified CCTV Intelligence Platform integrating 80,000+ camera feeds across 26+ state departments.
+    Designed with a zero-trust metadata-first architecture, DPDP Act 2023 consent ledger, and sub-2.5s cross-database threat intercept.
+  version: 1.0.0
+  contact:
+    name: Gujarat State Home Department & Command Center
+    email: cctv-command@gujarat.gov.in
+servers:
+  - url: http://localhost:8080/api
+    description: Local Nirikshan Edge Gateway Mock / Dev Server
+  - url: https://nirikshan.gujarat.gov.in/api/v1
+    description: Production Gujarat State Surveillance Cloud
+
+tags:
+  - name: Cameras & GIS Registry
+    description: Phase 1 • Central camera metadata and spatial indexing
+  - name: Edge Adapters
+    description: Phase 2 • Protocol normalization (ONVIF, RTSP, NetSDK)
+  - name: Live Streaming
+    description: Phase 3 • On-demand session-based WebRTC streaming relay
+  - name: Vision Analytics
+    description: Phase 4 • ANPR optical character recognition and indexing
+  - name: Integration Gateway
+    description: Phase 5 • VAHAN 4.0, eGujCop CCTNS, SARTHI, NAFIS bridge
+  - name: Kafka Alert Bus
+    description: Phase 5 • Real-time topic-partitioned threat routing
+  - name: Auth & RBAC
+    description: Phase 6 • Multi-tenant authentication and role scoping
+  - name: Consent Ledger
+    description: Phase 6 • DPDP Act 2023 private camera citizen consent lifecycle
+  - name: Audit Trail
+    description: Phase 6 • Immutable Section 65B audit log
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth & RBAC]
+      summary: Authenticate user persona and acquire department-scoped JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "superadmin"
+                password:
+                  type: string
+                  example: "StateSecurity2026!"
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+                  scoped_department:
+                    type: string
+
+  /cameras:
+    get:
+      tags: [Cameras & GIS Registry]
+      summary: Retrieve list of cameras scoped to user's department permissions
+      parameters:
+        - name: department_id
+          in: query
+          schema:
+            type: string
+        - name: district
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [online, offline, degraded]
+      responses:
+        '200':
+          description: List of camera nodes
+    post:
+      tags: [Cameras & GIS Registry]
+      summary: Register a new camera node in GIS Registry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, district, department_id, lat, lng]
+      responses:
+        '201':
+          description: Camera registered successfully
+
+  /cameras/{id}:
+    get:
+      tags: [Cameras & GIS Registry]
+      summary: Get camera node details and 24-hour health telemetry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Camera detail and telemetry record
+
+  /cameras/bulk-import:
+    post:
+      tags: [Cameras & GIS Registry]
+      summary: Bulk CSV ingestion of legacy district cameras
+      responses:
+        '200':
+          description: Import summary and gap-closure metrics
+
+  /adapters/test-connection:
+    post:
+      tags: [Edge Adapters]
+      summary: Probe and validate vendor camera stream protocol without hardware replacement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                protocol:
+                  type: string
+                  enum: [onvif, rtsp, vendor_sdk]
+                ip_address:
+                  type: string
+                port:
+                  type: integer
+      responses:
+        '200':
+          description: Protocol handshake and stream profile details
+
+  /streaming/session/start:
+    post:
+      tags: [Live Streaming]
+      summary: Allocate an on-demand session ticket with 5-minute bandwidth TTL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [camera_id]
+              properties:
+                camera_id:
+                  type: string
+      responses:
+        '200':
+          description: WebRTC stream relay URL and session ticket
+
+  /streaming/session/stop:
+    post:
+      tags: [Live Streaming]
+      summary: Immediately terminate on-demand stream and release WAN bandwidth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [camera_id]
+      responses:
+        '200':
+          description: Session terminated
+
+  /streaming/active-sessions:
+    get:
+      tags: [Live Streaming]
+      summary: Get all active control room video relay sessions
+      responses:
+        '200':
+          description: Active streams and total WAN bandwidth load
+
+  /analytics/anpr:
+    post:
+      tags: [Vision Analytics]
+      summary: Run optical OCR and YOLOv8 inference on video frame or camera preset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feed_source:
+                  type: string
+                camera_id:
+                  type: string
+      responses:
+        '200':
+          description: OCR plate output, confidence score, bounding box, and VAHAN alert
+
+  /events:
+    get:
+      tags: [Vision Analytics]
+      summary: Query camera-wise indexed vision events
+      parameters:
+        - name: camera_id
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Filtered event dossier records
+
+  /events/{id}:
+    get:
+      tags: [Vision Analytics]
+      summary: Retrieve complete forensic dossier with Section 65B digital evidence hash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Forensic incident payload
+
+  /integration/vahan/lookup:
+    post:
+      tags: [Integration Gateway]
+      summary: Query VAHAN 4.0 national vehicle database by plate number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plate_number]
+              properties:
+                plate_number:
+                  type: string
+                  example: "GJ-01-AB-1234"
+      responses:
+        '200':
+          description: Registered owner, chassis number, vehicle model, and FIR stolen status
+
+  /integration/egujcop/lookup:
+    post:
+      tags: [Integration Gateway]
+      summary: Search eGujCop & CCTNS state crime registry for wanted persons and warrants
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+      responses:
+        '200':
+          description: Warrant status, issuing court, and charges
+
+  /alerts:
+    get:
+      tags: [Kafka Alert Bus]
+      summary: Retrieve real-time alerts filterable by department and severity
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [ALL, critical, warning, info]
+        - name: department_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of active and dispatched alerts
+
+  /alerts/{id}/acknowledge:
+    post:
+      tags: [Kafka Alert Bus]
+      summary: Mark alert acknowledged by control room operator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alert acknowledged
+
+  /alerts/{id}/escalate:
+    post:
+      tags: [Kafka Alert Bus]
+      summary: Auto-dispatch PCR interceptor unit to incident location
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PCR unit assigned with ETA
+
+  /consent/grant:
+    post:
+      tags: [Consent Ledger]
+      summary: Grant and cryptographically seal citizen private camera consent (DPDP Act 2023)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [establishment_name, owner_name, district, granted_scope]
+      responses:
+        '201':
+          description: Consent certificate generated with PKI hash
+
+  /consent/revoke:
+    post:
+      tags: [Consent Ledger]
+      summary: Revoke private camera sharing consent and sever video relay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [record_id]
+      responses:
+        '200':
+          description: Consent revoked
+
+  /audit-log:
+    get:
+      tags: [Audit Trail]
+      summary: Retrieve immutable zero-trust audit trail
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit logs with cryptographic actor attribution

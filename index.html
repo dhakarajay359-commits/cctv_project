@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIRIKSHAN (નિરીક્ષણ) - Unified CCTV Intelligence & Analytics Platform</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet GIS Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- TOP CONTROL ROOM HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-badge">
+        <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
+        <div class="logo-text">
+          <div class="brand-title">NIRIKSHAN <span class="guj-script">નિરીક્ષણ</span></div>
+          <span class="brand-subtitle">Unified CCTV Intelligence & Analytics Grid &bull; Govt of Gujarat</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Department & RBAC Persona Switcher -->
+    <div class="header-rbac-switcher">
+      <div class="rbac-label"><i class="fa-solid fa-user-shield"></i> Active Persona (RBAC):</div>
+      <select id="userRoleSelect" class="rbac-select">
+        <option value="superadmin|dept-police">SuperAdmin &bull; State Command Center (All 26 Depts)</option>
+        <option value="operator|dept-police">Police Operator &bull; Home Dept (Police Feeds)</option>
+        <option value="admin|dept-rto">RTO Inspector &bull; Transport Dept (Highway & Tolls)</option>
+    <!-- Header Actions -->
+       <div class="top-nav-right">
+        <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
+        <div class="persona-switcher-wrap">
+          <label class="persona-label"><i class="fa-solid fa-user-shield"></i> Active Persona (RBAC):</label>
+          <select id="topbarPersonaSelect" class="custom-select persona-select">
+            <option value="superadmin">State Superadmin &bull; IG Jadeja (Full Access)</option>
+            <option value="rto_admin">Dept Admin &bull; R. K. Vaghela (RTO Scoped)</option>
+            <option value="amc_operator">Operator &bull; Priya Shah (AMC Scoped)</option>
+            <option value="forest_viewer">Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
+          </select>
+        </div>
+
+        <div class="live-clock" id="liveClock">2026-08-21 17:30:00 IST</div>
+        <div class="user-pill" id="topUserPill">
+          <i class="fa-solid fa-user-shield"></i>
+          <div>
+            <strong id="topUserName">IG V. R. Jadeja</strong><br/>
+            <span id="topUserDept" style="font-size: 0.68rem; color: var(--text-muted);">State Superadmin</span>
+          </div>
+        </div>
+      </div>
+      <span class="status-indicator live"><span class="dot"></span> 80,000+ Nodes Ready</span>
+      <button class="export-btn" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Dossier</button>
+    </div>
+  </header>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="main-nav-bar">
+    <div class="nav-container">
+      <button class="main-nav-btn active" data-view="view-dashboard"><i class="fa-solid fa-map-location-dot"></i> GIS Dashboard</button>
+      <button class="main-nav-btn" data-view="view-registry"><i class="fa-solid fa-list-check"></i> Camera Registry</button>
+      <button class="main-nav-btn" data-view="view-livewall"><i class="fa-solid fa-table-cells"></i> Live Video Wall</button>
+      <button class="main-nav-btn" data-view="view-analytics"><i class="fa-solid fa-chart-line"></i> Analytics & ANPR</button>
+      <button class="main-nav-btn" data-view="view-alerts"><i class="fa-solid fa-triangle-exclamation"></i> Alerts & Routing <span class="nav-badge" id="activeAlertBadge">2</span></button>
+      <button class="main-nav-btn" data-view="view-integration"><i class="fa-solid fa-database"></i> Cross-DB Gateway</button>
+      <button class="main-nav-btn" data-view="view-admin"><i class="fa-solid fa-sliders"></i> Admin & Audit</button>
+      <button class="main-nav-btn" data-view="view-architecture"><i class="fa-solid fa-network-wired"></i> 7-Layer Architecture</button>
+      <button class="main-nav-btn" data-view="view-api-docs"><i class="fa-solid fa-code"></i> OpenAPI / REST Client</button>
+    </div>
+  </nav>
+
+  <!-- MAIN VIEWPORT CONTAINER -->
+  <main class="main-container">
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: GIS DASHBOARD (HOME) -->
+    <!-- ========================================================================= -->
+    <section id="view-dashboard" class="app-view active">
+      <!-- Quick Stats Counters -->
+      <div class="stats-counter-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fa-solid fa-video"></i></div>
+          <div class="stat-data">
+            <div class="stat-number" id="dashTotalCams">80,000+</div>
+            <div class="stat-title">Integrated Cameras</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fa-solid fa-signal"></i></div>
+          <div class="stat-data">
+            <div class="stat-number text-green" id="dashOnlineRate">98.4%</div>
+            <div class="stat-title">Health Uptime</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon amber"><i class="fa-solid fa-car-burst"></i></div>
+          <div class="stat-data">
+            <div class="stat-number text-amber" id="dashAnprHits">1,482</div>
+            <div class="stat-title">24h ANPR Detections</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon rose"><i class="fa-solid fa-bell"></i></div>
+          <div class="stat-data">
+            <div class="stat-number text-rose" id="dashActiveAlerts">2 Active</div>
+            <div class="stat-title">Cross-DB Critical Hits</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GIS Map & Control Hub -->
+      <div class="gis-master-layout">
+        <!-- Sidebar Filters -->
+        <div class="gis-controls-sidebar">
+          <div class="sidebar-header">
+            <h3><i class="fa-solid fa-filter"></i> Geospatial Filters</h3>
+            <button class="btn-refresh" id="btnRefreshMap"><i class="fa-solid fa-arrows-rotate"></i></button>
+          </div>
+
+          <div class="filter-block">
+            <label>Department Scope:</label>
+            <select id="gisDeptSelect" class="custom-select">
+              <option value="ALL">All Departments (Sovereign View)</option>
+              <option value="dept-police">Home Dept / State Police</option>
+              <option value="dept-rto">RTO & Highways</option>
+              <option value="dept-amc">AMC Municipal Corp</option>
+              <option value="dept-civil">Food & Civil Supplies</option>
+              <option value="dept-private">Private / Commercial Opt-In</option>
+            </select>
+          </div>
+
+          <div class="filter-block">
+            <label>Status Filter:</label>
+            <div class="status-btn-group">
+              <button class="st-filter-btn active" data-st="ALL">All</button>
+              <button class="st-filter-btn" data-st="online"><span class="dot-sm green"></span> Online</button>
+              <button class="st-filter-btn" data-st="degraded"><span class="dot-sm amber"></span> Degraded</button>
+              <button class="st-filter-btn" data-st="offline"><span class="dot-sm red"></span> Offline</button>
+            </div>
+          </div>
+
+          <div class="filter-block">
+            <label>Quick Node Search:</label>
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="gisSearchInput" class="custom-input" placeholder="Search junction, IP, or camera...">
+            </div>
+          </div>
+
+          <div class="gis-nodes-list" id="gisNodesList">
+            <!-- Rendered dynamically from API client -->
+          </div>
+        </div>
+
+        <!-- Leaflet Map Canvas -->
+        <div class="gis-map-canvas-wrap">
+          <div class="map-top-bar">
+            <div class="map-mode-indicator">
+              <i class="fa-solid fa-satellite"></i> <strong>Live GIS Surveillance Matrix</strong> &bull; Gujarat Sector
+            </div>
+            <!-- Editable Cross-Dept Pursuit Input on GIS Map -->
+            <div class="map-pursuit-quick-bar">
+              <label><i class="fa-solid fa-route text-rose"></i> Vehicle Plate No:</label>
+              <input type="text" id="mapPursuitInput" list="pursuitPlateList" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter ANY Vehicle No..." style="width: 190px; font-size: 0.76rem; padding: 0.22rem 0.5rem; text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; color: var(--accent-cyan);">
+              <datalist id="pursuitPlateList">
+                <option value="GJ-01-AB-1234">GJ-01-AB-1234 (Stolen Creta)</option>
+                <option value="MP-09-HH-5541">MP-09-HH-5541 (Overweight Truck)</option>
+                <option value="MH-04-AZ-8890">MH-04-AZ-8890 (Expired Transit Permit)</option>
+                <option value="GJ-05-KP-7712">GJ-05-KP-7712 (Surat Diamond Corridor Hit)</option>
+                <option value="DL-01-TA-9901">DL-01-TA-9901 (Interstate Transit Alert)</option>
+                <option value="GJ-27-E-4567">GJ-27-E-4567 (Ahmedabad East Alert)</option>
+              </datalist>
+              <button class="action-btn primary" id="btnRenderMapPursuit" style="padding: 0.22rem 0.6rem; font-size: 0.72rem; background: linear-gradient(135deg, #f43f5e, #be123c);">
+                <i class="fa-solid fa-crosshairs"></i> Trace on Map
+              </button>
+              <button class="action-btn" id="btnClearMapPursuit" style="padding: 0.22rem 0.5rem; font-size: 0.72rem; display: none;">
+                <i class="fa-solid fa-xmark"></i> Clear Trail
+              </button>
+            </div>
+
+            <div class="map-telemetry-badge">
+              <i class="fa-solid fa-bolt"></i> Telemetry Mode: <strong>&lt; 5 Kbps/Node</strong> (Raw Video on Demand)
+            </div>
+          </div>
+
+          <!-- Floating Pursuit HUD Overlay on Map -->
+          <div class="pursuit-map-hud" id="pursuitMapHud" style="display: none;">
+            <div class="hud-top">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="hud-live-pill"><span class="dot-sm" style="background: var(--accent-rose);"></span> LIVE PURSUIT VECTOR</span>
+                <strong id="hudPlateBadge" style="font-family: var(--font-mono); color: var(--accent-cyan);">GJ-01-AB-1234</strong>
+              </div>
+              <button class="hud-close-btn" id="btnCloseHud">&times;</button>
+            </div>
+            <div class="hud-body">
+              <div class="hud-stat-grid">
+                <div><span>Vehicle:</span> <strong id="hudVehicleName">Hyundai Creta (White)</strong></div>
+                <div><span>Total Transit:</span> <strong class="text-cyan" id="hudDistance">74.2 km</strong></div>
+                <div><span>Avg Speed:</span> <strong class="text-amber" id="hudSpeed">81.5 km/h</strong></div>
+                <div><span>Heading:</span> <strong class="text-green" id="hudHeading">325° NW</strong></div>
+              </div>
+              <div class="hud-next-box">
+                <span class="hud-next-label"><i class="fa-solid fa-forward-step"></i> Next Predicted Roadblock:</span>
+                <strong id="hudNextLoc">Forest Dept Sanctuary North Inter-State Corridor</strong>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem;">
+                  <span class="text-amber" id="hudEta">ETA: ~14 Mins (18:52 IST)</span>
+                  <button class="action-btn primary" id="btnArmRoadblockFromHud" style="font-size: 0.68rem; padding: 0.2rem 0.5rem; background: linear-gradient(135deg, #f43f5e, #be123c);">
+                    <i class="fa-solid fa-shield-halved"></i> Arm Roadblock
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real Leaflet Map Container -->
+          <div id="leafletMap" class="leaflet-container-view"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: CAMERA REGISTRY (PHASE 1 - MODEL 1 FOUNDATION LAYER) -->
+    <!-- ========================================================================= -->
+    <section id="view-registry" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-cube"></i> Phase 1 &bull; Model 1 Deliverable</div>
+          <h2><i class="fa-solid fa-list-check"></i> Master Camera Registry & Gap-Analysis Portal</h2>
+          <p>Centralized geospatial inventory with department ownership, vendor specs, 15-day retention policies, heartbeat monitoring, and district gap analysis.</p>
+        </div>
+        <div class="registry-actions-group">
+          <button class="action-btn" id="btnOpenAdapterWizardModal" style="background: rgba(0, 242, 254, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+            <i class="fa-solid fa-microchip"></i> Edge Adapter Wizard (Phase 2)
+          </button>
+          <button class="action-btn" id="btnOpenBulkImportModal"><i class="fa-solid fa-file-csv"></i> Bulk CSV Import</button>
+          <button class="action-btn primary" id="btnOpenOnboardModal"><i class="fa-solid fa-plus"></i> Onboard New Camera</button>
+        </div>
+      </div>
+
+      <!-- Registry Sub-Navigation (Registry Table vs Gap Analysis) -->
+      <div class="registry-sub-nav">
+        <button class="reg-sub-btn active" data-subview="subview-table"><i class="fa-solid fa-table-list"></i> Camera Inventory Table</button>
+        <button class="reg-sub-btn" data-subview="subview-gap"><i class="fa-solid fa-chart-pie"></i> District Gap-Analysis Report</button>
+      </div>
+
+      <!-- SUBVIEW 1: REGISTRY TABLE & FILTERS -->
+      <div id="subview-table" class="reg-subview active">
+        <div class="registry-toolbar">
+          <div class="search-bar-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="registrySearch" class="custom-input" placeholder="Search by Camera ID, location, vendor, or district...">
+          </div>
+          <select id="registryDeptFilter" class="custom-select" style="max-width: 220px;">
+            <option value="ALL">All Departments</option>
+            <option value="dept-police">Police / Home</option>
+            <option value="dept-rto">RTO / Highways</option>
+            <option value="dept-amc">AMC Municipal</option>
+            <option value="dept-civil">Civil Supplies</option>
+            <option value="dept-forest">Forest & Wildlife</option>
+            <option value="dept-private">Private Opt-In</option>
+          </select>
+          <select id="registryDistrictFilter" class="custom-select" style="max-width: 220px;">
+            <option value="ALL">All 6 Key Districts</option>
+            <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
+            <option value="Jamnagar">Jamnagar</option>
+            <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
+            <option value="Gir Somnath">Gir Somnath</option>
+            <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
+            <option value="Valsad (Coastal Corridor)">Valsad (Coastal Corridor)</option>
+          </select>
+          <select id="registryTypeFilter" class="custom-select" style="max-width: 140px;">
+            <option value="ALL">All Types</option>
+            <option value="ip">IP Camera</option>
+            <option value="analog">Analog (DVR)</option>
+          </select>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table" id="registryTable">
+            <thead>
+              <tr>
+                <th>Camera ID</th>
+                <th>Location / Name</th>
+                <th>District</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th>Vendor & Type</th>
+                <th>Retention</th>
+                <th>Resolution</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="registryTableBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUBVIEW 2: DISTRICT GAP-ANALYSIS REPORT (MODEL 1 DELIVERABLE) -->
+      <div id="subview-gap" class="reg-subview">
+        <div class="gap-summary-banner">
+          <div class="gap-metric-box">
+            <span class="gap-label">Statewide Monitored Districts</span>
+            <span class="gap-val text-cyan" id="gapTotalDistricts">6 Target Sectors</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Avg Surveillance Coverage</span>
+            <span class="gap-val text-green" id="gapAvgCoverage">57.8%</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Priority Deficit Sectors</span>
+            <span class="gap-val text-rose" id="gapDeficitDistricts">4 Districts</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Est. Capital Grant Needed</span>
+            <span class="gap-val text-amber">₹34.2 Crores</span>
+          </div>
+        </div>
+
+        <div class="gap-district-grid" id="gapDistrictGrid">
+          <!-- District Gap Cards Rendered Dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- CAMERA DETAIL SLIDE-OVER DRAWER -->
+    <div class="camera-detail-drawer" id="camDetailDrawer">
+      <div class="drawer-top-bar">
+        <div class="drawer-title-wrap">
+          <span class="cam-id-pill" id="detailCamId">CAM-GJ-0101</span>
+          <h3 id="detailCamName">SG Highway Iskcon Crossroad Overbridge</h3>
+        </div>
+        <button class="close-drawer-btn" id="closeDetailDrawerBtn">&times;</button>
+      </div>
+
+      <div class="drawer-scroll-body">
+        <div class="detail-section">
+          <h4><i class="fa-solid fa-circle-info"></i> Asset Specification & Ownership</h4>
+          <div class="detail-grid">
+            <div class="detail-field"><label>Department:</label> <span id="detailDept">Gujarat State Police</span></div>
+            <div class="detail-field"><label>District Sector:</label> <span id="detailDistrict">Ahmedabad (Urban)</span></div>
+            <div class="detail-field"><label>Camera Type:</label> <span id="detailType">IP (ONVIF 2.4 Profile S)</span></div>
+            <div class="detail-field"><label>Vendor & Model:</label> <span id="detailVendor">Hikvision DS-2CD4A26FWD</span></div>
+            <div class="detail-field"><label>Storage Type:</label> <span id="detailStorage">Edge NVR (Normalized Protocol)</span></div>
+            <div class="detail-field"><label>Retention Policy:</label> <span id="detailRetention">15 Days Ring Buffer</span></div>
+            <div class="detail-field"><label>Stream Resolution:</label> <span id="detailResolution">1080p @ 25 FPS</span></div>
+            <div class="detail-field"><label>Onboarded Date:</label> <span id="detailOnboarded">2025-11-12</span></div>
+            <div class="detail-field"><label>GPS Coordinates:</label> <span id="detailGps">23.0298° N, 72.5074° E</span></div>
+            <div class="detail-field"><label>Field of View (FOV):</label> <span id="detailFov">Northbound (90°)</span></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4><i class="fa-solid fa-heart-pulse"></i> 24-Hour Heartbeat & Health Telemetry</h4>
+          <div class="health-summary-row">
+            <div class="health-box">
+              <label>Current Status:</label>
+              <span class="status-text text-green" id="detailStatus">ONLINE (Uptime: 99.8%)</span>
+            </div>
+            <div class="health-box">
+              <label>Avg Ping Latency:</label>
+              <span class="latency-text" id="detailPing">19 ms (Edge WAN)</span>
+            </div>
+            <div class="health-box">
+              <label>Packet Drop:</label>
+              <span class="packet-text text-green">0.00% Loss</span>
+            </div>
+          </div>
+
+          <div class="health-timeline-table">
+            <table class="compact-table">
+              <thead>
+                <tr>
+                  <th>Time Check</th>
+                  <th>Latency (ms)</th>
+                  <th>Status</th>
+                  <th>Edge Ring Buffer State</th>
+                </tr>
+              </thead>
+              <tbody id="detailHealthTimeline">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="drawer-actions-row">
+          <button class="action-btn primary" id="detailPullStreamBtn"><i class="fa-solid fa-play"></i> Pull On-Demand WebRTC Relay</button>
+          <button class="action-btn" id="detailExportDossierBtn"><i class="fa-solid fa-file-arrow-down"></i> Export Node Dossier</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK CSV IMPORT MODAL -->
+    <div class="app-modal" id="bulkImportModal">
+      <div class="modal-content large">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-csv"></i> Bulk Camera CSV Ingestion (Model 1)</h3>
+          <button class="close-modal-btn" id="closeBulkModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+            Paste or upload CSV rows following the schema: <code>name,district,department_id,lat,lng,vendor,type,retention_days</code>
+          </p>
+          
+          <textarea id="bulkCsvTextarea" class="custom-textarea" rows="7" placeholder="e.g.
+SG Highway Pakwan Crossroad,Ahmedabad (Urban),dept-police,23.0388,72.5122,Hikvision 4K,ip,15
+Jamnagar Reliance Port Road,Jamnagar,dept-rto,22.4810,70.0620,CP Plus 1080p,ip,15
+Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch Dinion,ip,30"></textarea>
+
+          <div class="csv-actions-bar">
+            <button class="action-btn" id="btnLoadSampleCsv"><i class="fa-solid fa-wand-magic-sparkles"></i> Load Sample 5-District CSV</button>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Auto-maps coordinates and assigns default 15-day edge ring buffer.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="btnCancelBulk">Cancel</button>
+          <button type="button" class="action-btn primary" id="btnSubmitBulkCsv"><i class="fa-solid fa-upload"></i> Process & Ingest Cameras</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 3: LIVE VIDEO WALL (PHASE 3 - MODEL 2 UNIFIED VIEWING PLATFORM) -->
+    <!-- ========================================================================= -->
+    <section id="view-livewall" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-play"></i> Phase 3 &bull; Model 2 Deliverable</div>
+          <h2><i class="fa-solid fa-table-cells"></i> Unified Live Viewing & Dynamic Video Wall</h2>
+          <p>Session-based on-demand video relays. Streams only start when requested by an operator and auto-stop on inactivity to enforce strict WAN bandwidth discipline.</p>
+        </div>
+        <div class="wall-header-actions">
+          <div class="wall-grid-toggles">
+            <span class="toggle-label">Grid Layout:</span>
+            <button class="grid-btn" data-grid="1x1"><i class="fa-solid fa-square"></i> 1 View</button>
+            <button class="grid-btn active" data-grid="2x2"><i class="fa-solid fa-table-cells-large"></i> 4 Views (2x2)</button>
+            <button class="grid-btn" data-grid="3x3"><i class="fa-solid fa-table-cells"></i> 9 Views (3x3)</button>
+            <button class="grid-btn" data-grid="4x4"><i class="fa-solid fa-border-all"></i> 16 Views (4x4)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bandwidth Discipline & Session Telemetry Bar -->
+      <div class="bandwidth-discipline-bar">
+        <div class="bw-stat-item">
+          <span class="bw-label"><i class="fa-solid fa-tower-broadcast text-cyan"></i> Active Stream Sessions:</span>
+          <strong class="bw-val text-cyan" id="liveWallActiveSessions">2 Active Streams</strong>
+        </div>
+        <div class="bw-stat-item">
+          <span class="bw-label"><i class="fa-solid fa-gauge-high text-green"></i> Current WAN Load:</span>
+          <strong class="bw-val text-green" id="liveWallWanLoad">4.80 Mbps</strong>
+          <span class="bw-sub">(vs 200 Gbps legacy centralized)</span>
+        </div>
+        <div class="bw-stat-item">
+          <span class="bw-label"><i class="fa-solid fa-stopwatch text-amber"></i> Inactivity Auto-Stop:</span>
+          <strong class="bw-val text-amber" id="liveWallInactivityTimer">04:45 Remaining</strong>
+        </div>
+        <button class="action-btn" id="btnStopAllSessions" style="margin-left: auto; font-size: 0.75rem; color: var(--accent-rose);">
+          <i class="fa-solid fa-power-off"></i> Terminate All Streams (Free Bandwidth)
+        </button>
+      </div>
+
+      <!-- Live Video Wall Grid Container -->
+      <div class="video-wall-grid grid-2x2" id="videoWallGrid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- FEED REVIEW TAGGING MODAL -->
+    <div class="app-modal" id="tagFeedModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-bookmark text-cyan"></i> Tag Live Feed for Investigative Review</h3>
+          <button class="close-modal-btn" id="closeTagModal">&times;</button>
+        </div>
+        <form id="tagFeedForm" class="modal-form">
+          <div class="form-group">
+            <label>Target Camera Feed:</label>
+            <input type="text" id="tagModalCamName" class="custom-input" readonly>
+            <input type="hidden" id="tagModalCamId">
+          </div>
+          <div class="form-group">
+            <label>Classification / Tag Type:</label>
+            <select id="tagModalType" class="custom-select">
+              <option value="suspicious_activity">Suspicious Movement / Loitering</option>
+              <option value="traffic_obstruction">Traffic Congestion / Illegal Parking</option>
+              <option value="crowd_surge">Crowd Surge / Safety Hazard</option>
+              <option value="anpr_discrepancy">ANPR Numberplate Mismatch</option>
+              <option value="general_investigation">General Forensic Review</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Reviewer Observation Notes:</label>
+            <textarea id="tagModalNotes" class="custom-textarea" rows="4" placeholder="Enter specific observations, suspect descriptors, or vehicle heading..." required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" id="btnCancelTag">Cancel</button>
+            <button type="submit" class="action-btn primary"><i class="fa-solid fa-check"></i> Commit Event to Analytics Hub</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 4: ANALYTICS & ANPR SEARCH (PHASE 4 - MODEL 2 ANALYTICS ENGINE) -->
+    <!-- ========================================================================= -->
+    <section id="view-analytics" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-brain"></i> Phase 4 &bull; Model 2 Deliverable</div>
+          <h2><i class="fa-solid fa-microscope"></i> Vision Analytics Engine & ANPR Event Detection</h2>
+          <p>Real-time computer vision inference pipeline with automated optical license plate recognition (ANPR), bounding box extraction, camera-wise indexing, and cross-department forensic search.</p>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- CROSS-DEPARTMENT VEHICLE PURSUIT & PREDICTIVE TRAJECTORY LAB -->
+      <!-- ========================================================================= -->
+      <div class="anpr-lab-card" style="margin-top: 1.5rem; border-color: rgba(244,63,94,0.4); background: linear-gradient(180deg, rgba(244,63,94,0.06) 0%, rgba(15,23,42,0.8) 100%);">
+        <div class="anpr-lab-header">
+          <div class="anpr-lab-title">
+            <i class="fa-solid fa-route text-rose" style="font-size: 1.4rem;"></i>
+            <div>
+              <h3>Cross-Department Trajectory Reconstruction & Predictive Interception</h3>
+              <p>Reconstructs multi-agency sighting trails across Police, AMC Smart City, RTO, Private Citizen, and Forest Department cameras to calculate vehicle speed, heading, and predict the exact forward roadblock location.</p>
+            </div>
+          </div>
+          <div class="anpr-lab-presets">
+            <div class="search-bar-wrap" style="min-width: 200px;">
+              <i class="fa-solid fa-car"></i>
+              <input type="text" id="trajectoryPlateInput" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter Stolen Plate (e.g. GJ-01-AB-1234)">
+            </div>
+            <button class="action-btn primary" id="btnTraceTrajectory" style="background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 0 16px rgba(244,63,94,0.4);">
+              <i class="fa-solid fa-compass"></i> Trace Route
+            </button>
+            <button class="action-btn" id="btnViewOnGisMap" style="background: rgba(0, 242, 254, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+              <i class="fa-solid fa-map-location-dot"></i> View on GIS Map
+            </button>
+          </div>
+        </div>
+
+        <div class="quick-samples-bar" style="margin-top: 0.5rem; margin-bottom: 0.8rem;">
+          <span>Select Target Pursuit:</span>
+          <button class="sample-chip" onclick="document.getElementById('trajectoryPlateInput').value='GJ-01-AB-1234'; document.getElementById('btnTraceTrajectory').click();">GJ-01-AB-1234 (Stolen Creta &bull; Police ➔ AMC ➔ Private ➔ RTO ➔ Forest)</button>
+          <button class="sample-chip" onclick="document.getElementById('trajectoryPlateInput').value='MP-09-HH-5541'; document.getElementById('btnTraceTrajectory').click();">MP-09-HH-5541 (Overweight Truck &bull; Civil Supplies ➔ RTO ➔ Border Patrol)</button>
+        </div>
+
+        <!-- Trajectory Reconstruction Interactive Dashboard Output -->
+        <div id="trajectoryResultsContainer" style="display: none; margin-top: 1rem;">
+          <!-- Trajectory Summary Banner -->
+          <div class="gap-summary-banner" style="margin-bottom: 1.2rem;">
+            <div class="gap-metric-box">
+              <span class="gap-label">Target Stolen Vehicle</span>
+              <strong class="text-rose" id="trajVehicleModel">Hyundai Creta (White)</strong>
+              <span style="font-size: 0.7rem; color: var(--text-muted);" id="trajFirRef">FIR-2026-GJ-01-8841</span>
+            </div>
+            <div class="gap-metric-box">
+              <span class="gap-label">Total Multi-Dept Transit</span>
+              <span class="gap-val text-cyan" id="trajTotalDist">74.2 km</span>
+            </div>
+            <div class="gap-metric-box">
+              <span class="gap-label">Average Transit Speed</span>
+              <span class="gap-val text-amber" id="trajAvgSpeed">81.5 km/h</span>
+            </div>
+            <div class="gap-metric-box">
+              <span class="gap-label">Current Heading Vector</span>
+              <span class="gap-val text-green" id="trajHeading">North-West (325°)</span>
+            </div>
+          </div>
+
+          <!-- Chronological Multi-Department Sighting Trail -->
+          <h4 style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.8rem; text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.05em;">
+            <i class="fa-solid fa-timeline text-cyan"></i> Chronological Cross-Jurisdiction Camera Sighting Trail:
+          </h4>
+          <div class="trajectory-steps-timeline" id="trajectoryTimelineList">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- AI Predictive Interception Card -->
+          <div class="predictive-intercept-card" style="margin-top: 1.4rem; background: rgba(244,63,94,0.08); border: 2px dashed var(--accent-rose); border-radius: var(--radius-md); padding: 1.2rem 1.4rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+                  <span class="node-status-pill online" style="background: rgba(244,63,94,0.2); color: var(--accent-rose); border-color: var(--accent-rose); font-weight: 800;">
+                    <span class="dot-sm" style="background: var(--accent-rose);"></span> AI PREDICTIVE INTERCEPT VECTOR
+                  </span>
+                  <span class="kafka-badge"><i class="fa-solid fa-satellite-dish"></i> 96.2% Confidence</span>
+                </div>
+                <h3 style="font-size: 1.1rem; color: #ffffff; margin-top: 0.2rem;" id="predNextLocTitle">Next Predicted Location: Forest Dept Sanctuary North Inter-State Corridor</h3>
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.3rem;" id="predStrategyDesc">
+                  Vehicle maintaining <strong>92.0 km/h</strong> on NH-147 heading towards Rajasthan Interstate boundary. Pre-alert transmitted across department boundaries.
+                </p>
+              </div>
+
+              <div style="text-align: right;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Estimated Time of Arrival:</span>
+                <span style="font-family: var(--font-mono); font-size: 1.3rem; font-weight: 800; color: var(--accent-amber);" id="predEtaTime">~14 Mins (18:52 IST)</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid rgba(244,63,94,0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
+              <span style="font-size: 0.75rem; color: var(--text-muted);" id="predForwardUnit">
+                <i class="fa-solid fa-car-on text-cyan"></i> Forward Squad: <strong>Inter-State Border Flying Squad #11</strong> (Pre-Positioned)
+              </span>
+              <button class="action-btn primary" id="btnDispatchForwardRoadblock" style="background: linear-gradient(135deg, #f43f5e, #be123c); font-size: 0.78rem; padding: 0.35rem 0.8rem;">
+                <i class="fa-solid fa-shield-halved"></i> Arm Automated Roadblock & Forward Intercept
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAMERA-WISE MULTI-PARAMETER SEARCH TOOLBAR -->
+      <div class="analytics-filter-toolbar">
+        <div class="search-bar-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="analyticsSearch" class="custom-input" placeholder="Search by Plate (e.g. GJ-01), Suspect Name, or Event ID...">
+        </div>
+
+        <select id="analyticsCameraFilter" class="custom-select" style="max-width: 220px;">
+          <option value="ALL">All Camera Nodes</option>
+          <option value="CAM-GJ-0101">CAM-GJ-0101 &bull; SG Highway Overbridge</option>
+          <option value="CAM-GJ-0102">CAM-GJ-0102 &bull; Ashram Road Riverfront</option>
+          <option value="CAM-GJ-0201">CAM-GJ-0201 &bull; Jamnagar Bedi Port</option>
+          <option value="CAM-GJ-0301">CAM-GJ-0301 &bull; Dwarka Temple Plaza</option>
+          <option value="CAM-GJ-0401">CAM-GJ-0401 &bull; Gir Sasan Gate #4</option>
+          <option value="CAM-GJ-0501">CAM-GJ-0501 &bull; Dahod NH-47 Checkpost</option>
+          <option value="CAM-GJ-0601">CAM-GJ-0601 &bull; Valsad Bhilad Toll</option>
+        </select>
+
+        <select id="analyticsTypeFilter" class="custom-select" style="max-width: 180px;">
+          <option value="ALL">All Event Types</option>
+          <option value="anpr">ANPR Numberplate Hit</option>
+          <option value="face">Facial Match (CCTNS)</option>
+          <option value="crowd">Loitering / Crowd Surge</option>
+          <option value="manual">Operator Tagged (Phase 3)</option>
+        </select>
+
+        <button class="action-btn" id="btnResetAnalyticsFilters"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+      </div>
+
+      <!-- INDEXED RESULTS TABLE -->
+      <div class="table-card">
+        <table class="data-table" id="analyticsTable">
+          <thead>
+            <tr>
+              <th>Event ID</th>
+              <th>Timestamp (IST)</th>
+              <th>Camera Node & District</th>
+              <th>Event Type</th>
+              <th>Inference Details</th>
+              <th>Database Intercept</th>
+              <th>Forensic Actions</th>
+            </tr>
+          </thead>
+          <tbody id="analyticsTableBody">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- JUMP-TO-CLIP VIDEO PLAYBACK MODAL -->
+    <div class="app-modal" id="clipModal">
+      <div class="modal-content large">
+        <div class="modal-header">
+          <div>
+            <span class="phase-tag-badge"><i class="fa-solid fa-film"></i> Forensic Clip Playback</span>
+            <h3 id="clipModalTitle">Incident Playback: EVT-90214</h3>
+          </div>
+          <button class="close-modal-btn" id="closeClipModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="clip-player-sim">
+            <div class="clip-watermark" id="clipWatermark">CAM-GJ-0101 &bull; 2026-08-21 17:42:10 IST</div>
+            <div class="clip-bbox-overlay" id="clipBboxOverlay">
+              <span class="bbox-tag" id="clipBboxTag">ANPR: GJ-01-AB-1234 (99.2%)</span>
+            </div>
+            <div class="clip-sim-center">
+              <i class="fa-solid fa-play-circle" style="font-size: 3.5rem; color: var(--accent-cyan);"></i>
+              <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #ffffff;">Streaming Forensic Buffer from Edge NVR (15-Day Ring Buffer)</p>
+              <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Offset: 00:14:22 &bull; Cryptographic Hash: #SHA256-VALID</span>
+            </div>
+          </div>
+          <div class="clip-scrub-bar">
+            <div class="scrub-progress" style="width: 45%;"></div>
+            <span class="scrub-time">00:14:22 / 00:30:00</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="btnCloseClip">Close</button>
+          <button type="button" class="action-btn primary" id="btnDownloadEvidenceDossier">
+            <i class="fa-solid fa-file-shield"></i> Download Sealed Evidence Dossier (Section 65B)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 5: ALERTS & REAL-TIME DISPATCH (PHASE 5 - KAFKA ALERT BUS) -->
+    <!-- ========================================================================= -->
+    <section id="view-alerts" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-tower-broadcast"></i> Phase 5 &bull; Alert Bus & Event Engine (L5)</div>
+          <h2><i class="fa-solid fa-bell"></i> Real-Time Alerts & PCR Interceptor Dispatch</h2>
+          <p>Kafka topic-partitioned alert stream delivering sub-second automated intercepts from VAHAN, eGujCop, and NAFIS vision events directly to department control rooms.</p>
+        </div>
+        <div class="alert-header-actions">
+          <button class="action-btn primary" id="btnSimulateStolenHit" style="background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 0 16px rgba(244,63,94,0.4);">
+            <i class="fa-solid fa-bolt"></i> Simulate Live ANPR Stolen Vehicle Intercept
+          </button>
+        </div>
+      </div>
+
+      <!-- Alert Metrics & Dispatch Status Banner -->
+      <div class="gap-summary-banner">
+        <div class="gap-metric-box">
+          <span class="gap-label">Active Unresolved Alerts</span>
+          <span class="gap-val text-rose" id="alertsTotalCount">3 Active</span>
+        </div>
+        <div class="gap-metric-box">
+          <span class="gap-label">PCR Units On-Scene / En Route</span>
+          <span class="gap-val text-cyan" id="alertsDispatchedCount">2 Interceptors</span>
+        </div>
+        <div class="gap-metric-box">
+          <span class="gap-label">Avg Incident Dispatch Latency</span>
+          <span class="gap-val text-green">1.8 Seconds</span>
+        </div>
+        <div class="gap-metric-box">
+          <span class="gap-label">Kafka Bus Stream Health</span>
+          <span class="gap-val text-amber">100% Operational</span>
+        </div>
+      </div>
+
+      <!-- Alert Filter Toolbar -->
+      <div class="registry-toolbar">
+        <div class="alert-severity-pills">
+          <button class="filter-pill-btn active" data-severity="ALL">All Severities</button>
+          <button class="filter-pill-btn critical" data-severity="critical"><i class="fa-solid fa-circle-exclamation"></i> Critical</button>
+          <button class="filter-pill-btn warning" data-severity="warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning</button>
+          <button class="filter-pill-btn info" data-severity="info"><i class="fa-solid fa-circle-info"></i> Info</button>
+        </div>
+
+        <select id="alertsDeptFilter" class="custom-select" style="max-width: 220px; margin-left: auto;">
+          <option value="ALL">All Control Rooms</option>
+          <option value="dept-police">Police / Law Enforcement</option>
+          <option value="dept-rto">RTO / Commercial Transit</option>
+          <option value="dept-amc">AMC Smart City</option>
+          <option value="dept-civil">Civil Supplies</option>
+          <option value="dept-forest">Forest & Wildlife</option>
+        </select>
+      </div>
+
+      <!-- Real-Time Alerts Feed Container -->
+      <div class="alerts-feed-container" id="alertsFeedList">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 6: INTEGRATION GATEWAY (PHASE 5 - L4 DATABASE BRIDGES) -->
+    <!-- ========================================================================= -->
+    <section id="view-integration" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-plug-circle-bolt"></i> Phase 5 &bull; Integration Gateway (L4)</div>
+          <h2><i class="fa-solid fa-network-wired"></i> National & State Database Integration Gateway</h2>
+          <p>Secure API bridges connecting Nirikshan vision inferences with VAHAN 4.0, SARTHI, eGujCop/CCTNS, and AFIS/NAFIS national registries.</p>
+        </div>
+      </div>
+
+      <div class="integration-sandbox-card">
+        <div class="sandbox-tab-bar">
+          <button class="sandbox-tab active" data-target="tab-vahan"><i class="fa-solid fa-car"></i> VAHAN 4.0 (Vehicle Registry)</button>
+          <button class="sandbox-tab" data-target="tab-egujcop"><i class="fa-solid fa-shield-halved"></i> eGujCop / CCTNS (Criminal Registry)</button>
+          <button class="sandbox-tab" data-target="tab-sarthi"><i class="fa-solid fa-id-card"></i> SARTHI (Driving Licenses)</button>
+          <button class="sandbox-tab" data-target="tab-nafis"><i class="fa-solid fa-fingerprint"></i> AFIS / NAFIS (Biometrics)</button>
+        </div>
+
+        <!-- TAB 1: VAHAN -->
+        <div id="tab-vahan" class="sandbox-panel active">
+          <div class="sandbox-query-row">
+            <input type="text" id="vahanQueryInput" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter Registration Number (e.g. GJ-01-AB-1234)">
+            <button class="action-btn primary" id="btnExecuteVahanQuery"><i class="fa-solid fa-search"></i> Query VAHAN 4.0 API</button>
+          </div>
+          <div class="quick-samples-bar">
+            <span>Quick Samples:</span>
+            <button class="sample-chip" onclick="document.getElementById('vahanQueryInput').value='GJ-01-AB-1234'; document.getElementById('btnExecuteVahanQuery').click();">GJ-01-AB-1234 (Stolen SUV)</button>
+            <button class="sample-chip" onclick="document.getElementById('vahanQueryInput').value='MP-09-HH-5541'; document.getElementById('btnExecuteVahanQuery').click();">MP-09-HH-5541 (Overweight Truck)</button>
+            <button class="sample-chip" onclick="document.getElementById('vahanQueryInput').value='MH-04-AZ-8890'; document.getElementById('btnExecuteVahanQuery').click();">MH-04-AZ-8890 (Expired Fitness)</button>
+          </div>
+          <div class="sandbox-result-box" id="vahanResultBox" style="display: none;"></div>
+        </div>
+
+        <!-- TAB 2: EGUJCOP -->
+        <div id="tab-egujcop" class="sandbox-panel">
+          <div class="sandbox-query-row">
+            <input type="text" id="egujcopQueryInput" class="custom-input" value="Vikram K. Rathod" placeholder="Enter Suspect Name, Alias, or CCTNS ID...">
+            <button class="action-btn primary" id="btnExecuteEgujcopQuery"><i class="fa-solid fa-search"></i> Query eGujCop CCTNS</button>
+          </div>
+          <div class="quick-samples-bar">
+            <span>Quick Samples:</span>
+            <button class="sample-chip" onclick="document.getElementById('egujcopQueryInput').value='Vikram K. Rathod'; document.getElementById('btnExecuteEgujcopQuery').click();">Vikram K. Rathod (Wanted Fugitive NBW)</button>
+            <button class="sample-chip" onclick="document.getElementById('egujcopQueryInput').value='Haresh B. Solanki'; document.getElementById('btnExecuteEgujcopQuery').click();">Haresh B. Solanki (Proclaimed Offender)</button>
+          </div>
+          <div class="sandbox-result-box" id="egujcopResultBox" style="display: none;"></div>
+        </div>
+
+        <!-- TAB 3: SARTHI -->
+        <div id="tab-sarthi" class="sandbox-panel">
+          <div class="sandbox-query-row">
+            <input type="text" id="sarthiQueryInput" class="custom-input" value="GJ01 20180019281" placeholder="Enter Driving License Number...">
+            <button class="action-btn primary" id="btnExecuteSarthiQuery"><i class="fa-solid fa-search"></i> Query SARTHI DL</button>
+          </div>
+          <div class="sandbox-result-box" id="sarthiResultBox" style="display: none;"></div>
+        </div>
+
+        <!-- TAB 4: NAFIS -->
+        <div id="tab-nafis" class="sandbox-panel">
+          <div class="sandbox-query-row">
+            <input type="text" id="nafisQueryInput" class="custom-input" value="NAFIS-IN-2026-99018" placeholder="Enter Biometric Embedding / NAFIS ID...">
+            <button class="action-btn primary" id="btnExecuteNafisQuery"><i class="fa-solid fa-search"></i> Query NAFIS Biometric Index</button>
+          </div>
+          <div class="sandbox-result-box" id="nafisResultBox" style="display: none;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 7: ADMIN, AUDIT TRAIL & CONSENT LEDGER -->
+    <!-- ========================================================================= -->
+    <section id="view-admin" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <h2><i class="fa-solid fa-sliders"></i> System Administration & Security Governance</h2>
+          <p>Multi-tenant sovereign RBAC, immutable cryptographic audit trail, and citizen/commercial consent records.</p>
+        </div>
+      </div>
+
+      <div class="admin-sections-grid">
+        <!-- Audit Trail -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3><i class="fa-solid fa-receipt"></i> Immutable Audit Trail (Zero-Trust)</h3>
+            <span class="badge-count" id="auditCount">4 Records</span>
+          </div>
+          <div class="table-card compact">
+            <table class="data-table" id="auditTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User / Service</th>
+                  <th>Role</th>
+                  <th>Action</th>
+                  <th>Target Resource</th>
+                  <th>Origin IP</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <!-- Dynamic logs -->
+              </tbody>
+            </table>
+          <div class="phase-tag-badge"><i class="fa-solid fa-lock"></i> Phase 6 &bull; Security, RBAC & Governance (L6)</div>
+          <h2><i class="fa-solid fa-scale-balanced"></i> Security, RBAC & Department Governance</h2>
+          <p>Multi-tenant department data sovereignty, immutable zero-trust audit trail, private camera citizen consent ledger, and role-scoped permissions.</p>
+        </div>
+        <div class="admin-header-actions">
+          <button class="action-btn primary" id="btnOpenGrantConsentModal"><i class="fa-solid fa-signature"></i> Grant New Citizen Consent</button>
+        </div>
+      </div>
+
+      <!-- Admin Sub-Navigation Tabs -->
+      <div class="registry-sub-nav">
+        <button class="admin-sub-btn active" data-subview="admin-audit"><i class="fa-solid fa-shield-halved"></i> Immutable Audit Trail</button>
+        <button class="admin-sub-btn" data-subview="admin-consent"><i class="fa-solid fa-file-contract"></i> Private Consent Ledger</button>
+        <button class="admin-sub-btn" data-subview="admin-rbac"><i class="fa-solid fa-users-gear"></i> Role-Based Access Matrix</button>
+        <button class="admin-sub-btn" data-subview="admin-depts"><i class="fa-solid fa-building-columns"></i> Multi-Tenant Departments</button>
+      </div>
+
+      <!-- SUBVIEW 1: AUDIT TRAIL -->
+      <div id="admin-audit" class="admin-subview active">
+        <div class="registry-toolbar">
+          <div class="search-bar-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="auditSearchInput" class="custom-input" placeholder="Search audit logs by Actor, Action, or Target Node...">
+          </div>
+          <select id="auditActionFilter" class="custom-select" style="max-width: 220px;">
+            <option value="ALL">All Audit Actions</option>
+            <option value="LOGIN">User Logins</option>
+            <option value="CAMERA">Camera Registry Edits</option>
+            <option value="STREAM">Live Stream Pulls</option>
+            <option value="ANPR">ANPR Inferences</option>
+            <option value="ALERT">PCR Alert Actions</option>
+            <option value="CONSENT">Consent Ledger Changes</option>
+          </select>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table" id="auditTable">
+            <thead>
+              <tr>
+                <th>Audit ID</th>
+                <th>Timestamp (IST)</th>
+                <th>Authenticated Actor</th>
+                <th>Role & Department</th>
+                <th>Operation / Action</th>
+                <th>Target Resource & Diff</th>
+                <th>Source IP / Node</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUBVIEW 2: CITIZEN / SOCIETY CONSENT LEDGER -->
+      <div id="admin-consent" class="admin-subview">
+        <div class="gap-summary-banner">
+          <div class="gap-metric-box">
+            <span class="gap-label">Total Registered Private Feeds</span>
+            <span class="gap-val text-cyan" id="consentTotalFeeds">8,800 Nodes</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Active Signed Consents</span>
+            <span class="gap-val text-green" id="consentActiveCount">3 Active</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Revoked Citizen Consents</span>
+            <span class="gap-val text-rose" id="consentRevokedCount">1 Revoked</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Legal Compliance Framework</span>
+            <span class="gap-val text-amber">DPDP Act 2023</span>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="data-table" id="consentTable">
+            <thead>
+              <tr>
+                <th>Certificate ID</th>
+                <th>Establishment / Society</th>
+                <th>Owner / Representative</th>
+                <th>Camera Identifier</th>
+                <th>Granted Data Scope</th>
+                <th>Consent Status</th>
+                <th>Signed Date & PKI Hash</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="consentTableBody">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUBVIEW 3: RBAC ACCESS MATRIX -->
+      <div id="admin-rbac" class="admin-subview">
+        <div class="table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Role Tier</th>
+                <th>Scope Hierarchy</th>
+                <th>Camera Registry</th>
+                <th>Live Wall Streaming</th>
+                <th>Vision Analytics</th>
+                <th>PCR Alert Dispatch</th>
+                <th>Governance & Audit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong class="text-rose">superadmin</strong></td>
+                <td>Statewide (All 26 Depts)</td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Full R/W</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Unlimited</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Full Vision Hub</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Full Dispatch</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Full Admin</span></td>
+              </tr>
+              <tr>
+                <td><strong class="text-amber">department_admin</strong></td>
+                <td>Single Department Isolated</td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Dept Scoped</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Dept Scoped</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Dept Events</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Dept Alerts</span></td>
+                <td><span class="text-amber"><i class="fa-solid fa-eye"></i> View Dept Only</span></td>
+              </tr>
+              <tr>
+                <td><strong class="text-cyan">operator</strong></td>
+                <td>Single Department Operations</td>
+                <td><span class="text-cyan"><i class="fa-solid fa-eye"></i> Read Only</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Active Pull</span></td>
+                <td><span class="text-green"><i class="fa-solid fa-check"></i> Search & Tag</span></td>
+                <td><span class="text-amber"><i class="fa-solid fa-check"></i> Acknowledge</span></td>
+                <td><span class="text-rose"><i class="fa-solid fa-xmark"></i> No Access</span></td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--text-muted);">viewer</strong></td>
+                <td>Single Department Read-Only</td>
+                <td><span class="text-cyan"><i class="fa-solid fa-eye"></i> Read Only</span></td>
+                <td><span class="text-cyan"><i class="fa-solid fa-eye"></i> View Feeds</span></td>
+                <td><span class="text-rose"><i class="fa-solid fa-xmark"></i> No Access</span></td>
+                <td><span class="text-rose"><i class="fa-solid fa-xmark"></i> No Access</span></td>
+                <td><span class="text-rose"><i class="fa-solid fa-xmark"></i> No Access</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SUBVIEW 4: MULTI-TENANT DEPARTMENTS -->
+      <div id="admin-depts" class="admin-subview">
+        <div class="gap-district-grid" id="adminDeptsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- GRANT NEW CITIZEN CONSENT MODAL -->
+    <div class="app-modal" id="grantConsentModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-signature text-cyan"></i> Grant Private Camera Citizen Consent</h3>
+          <button class="close-modal-btn" id="closeConsentModal">&times;</button>
+        </div>
+        <form id="grantConsentForm" class="modal-form">
+          <div class="form-group">
+            <label>Establishment / Society Name:</label>
+            <input type="text" id="consentEstablishment" class="custom-input" placeholder="e.g. Iscon Platinum Residential Society" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Owner / Secretary Name:</label>
+              <input type="text" id="consentOwner" class="custom-input" placeholder="e.g. Nileshbhai R. Shah" required>
+            </div>
+            <div class="form-group">
+              <label>Contact Mobile / Email:</label>
+              <input type="text" id="consentContact" class="custom-input" placeholder="+91 98250 88912" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>District Sector:</label>
+              <select id="consentDistrict" class="custom-select">
+                <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
+                <option value="Jamnagar">Jamnagar</option>
+                <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
+                <option value="Gir Somnath">Gir Somnath</option>
+                <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
+                <option value="Valsad (Coastal Corridor)">Valsad (Coastal Corridor)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Granted Sharing Scope (DPDP Act):</label>
+              <select id="consentScope" class="custom-select">
+                <option value="Metadata Only">Metadata & Heartbeat Only (Lowest Risk)</option>
+                <option value="View-Only">On-Demand View Only (No Local Recording)</option>
+                <option value="Analytics-Enabled">ANPR & Edge Analytics Enabled</option>
+                <option value="Full Surveillance Relay">Full Law-Enforcement Surveillance Relay</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" id="btnCancelConsent">Cancel</button>
+            <button type="submit" class="action-btn primary"><i class="fa-solid fa-check"></i> Sign & Seal Digital Consent</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 8: 7-LAYER ARCHITECTURE & BANDWIDTH ROI (PHASE 7 DELIVERABLE) -->
+    <!-- ========================================================================= -->
+    <section id="view-architecture" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-layer-group"></i> Phase 7 &bull; Architectural Blueprint & ROI (L0–L6)</div>
+          <h2><i class="fa-solid fa-sitemap"></i> 7-Layer Architecture & State Bandwidth Feasibility</h2>
+          <p>A decoupled, microservice-ready blueprint proving how Nirikshan scales to 80,000+ cameras with 93.7% taxpayer savings vs legacy centralized recording.</p>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE BANDWIDTH & COST ROI CALCULATOR (PHASE 7 PITCH MOMENT) -->
+      <div class="gap-analysis-container" style="margin-bottom: 2rem;">
+        <div class="gap-header">
+          <div>
+            <h3><i class="fa-solid fa-calculator text-cyan"></i> State Bandwidth & 5-Year Budget ROI Simulator</h3>
+            <p>Compare legacy 24/7 centralized video streaming vs Nirikshan's metadata-first on-demand relay architecture across statewide scales.</p>
+          </div>
+        </div>
+
+        <div class="calc-slider-wrap" style="background: rgba(255,255,255,0.02); padding: 1.2rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1.2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #ffffff;">Simulated Statewide Camera Fleet:</label>
+            <span style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--accent-cyan); font-weight: 800;" id="calcCamCountLabel">80,000 Nodes</span>
+          </div>
+          <input type="range" id="calcCamSlider" min="5000" max="150000" step="5000" value="80000" style="width: 100%; accent-color: var(--accent-cyan); cursor: pointer;">
+        </div>
+
+        <div class="gap-summary-banner">
+          <div class="gap-metric-box">
+            <span class="gap-label">Legacy 24/7 WAN Bandwidth</span>
+            <span class="gap-val text-rose" id="calcLegacyBandwidth">200.0 Gbps</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Nirikshan On-Demand WAN</span>
+            <span class="gap-val text-green" id="calcNirikshanBandwidth">4.80 Mbps</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Legacy 5-Yr Central Storage</span>
+            <span class="gap-val text-rose" id="calcLegacyCost">₹1,240 Cr</span>
+          </div>
+          <div class="gap-metric-box">
+            <span class="gap-label">Nirikshan 5-Yr State Budget</span>
+            <span class="gap-val text-green" id="calcNirikshanCost">₹78.0 Cr</span>
+          </div>
+        </div>
+
+        <div class="calc-verdict-card" style="background: rgba(16,185,129,0.08); border: 1px solid var(--accent-emerald); border-radius: var(--radius-sm); padding: 1rem 1.4rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;">
+          <div>
+            <h4 style="color: var(--accent-emerald); font-size: 0.95rem; margin-bottom: 0.2rem;"><i class="fa-solid fa-circle-check"></i> Nirikshan Strategic Taxpayer Dividend:</h4>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Reduces central network load by <strong>99.8%</strong> and eliminates ₹450 Cr in forced camera replacement CAPEX.</span>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 1.4rem; font-weight: 800; color: var(--accent-emerald);" id="calcSavingsLabel">₹1,162 Cr Saved (93.7% ROI)</span>
+        </div>
+      </div>
+
+      <!-- Security & Governance Thread Banner -->
+      <div class="security-thread-banner">
+        <div class="sec-thread-title"><i class="fa-solid fa-lock"></i> Cross-Layer Security & Governance Thread</div>
+        <div class="sec-thread-chips">
+          <span><i class="fa-solid fa-key"></i> Dept-Scoped API Keys</span>
+          <span><i class="fa-solid fa-shield-virus"></i> Zero-Trust Between Layers</span>
+          <span><i class="fa-solid fa-receipt"></i> Full Section 65B Audit Trail</span>
+          <span><i class="fa-solid fa-file-shield"></i> Encryption (Transit & Rest)</span>
+          <span><i class="fa-solid fa-handshake"></i> DPDP Act 2023 Consent Ledger</span>
+        </div>
+      </div>
+
+      <!-- 7-Layer Architecture Interactive Stack -->
+      <div class="seven-layers-stack">
+        <!-- Source Layer -->
+        <div class="layer-card source-layer">
+          <div class="layer-badge-col"><span class="layer-id-badge source">BASE</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>Department CCTV & VMS Networks <span class="sub-status">[Unchanged / Sovereign]</span></h3>
+              <span class="layer-protocol">Hikvision, Dahua, CP Plus, Axis, Bosch, Legacy DVR/NVR</span>
+            </div>
+            <p>Each department retains 100% sovereign ownership, existing retention policies (7 vs 15+ days), and local hardware.</p>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Local RTSP / ONVIF / Vendor SDKs <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L0 -->
+        <div class="layer-card l0-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L0</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L0 &bull; Edge Adapter Agent Layer</h3>
+              <span class="layer-tag edge-tag">Edge Tier</span>
+            </div>
+            <p><strong>Protocol Normalization & Local Edge AI:</strong> Converts disparate ONVIF Profile S/T, RTSP feeds into unified JSON schema. Local 15-day ring-buffer storage.</p>
+            <div class="layer-meta-chips"><span>ONVIF / RTSP</span><span>FFmpeg Pipe</span><span>Edge Ring Buffer</span><span>Local AI</span></div>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Thin Telemetry (< 5 kbps) & On-Demand Triggers <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L1 -->
+        <div class="layer-card l1-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L1</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L1 &bull; Central Registry & GIS Portal <span class="model-badge">Model 1</span></h3>
+              <span class="layer-tag gis-tag">Registry Tier</span>
+            </div>
+            <p><strong>Geospatial Single-Source-of-Truth:</strong> Master directory indexing all ~80,000 cameras with GPS coordinates, FOV, and 24h health heartbeat.</p>
+            <div class="layer-meta-chips"><span>PostgreSQL + PostGIS</span><span>WS-Discovery Scan</span><span>Health Heartbeat</span></div>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Dynamic WebRTC Stream Tickets <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L2 -->
+        <div class="layer-card l2-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L2</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L2 &bull; Unified Streaming Gateway <span class="model-badge">Model 2</span></h3>
+              <span class="layer-tag stream-tag">Streaming Tier</span>
+            </div>
+            <p><strong>Bandwidth-Preserving Dynamic Video Relay:</strong> Zero continuous raw video streaming over WAN. Pulls low-latency WebRTC/HLS feeds dynamically on-demand with 5-min inactivity TTL.</p>
+            <div class="layer-meta-chips"><span>WebRTC Relay</span><span>HLS Fallback</span><span>Zero Forced Recording</span></div>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Normalized Event & Detection Feeds <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L3 -->
+        <div class="layer-card l3-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L3</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L3 &bull; Vision Analytics Engine</h3>
+              <span class="layer-tag ai-tag">AI / ML Tier</span>
+            </div>
+            <p><strong>Deep Vision Inference & Tagging:</strong> ANPR OCR, facial embedding vectors, crowd surge detection, vehicle classification, and loitering triggers.</p>
+            <div class="layer-meta-chips"><span>YOLOv8 + Optical OCR</span><span>Face Match Service</span><span>Elasticsearch Index</span></div>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> High-Speed mTLS Inquiries <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L4 -->
+        <div class="layer-card l4-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L4</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L4 &bull; Integration Gateway (National Databases)</h3>
+              <span class="layer-tag gateway-tag">Intelligence Tier</span>
+            </div>
+            <p><strong>Secure API Bridge to National Databases:</strong> Instantly cross-references detection vectors against VAHAN 4.0, SARTHI 4.0, eGujCop/CCTNS, and NAFIS in < 2.5s.</p>
+            <div class="layer-meta-chips"><span>VAHAN 4.0</span><span>SARTHI 4.0</span><span>eGujCop / CCTNS</span><span>AFIS / NAFIS</span></div>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Real-Time Event Routing <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L5 -->
+        <div class="layer-card l5-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L5</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L5 &bull; Alert & Event Bus (Kafka)</h3>
+              <span class="layer-tag bus-tag">Messaging Tier</span>
+            </div>
+            <p><strong>Real-Time Pub/Sub Event Backbone:</strong> High-throughput, distributed event streaming pipeline routing critical alerts to department control rooms.</p>
+            <div class="layer-meta-chips"><span>Apache Kafka Bus</span><span>Department Partitioning</span><span>Sub-100ms Dispatch</span></div>
+          </div>
+        </div>
+
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Visual Presentation & Action <i class="fa-solid fa-arrow-down"></i></div>
+
+        <!-- L6 -->
+        <div class="layer-card l6-card">
+          <div class="layer-badge-col"><span class="layer-id-badge">L6</span></div>
+          <div class="layer-info-col">
+            <div class="layer-heading">
+              <h3>L6 &bull; Unified Command Dashboard</h3>
+              <span class="layer-tag ui-tag">Presentation Tier</span>
+            </div>
+            <p><strong>Statewide Control Center & Video Wall:</strong> Comprehensive user interface for GIS map exploration, multi-feed video walls, real-time alert triage, and RBAC.</p>
+            <div class="layer-meta-chips"><span>Single API-First Client</span><span>Leaflet GIS</span><span>Multi-Tenant RBAC</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 9: OPENAPI & DOCKER SUBMISSION PACKAGE (PHASE 7 DELIVERABLE) -->
+    <!-- ========================================================================= -->
+    <section id="view-api-docs" class="app-view">
+      <div class="view-header-bar">
+        <div>
+          <div class="phase-tag-badge"><i class="fa-solid fa-box-archive"></i> Phase 7 &bull; Submission Package</div>
+          <h2><i class="fa-solid fa-code"></i> Consolidated OpenAPI Spec & Microservice Orchestration</h2>
+          <p>Complete OpenAPI 3.0 contract and Docker Compose orchestration ready for production backend implementation.</p>
+        </div>
+        <div class="api-package-buttons">
+          <a href="/api-spec.yaml" download="nirikshan-api-spec.yaml" class="action-btn primary"><i class="fa-solid fa-file-code"></i> Download OpenAPI Spec</a>
+          <a href="/docker-compose.yml" download="docker-compose.yml" class="action-btn"><i class="fa-brands fa-docker"></i> Download docker-compose.yml</a>
+          <a href="/ARCHITECTURE.md" download="ARCHITECTURE.md" class="action-btn"><i class="fa-solid fa-book"></i> Download Whitepaper</a>
+        </div>
+      </div>
+
+      <div class="api-explorer-grid">
+        <div class="endpoint-card">
+          <div class="ep-header">
+            <span class="http-badge get">GET</span>
+            <code>/api/cameras</code>
+          </div>
+          <p>List all registered cameras scoped by requesting user's department RBAC.</p>
+          <button class="test-ep-btn" onclick="testApiEndpoint('getCameras')"><i class="fa-solid fa-play"></i> Execute Query</button>
+        </div>
+
+        <div class="endpoint-card">
+          <div class="ep-header">
+            <span class="http-badge post">POST</span>
+            <code>/api/streaming/session/start</code>
+          </div>
+          <p>Allocate on-demand WebRTC live stream ticket with 5-minute bandwidth TTL.</p>
+          <button class="test-ep-btn" onclick="testApiEndpoint('requestStream')"><i class="fa-solid fa-play"></i> Execute Query</button>
+        </div>
+
+        <div class="endpoint-card">
+          <div class="ep-header">
+            <span class="http-badge post">POST</span>
+            <code>/api/analytics/anpr</code>
+          </div>
+          <p>Run YOLOv8 and optical OCR inference with automatic VAHAN 4.0 cross-check.</p>
+          <button class="test-ep-btn" onclick="testApiEndpoint('runAnpr')"><i class="fa-solid fa-play"></i> Execute Query</button>
+        </div>
+
+        <div class="endpoint-card">
+          <div class="ep-header">
+            <span class="http-badge post">POST</span>
+            <code>/api/integration/vahan/lookup</code>
+          </div>
+          <p>Query National VAHAN 4.0 Registry for vehicle ownership & stolen status.</p>
+          <button class="test-ep-btn" onclick="testApiEndpoint('queryVahan')"><i class="fa-solid fa-play"></i> Execute Query</button>
+        </div>
+
+        <div class="endpoint-card">
+          <div class="ep-header">
+            <span class="http-badge post">POST</span>
+            <code>/api/alerts/:id/escalate</code>
+          </div>
+          <p>Dispatch real-time emergency dossier to nearest PCR interceptor unit.</p>
+          <button class="test-ep-btn" onclick="testApiEndpoint('dispatchAlert')"><i class="fa-solid fa-play"></i> Execute Query</button>
+        </div>
+
+        <div class="endpoint-card">
+          <div class="ep-header">
+            <span class="http-badge post">POST</span>
+            <code>/api/consent/grant</code>
+          </div>
+          <p>Grant and cryptographically seal citizen private camera consent (DPDP Act 2023).</p>
+          <button class="test-ep-btn" onclick="testApiEndpoint('grantConsent')"><i class="fa-solid fa-play"></i> Execute Query</button>
+        </div>
+      </div>
+
+      <div class="api-console-box">
+        <div class="console-header"><i class="fa-solid fa-terminal"></i> Live API Response Console (via /src/api/client.js)</div>
+        <pre id="apiConsoleOutput">// Click 'Execute Query' on any endpoint above to test live JSON contract...</pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- ONBOARD CAMERA MODAL -->
+  <div class="app-modal" id="onboardCameraModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle"></i> Onboard New Camera Node</h3>
+        <button class="close-modal-btn" id="closeOnboardModal">&times;</button>
+      </div>
+      <form id="onboardCameraForm" class="modal-form">
+        <div class="form-group">
+          <label>Camera Name / Location Identifier:</label>
+          <input type="text" id="newCamName" class="custom-input" placeholder="e.g. Jamnagar Bedi Port Access Gate" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>District Sector:</label>
+            <select id="newCamDistrict" class="custom-select">
+              <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
+              <option value="Jamnagar">Jamnagar</option>
+              <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
+              <option value="Gir Somnath">Gir Somnath</option>
+              <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
+              <option value="Valsad (Coastal Corridor)">Valsad (Coastal Corridor)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Department Ownership:</label>
+            <select id="newCamDept" class="custom-select">
+              <option value="dept-police">Gujarat State Police (Home)</option>
+              <option value="dept-rto">RTO Checkpost & Tolls</option>
+              <option value="dept-amc">AMC Smart City</option>
+              <option value="dept-civil">Civil Supplies Warehousing</option>
+              <option value="dept-forest">Forest & Wildlife Dept</option>
+              <option value="dept-private">Private / Commercial Opt-In</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Camera Type:</label>
+            <select id="newCamType" class="custom-select">
+              <option value="ip">IP Camera (ONVIF/RTSP)</option>
+              <option value="analog">Analog (DVR Normalized)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Resolution:</label>
+            <select id="newCamResolution" class="custom-select">
+              <option value="1080p">1080p Full HD</option>
+              <option value="4K">4K Ultra HD</option>
+              <option value="720p">720p HD</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Latitude (GPS):</label>
+            <input type="number" step="0.0001" id="newCamLat" class="custom-input" value="23.0300" required>
+          </div>
+          <div class="form-group">
+            <label>Longitude (GPS):</label>
+            <input type="number" step="0.0001" id="newCamLng" class="custom-input" value="72.5200" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vendor & Model:</label>
+            <input type="text" id="newCamVendor" class="custom-input" value="Hikvision 4K IP Bullet" required>
+          </div>
+          <div class="form-group">
+            <label>Retention Days:</label>
+            <input type="number" id="newCamRetention" class="custom-input" value="15" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="btnCancelOnboard">Cancel</button>
+          <button type="submit" class="action-btn primary"><i class="fa-solid fa-check"></i> Register Camera Node</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDGE ADAPTER ONBOARDING WIZARD MODAL (PHASE 2 DELIVERABLE) -->
+  <div class="app-modal" id="adapterWizardModal">
+    <div class="modal-content extra-large">
+      <div class="modal-header">
+        <div class="wizard-header-title">
+          <span class="phase-tag-badge"><i class="fa-solid fa-microchip"></i> Phase 2 &bull; Edge Adapter Layer (L0)</span>
+          <h3>Universal Edge Adapter Camera Onboarding Wizard</h3>
+        </div>
+        <button class="close-modal-btn" id="closeAdapterModal">&times;</button>
+      </div>
+
+      <!-- Step Progression Tracker -->
+      <div class="wizard-step-tracker">
+        <div class="wiz-step active" id="wizStep1"><span class="step-num">1</span> Protocol Selection</div>
+        <div class="wiz-step-line"></div>
+        <div class="wiz-step" id="wizStep2"><span class="step-num">2</span> Connection Config</div>
+        <div class="wiz-step-line"></div>
+        <div class="wiz-step" id="wizStep3"><span class="step-num">3</span> Probe & Normalize</div>
+        <div class="wiz-step-line"></div>
+        <div class="wiz-step" id="wizStep4"><span class="step-num">4</span> Commit to GIS</div>
+      </div>
+
+      <div class="wizard-body-panel">
+        <!-- STEP 1: PROTOCOL SELECTION -->
+        <div class="wiz-panel active" id="panelStep1">
+          <h4>Select Camera Communication Protocol:</h4>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            NIRIKSHAN's Edge Adapter automatically normalizes any legacy stream into a single standard schema without replacing local hardware.
+          </p>
+          <div class="protocol-cards-grid">
+            <div class="protocol-option-card selected" data-protocol="onvif">
+              <div class="proto-icon"><i class="fa-solid fa-network-wired"></i></div>
+              <h4>ONVIF Profile S / T</h4>
+              <p>Standard IP cameras supporting WS-Discovery, PTZ control, and Profile S streaming.</p>
+              <span class="proto-badge">Auto-Discovery</span>
+            </div>
+
+            <div class="protocol-option-card" data-protocol="rtsp">
+              <div class="proto-icon"><i class="fa-solid fa-play"></i></div>
+              <h4>Native RTSP / H.264</h4>
+              <p>Direct RTSP URL connection for IP encoders, RTSP relays, and legacy IP nodes.</p>
+              <span class="proto-badge">Universal Stream</span>
+            </div>
+
+            <div class="protocol-option-card" data-protocol="sdk">
+              <div class="proto-icon"><i class="fa-solid fa-cubes"></i></div>
+              <h4>Vendor NetSDK / ISAPI</h4>
+              <p>Direct SDK adapter for Hikvision, Dahua, CP Plus, Bosch NVR/DVR arrays.</p>
+              <span class="proto-badge">SDK Bridge</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: CONNECTION CONFIGURATION -->
+        <div class="wiz-panel" id="panelStep2">
+          <h4>Enter Device Connection Parameters:</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Host IP / Subnet Address:</label>
+              <input type="text" id="wizHost" class="custom-input" value="192.168.1.145">
+            </div>
+            <div class="form-group">
+              <label>Port:</label>
+              <input type="number" id="wizPort" class="custom-input" value="554">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>RTSP Stream Path (or Channel):</label>
+              <input type="text" id="wizPath" class="custom-input" value="/onvif/media/h264/profile1">
+            </div>
+            <div class="form-group">
+              <label>Authentication Profile:</label>
+              <select id="wizAuth" class="custom-select">
+                <option value="ws-token">WS-Security Digest (Standard)</option>
+                <option value="basic">HTTP Basic / Digest</option>
+                <option value="none">Unauthenticated (Public Feed)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Username:</label>
+              <input type="text" id="wizUser" class="custom-input" value="admin">
+            </div>
+            <div class="form-group">
+              <label>Password:</label>
+              <input type="password" id="wizPass" class="custom-input" value="GovGujarat@2026">
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: PROBE & NORMALIZE -->
+        <div class="wiz-panel" id="panelStep3">
+          <h4>Edge Adapter Live Probe & Schema Normalization:</h4>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
+            Executing <code>POST /api/adapters/test-connection</code> to probe the vendor stream and normalize parameters.
+          </p>
+          
+          <button class="action-btn primary" id="btnRunAdapterTest" style="margin-bottom: 1rem;">
+            <i class="fa-solid fa-play"></i> Initiate Protocol Handshake Probe
+          </button>
+
+          <div class="probe-output-card" id="probeOutputCard" style="display: none;">
+            <div class="probe-header">
+              <span class="status-indicator live"><span class="dot"></span> Protocol Normalization Complete</span>
+              <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-cyan);">Latency: 18ms</span>
+            </div>
+            <div class="normalized-spec-grid" id="normSpecGrid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: SPATIAL METADATA & COMMIT -->
+        <div class="wiz-panel" id="panelStep4">
+          <h4>Spatial Coordinates & Department Ownership:</h4>
+          <div class="form-group">
+            <label>Camera Identifier Name:</label>
+            <input type="text" id="wizCamName" class="custom-input" value="Dahod Inter-State Truck Weighbridge Gate #2">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>District Sector:</label>
+              <select id="wizDistrict" class="custom-select">
+                <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
+                <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
+                <option value="Jamnagar">Jamnagar</option>
+                <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
+                <option value="Gir Somnath">Gir Somnath</option>
+                <option value="Valsad (Coastal Corridor)">Valsad (Coastal Corridor)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Department Ownership:</label>
+              <select id="wizDept" class="custom-select">
+                <option value="dept-rto">Road Transport Office (RTO)</option>
+                <option value="dept-police">Gujarat State Police (Home)</option>
+                <option value="dept-amc">AMC Municipal Smart City</option>
+                <option value="dept-civil">Food & Civil Supplies</option>
+                <option value="dept-forest">Forest & Wildlife Dept</option>
+                <option value="dept-private">Private / Commercial Opt-In</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Latitude (GPS):</label>
+              <input type="number" step="0.0001" id="wizLat" class="custom-input" value="22.8410">
+            </div>
+            <div class="form-group">
+              <label>Longitude (GPS):</label>
+              <input type="number" step="0.0001" id="wizLng" class="custom-input" value="74.2590">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn-cancel" id="btnPrevWiz" style="display: none;"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+        <button class="action-btn primary" id="btnNextWiz">Next: Connection Config <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TACTICAL FORWARD INTERCEPT DISPATCH MODAL -->
+  <!-- ========================================================================= -->
+  <div class="app-modal" id="tacticalDispatchModal">
+    <div class="modal-content" style="max-width: 600px; border-color: var(--accent-rose); box-shadow: 0 0 35px rgba(244,63,94,0.4);">
+      <div class="modal-header" style="background: rgba(244,63,94,0.12); border-bottom-color: rgba(244,63,94,0.3);">
+        <div>
+          <span class="node-status-pill online" style="background: rgba(244,63,94,0.25); color: var(--accent-rose); border-color: var(--accent-rose); font-weight: 800;">
+            <span class="dot-sm" style="background: var(--accent-rose);"></span> EMERGENCY DISPATCH BROADCAST
+          </span>
+          <h3 style="margin-top: 0.3rem; color: #ffffff;"><i class="fa-solid fa-tower-broadcast text-rose"></i> Nearest Authorities Alerted & Roadblock Armed!</h3>
+        </div>
+        <button class="close-modal-btn" id="closeTacticalModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.2rem;">
+        <!-- Vehicle Badge & Order Reference -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+          <div>
+            <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">TARGET VEHICLE:</span>
+            <div class="ind-plate-box" style="margin-top: 0.2rem;">
+              <span class="ind-side">IND</span>
+              <strong id="tacticalModalPlate">GJ-01-AB-1234</strong>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">INTERCEPT ORDER REF:</span>
+            <strong style="font-family: var(--font-mono); color: var(--accent-cyan); font-size: 0.95rem;" id="tacticalModalOrderId">ORD-INT-8841</strong>
+            <span style="font-size: 0.7rem; color: var(--accent-emerald); display: block;" id="tacticalModalTimestamp">18:45 IST</span>
+          </div>
+        </div>
+
+        <!-- Alerted Authority & Radio Grid -->
+        <div style="background: rgba(244,63,94,0.06); border: 1px solid rgba(244,63,94,0.25); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 1rem;">
+          <h4 style="font-size: 0.85rem; color: var(--accent-rose); margin-bottom: 0.4rem;">
+            <i class="fa-solid fa-bullhorn"></i> Alerted Command Station & Tactical Radio:
+          </h4>
+          <p style="font-size: 0.82rem; color: #ffffff; font-weight: 700; margin-bottom: 0.2rem;" id="tacticalModalStation">
+            Mehsana District Highway Police Station & Toll Checkpost #03
+          </p>
+          <span style="font-size: 0.75rem; color: var(--accent-cyan); display: block;" id="tacticalModalRadio">
+            <i class="fa-solid fa-walkie-talkie"></i> Broadcast: TETRA Radio Tactical Channel #08 (Sub-GHz Emergency Grid)
+          </span>
+        </div>
+
+        <!-- Roadblock Action Status -->
+        <div style="display: flex; align-items: center; gap: 0.6rem; background: rgba(16,185,129,0.08); border: 1px solid var(--accent-emerald); border-radius: var(--radius-sm); padding: 0.8rem 1rem; margin-bottom: 1rem;">
+          <i class="fa-solid fa-circle-check text-green" style="font-size: 1.4rem;"></i>
+          <div>
+            <strong style="font-size: 0.85rem; color: var(--accent-emerald); display: block;">Automated Hydraulic Barrier Deployed</strong>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Toll gates #01 & #02 locked. Spike strips positioned across exit lanes.</span>
+          </div>
+        </div>
+
+        <!-- Active Interceptor Units Table -->
+        <h4 style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 0.5rem;">
+          <i class="fa-solid fa-car-side text-cyan"></i> 3 Interceptor Patrol Units Pre-Positioned:
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;" id="tacticalUnitsList">
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
+            <div><strong style="color: #ffffff;">PCR Interceptor #11</strong> <span style="color: var(--text-muted);">&bull; Inspector K. L. Barot</span></div>
+            <span class="text-amber" style="font-family: var(--font-mono); font-weight: 800;">ETA: 2.1 Mins (1.4 km)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
+            <div><strong style="color: #ffffff;">Toll Barrier Squad #02</strong> <span style="color: var(--text-muted);">&bull; Sub-Inspector R. Solanki</span></div>
+            <span class="text-green" style="font-family: var(--font-mono); font-weight: 800;">ARMED AT TOLL GATE</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
+            <div><strong style="color: #ffffff;">RTO Mobile Flying Squad</strong> <span style="color: var(--text-muted);">&bull; MVI V. Joshi</span></div>
+            <span class="text-amber" style="font-family: var(--font-mono); font-weight: 800;">ETA: 3.4 Mins (2.8 km)</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="action-btn primary" id="btnAckTacticalModal" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
+          <i class="fa-solid fa-check-double"></i> Acknowledge Broadcast & Monitor Live Feeds
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet GIS Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- NIRIKSHAN Platform Scripts -->
+  <script src="src/api/client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
