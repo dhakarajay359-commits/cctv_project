@@ -20,9 +20,9 @@
 <body class="dark-theme">
   <!-- TOP CONTROL ROOM HEADER -->
   <header class="app-header">
-    <!-- Brand & Government Identity Logo -->
-    <div class="header-left">
-      <div class="logo-badge">
+    <div class="header-cards-strip">
+      <!-- Hard Card 1: Brand & Identity -->
+      <div class="hdr-hard-card brand-card">
         <div class="logo-shield-wrapper">
           <div class="logo-shield-outer"></div>
           <div class="logo-shield-inner">
@@ -34,60 +34,58 @@
           <div class="brand-title-row">
             <span class="brand-title">NIRIKSHAN</span>
             <span class="guj-script-badge">નિરીક્ષણ</span>
-            <span class="state-gov-chip"><i class="fa-solid fa-landmark"></i> GOVT OF GUJARAT</span>
           </div>
-          <span class="brand-subtitle">Unified State CCTV Intelligence & Neural Analytics Matrix &bull; 26 Sovereign Departments</span>
+          <span class="brand-subtitle"><i class="fa-solid fa-landmark text-amber"></i> Govt of Gujarat &bull; 26 Depts</span>
         </div>
       </div>
-    </div>
 
-    <!-- Center Live Fleet Telemetry Telemetry Capsule -->
-    <div class="header-telemetry-capsule">
-      <div class="telemetry-pill live">
-        <span class="live-dot-pulse"></span>
-        <span><strong>80,000+</strong> Sovereign Edge Nodes</span>
+      <!-- Hard Card 2: Sovereign Fleet Health & Telemetry -->
+      <div class="hdr-hard-card fleet-status-card">
+        <div class="telemetry-item live">
+          <span class="live-dot-pulse"></span>
+          <span><strong>80,000+</strong> Nodes</span>
+        </div>
+        <div class="card-v-divider"></div>
+        <div class="telemetry-item network">
+          <i class="fa-solid fa-bolt text-cyan"></i>
+          <span>WAN: <strong>&lt; 5 Kbps</strong></span>
+        </div>
       </div>
-      <div class="telemetry-pill network">
-        <i class="fa-solid fa-bolt text-cyan"></i>
-        <span>WAN Telemetry: <strong>&lt; 5 Kbps</strong></span>
-      </div>
-    </div>
 
-    <!-- Right Header Controls: RBAC Persona Switcher & Live Clock -->
-    <div class="header-actions">
-      <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
-      <div class="persona-switcher-wrap">
+      <!-- Hard Card 3: RBAC Persona Context -->
+      <div class="hdr-hard-card persona-card">
         <div class="persona-label-box">
           <i class="fa-solid fa-user-shield text-amber"></i>
-          <span>RBAC Persona:</span>
+          <span>RBAC:</span>
         </div>
         <select id="topbarPersonaSelect" class="custom-select persona-select">
-          <option value="superadmin">👑 State Superadmin &bull; IG Jadeja (Full 26 Depts Access)</option>
-          <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO & Highway Scoped)</option>
-          <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC Municipal Scoped)</option>
-          <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
+          <option value="superadmin">👑 State Superadmin &bull; IG Jadeja</option>
+          <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO)</option>
+          <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC)</option>
+          <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest)</option>
         </select>
       </div>
 
-      <!-- Live Digital Military Clock -->
-      <div class="live-clock-badge">
+      <!-- Hard Card 4: Digital Military Clock -->
+      <div class="hdr-hard-card clock-card">
         <i class="fa-regular fa-clock text-cyan"></i>
-        <span id="liveClock">23:02:35 IST</span>
+        <span id="liveClock">23:04:40 IST</span>
       </div>
 
-      <!-- Active User Profile Pill -->
-      <div class="user-pill" id="topUserPill">
+      <!-- Hard Card 5: User Officer Clearance Pill -->
+      <div class="hdr-hard-card user-card" id="topUserPill">
         <div class="user-avatar-hex">
           <i class="fa-solid fa-user-shield"></i>
         </div>
         <div class="user-info-text">
           <strong id="topUserName">IG V. R. Jadeja</strong>
-          <span id="topUserDept">State Superadmin &bull; Level-1 Clearance</span>
+          <span id="topUserDept">Superadmin &bull; Clearance L1</span>
         </div>
       </div>
 
-      <button class="export-btn" id="exportPdfBtn" title="Export Certified Surveillance Dossier">
-        <i class="fa-solid fa-file-pdf"></i>
+      <!-- Hard Card 6: Dossier Export -->
+      <button class="hdr-hard-card export-card" id="exportPdfBtn" title="Export Certified Surveillance Dossier">
+        <i class="fa-solid fa-file-pdf text-rose"></i>
         <span>Export Dossier</span>
       </button>
     </div>
