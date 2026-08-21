@@ -1075,6 +1075,145 @@ class NirikshanApiClient {
     return cam;
   }
 
+  // =========================================================================
+  // OPTICAL FOV RANGE & BLIND-SPOT GAP ANALYSIS ENGINE
+  // =========================================================================
+  async getCameraFovAnalysis(cameraId) {
+    const cam = await this.getCameraById(cameraId) || this.cameras[0];
+    const lat = cam.lat;
+    const lng = cam.lng;
+    const fov = cam.fov_angle || 90;
+    
+    // Calculate heading azimuth based on camera direction
+    let azimuth = 0; // 0 = North
+    const dir = (cam.direction || '').toLowerCase();
+    if (dir.includes('north')) azimuth = 0;
+    else if (dir.includes('east')) azimuth = 90;
+    else if (dir.includes('south')) azimuth = 180;
+    else if (dir.includes('west')) azimuth = 270;
+    else if (dir.includes('central') || dir.includes('junction')) azimuth = 45;
+    else azimuth = (Math.abs(cam.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) * 37) % 360;
+
+    const maxRangeMeters = cam.resolution === '4K' ? 280 : 180;
+    const recognitionRangeMeters = Math.round(maxRangeMeters * 0.5);
+    const identificationRangeMeters = Math.round(maxRangeMeters * 0.25);
+
+    // Generate FOV Sector Polygon coordinates (Conical optical fan)
+    const fovPoints = [[lat, lng]];
+    const startAngle = azimuth - (fov / 2);
+    const endAngle = azimuth + (fov / 2);
+    const steps = 12;
+
+    // Convert meters to approximate lat/lng delta (1 deg lat ~ 111,000m)
+    const metersToDegLat = 1 / 111000;
+    const metersToDegLng = 1 / (111000 * Math.cos(lat * (Math.PI / 180)));
+
+    for (let i = 0; i <= steps; i++) {
+      const angleDeg = startAngle + (i / steps) * (endAngle - startAngle);
+      const angleRad = (angleDeg - 90) * (Math.PI / 180); // 0 deg is North
+      const pLat = lat + Math.cos(angleRad) * maxRangeMeters * metersToDegLat;
+      const pLng = lng + Math.sin(angleRad) * maxRangeMeters * metersToDegLng;
+      fovPoints.push([pLat, pLng]);
+    }
+    fovPoints.push([lat, lng]);
+
+    // Calculate Uncovered Blind Spot (Opposite / complementary sector)
+    const blindAzimuth = (azimuth + 180) % 360;
+    const blindDistanceMeters = maxRangeMeters * 0.9;
+    const blindAngleRad = (blindAzimuth - 90) * (Math.PI / 180);
+    const blindLat = lat + Math.cos(blindAngleRad) * blindDistanceMeters * metersToDegLat;
+    const blindLng = lng + Math.sin(blindAngleRad) * blindDistanceMeters * metersToDegLng;
+
+    const blindPoints = [[lat, lng]];
+    const bStartAngle = blindAzimuth - 45;
+    const bEndAngle = blindAzimuth + 45;
+    for (let i = 0; i <= steps; i++) {
+      const angleDeg = bStartAngle + (i / steps) * (bEndAngle - bStartAngle);
+      const angleRad = (angleDeg - 90) * (Math.PI / 180);
+      const pLat = lat + Math.cos(angleRad) * blindDistanceMeters * metersToDegLat;
+      const pLng = lng + Math.sin(angleRad) * blindDistanceMeters * metersToDegLng;
+      blindPoints.push([pLat, pLng]);
+    }
+    blindPoints.push([lat, lng]);
+
+    const blindSpotInfo = {
+      blind_spot_id: `BLIND-GAP-${cam.id.replace('CAM-', '')}-01`,
+      location_description: `Unmonitored Blind Zone: ${cam.direction.includes('North') ? 'South Approach Service Ingress' : 'Secondary Ingress & Underpass Corridor'}`,
+      uncovered_azimuth: `${Math.round(bStartAngle)}° - ${Math.round(bEndAngle)}° (${blindAzimuth > 180 ? 'South-West' : 'South-East'})`,
+      uncovered_area_sqm: Math.round((Math.PI * Math.pow(blindDistanceMeters, 2) * (90 / 360))),
+      risk_level: 'HIGH_RISK_DEFICIT',
+      recommended_install_lat: parseFloat(blindLat.toFixed(6)),
+      recommended_install_lng: parseFloat(blindLng.toFixed(6)),
+      recommended_hardware: cam.type === 'ip' ? '4K Ultra-Starlight ANPR + PTZ' : 'Hikvision DeepinView Bullet (IP)',
+      estimated_capex_inr: 45000,
+      blind_polygon: blindPoints
+    };
+
+    return {
+      camera_id: cam.id,
+      camera_name: cam.name,
+      district: cam.district,
+      department_id: cam.department_id,
+      lat: cam.lat,
+      lng: cam.lng,
+      optical_specs: {
+        vendor_model: cam.vendor,
+        resolution: cam.resolution,
+        fov_horizontal_degrees: fov,
+        azimuth_heading_degrees: azimuth,
+        direction_name: cam.direction,
+        dori_standards: {
+          detection_range_meters: maxRangeMeters,
+          recognition_range_meters: recognitionRangeMeters,
+          identification_range_meters: identificationRangeMeters
+        }
+      },
+      coverage_cone_polygon: fovPoints,
+      blind_spot_analysis: blindSpotInfo
+    };
+  }
+
+  async proposeCameraInstallation(proposalData) {
+    const proposal = {
+      proposal_id: `PROP-CCTV-${Math.floor(1000 + Math.random() * 9000)}`,
+      parent_camera_id: proposalData.parent_camera_id || 'CAM-GJ-0101',
+      blind_spot_id: proposalData.blind_spot_id,
+      proposed_name: proposalData.proposed_name || `New Node: ${proposalData.location_description}`,
+      district: proposalData.district || 'Ahmedabad (Urban)',
+      department_id: proposalData.department_id || this.activeUser.department_id,
+      lat: parseFloat(proposalData.recommended_install_lat),
+      lng: parseFloat(proposalData.recommended_install_lng),
+      hardware_recommended: proposalData.recommended_hardware,
+      estimated_budget_inr: proposalData.estimated_capex_inr || 45000,
+      priority: 'CRITICAL_BLIND_SPOT_ELIMINATION',
+      status: 'APPROVED_AND_QUEUED',
+      timestamp: new Date().toISOString()
+    };
+
+    // Auto-register proposed camera as an active planned node
+    await this.createCamera({
+      id: `CAM-PROP-${Math.floor(100 + Math.random() * 900)}`,
+      district: proposal.district,
+      department_id: proposal.department_id,
+      name: proposal.proposed_name,
+      lat: proposal.lat,
+      lng: proposal.lng,
+      type: 'ip',
+      vendor: proposal.hardware_recommended,
+      direction: 'Blind Spot Coverage Angle',
+      fov_angle: 90,
+      resolution: '4K',
+      retention_days: 15
+    });
+
+    this.logAudit('CAMERA_INSTALLATION_PROPOSED', `${proposal.proposal_id} for Blind Spot ${proposal.blind_spot_id}`);
+    return {
+      status: 'success',
+      message: 'New Camera Installation Proposed & Registered in State Infrastructure Pipeline!',
+      proposal
+    };
+  }
+
   async createCamera(cameraData) {
     const newCam = {
       id: cameraData.id || `CAM-GJ-${Math.floor(1000 + Math.random() * 9000)}`,

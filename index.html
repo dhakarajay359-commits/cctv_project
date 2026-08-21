@@ -276,6 +276,49 @@
             </div>
           </div>
 
+          <!-- Floating FOV Range & Blind-Spot Diagnostic HUD -->
+          <div class="fov-map-hud" id="fovMapHud" style="display: none;">
+            <div class="hud-top">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="hud-live-pill" style="background: rgba(0,242,254,0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);">
+                  <i class="fa-solid fa-satellite-dish"></i> OPTICAL FOV & BLIND-SPOT HUD
+                </span>
+                <strong id="fovHudCamId" style="font-family: var(--font-mono); color: var(--text-primary);">CAM-GJ-0101</strong>
+              </div>
+              <button class="hud-close-btn" id="btnCloseFovHud">&times;</button>
+            </div>
+            <div class="hud-body">
+              <div class="hud-stat-grid">
+                <div><span>Camera:</span> <strong id="fovHudCamName">SG Highway Overbridge</strong></div>
+                <div><span>Direction / FOV:</span> <strong class="text-cyan" id="fovHudDirection">Northbound (90°)</strong></div>
+                <div><span>DORI Range:</span> <strong class="text-green" id="fovHudRange">280m Max / 140m Recog</strong></div>
+                <div><span>District / Dept:</span> <strong class="text-amber" id="fovHudDistrict">Ahmedabad • Police</strong></div>
+              </div>
+              
+              <!-- Uncovered Blind-Spot Alert Card -->
+              <div class="blind-spot-alert-box" id="fovBlindSpotBox">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 0.72rem; font-weight: 800; color: var(--accent-rose); text-transform: uppercase;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE DETECTED
+                  </span>
+                  <span class="node-status-pill offline" style="font-size: 0.62rem; padding: 0.1rem 0.4rem;">GAP DEFICIT</span>
+                </div>
+                <p id="fovBlindSpotDesc" style="font-size: 0.76rem; color: #ffffff; margin: 0.25rem 0 0.4rem 0; font-weight: 600;">
+                  Service Road South Approach & Underpass is completely unmonitored.
+                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid rgba(244,63,94,0.25);">
+                  <div>
+                    <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Recommended Hardware:</span>
+                    <strong id="fovRecHardware" style="font-size: 0.74rem; color: var(--accent-emerald);">4K Ultra-Starlight ANPR + PTZ</strong>
+                  </div>
+                  <button class="action-btn primary" id="btnProposeCameraFromHud" style="font-size: 0.7rem; padding: 0.3rem 0.65rem; background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fa-solid fa-plus-circle"></i> Install Camera Here
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Real Leaflet Map Container -->
           <div id="leafletMap" class="leaflet-container-view"></div>
         </div>
@@ -1806,6 +1849,142 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
       <div class="modal-footer">
         <button type="button" class="action-btn primary" id="btnAckTacticalModal" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
           <i class="fa-solid fa-check-double"></i> Acknowledge Broadcast & Monitor Live Feeds
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- CAMERA DETAIL SLIDE-OVER DRAWER (PHASE 1 & FOV DIAGNOSTICS) -->
+  <!-- ========================================================================= -->
+  <div class="cam-detail-drawer" id="camDetailDrawer">
+    <div class="drawer-header">
+      <div>
+        <span class="node-id" id="detailCamId">CAM-GJ-0101</span>
+        <h3 id="detailCamName" style="margin-top: 0.2rem;">SG Highway Iskcon Crossroad Overbridge</h3>
+      </div>
+      <button class="close-modal-btn" id="closeDetailDrawerBtn">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <!-- Live Video Snapshot / Stream Preview -->
+      <div class="drawer-stream-preview">
+        <div class="video-placeholder" id="detailVideoPlaceholder">
+          <i class="fa-solid fa-video"></i>
+          <span>Live Edge Relay Active (1080p WebRTC)</span>
+        </div>
+      </div>
+
+      <!-- Optical Range & FOV Diagnostics Card -->
+      <div class="card" style="margin-bottom: 1rem; border-color: rgba(0,242,254,0.3);">
+        <h4 style="font-size: 0.82rem; color: var(--accent-cyan); margin-bottom: 0.6rem;">
+          <i class="fa-solid fa-satellite-dish"></i> Optical Range & DORI Standard Coverage:
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center; margin-bottom: 0.6rem;">
+          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color);">
+            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Identification (35px/m)</span>
+            <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 0.85rem;" id="detailIdRange">45 Meters</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color);">
+            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Recognition (125px/m)</span>
+            <strong style="color: var(--accent-emerald); font-family: var(--font-mono); font-size: 0.85rem;" id="detailRecRange">110 Meters</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.3); padding: 0.4rem; border-radius: 4px; border: 1px solid var(--border-color);">
+            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Max Detection (25px/m)</span>
+            <strong style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.85rem;" id="detailDetRange">280 Meters</strong>
+          </div>
+        </div>
+        <button class="action-btn" id="btnDrawerInspectFov" style="width: 100%; padding: 0.35rem; font-size: 0.75rem; background: rgba(0,242,254,0.12); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+          <i class="fa-solid fa-eye"></i> View Live Optical FOV Cone on GIS Map
+        </button>
+      </div>
+
+      <!-- Blind-Spot Deficit & Propose Camera Installation Card -->
+      <div class="card" style="margin-bottom: 1rem; border-color: rgba(244,63,94,0.3); background: rgba(244,63,94,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <h4 style="font-size: 0.82rem; color: var(--accent-rose);">
+            <i class="fa-solid fa-triangle-exclamation"></i> Identified Blind-Spot Gap:
+          </h4>
+          <span class="node-status-pill offline" style="font-size: 0.6rem;">Blind Angle Deficit</span>
+        </div>
+        <p id="drawerBlindSpotDesc" style="font-size: 0.78rem; color: #ffffff; line-height: 1.35; margin-bottom: 0.6rem;">
+          Evaluating adjacent 360° perimeter...
+        </p>
+        <button class="action-btn primary" id="btnDrawerProposeInstall" style="width: 100%; padding: 0.45rem; font-size: 0.78rem; background: linear-gradient(135deg, #10b981, #059669);">
+          <i class="fa-solid fa-plus-circle"></i> Propose New Camera Installation Here
+        </button>
+      </div>
+
+      <!-- Heartbeat & Ring Buffer Diagnostics -->
+      <div class="card">
+        <h4 style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+          <i class="fa-solid fa-heart-pulse text-emerald"></i> Edge Health Telemetry (24-Hour Pings):
+        </h4>
+        <div class="health-timeline-box" id="detailHealthTimeline">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- CAMERA INSTALLATION PROPOSAL MODAL -->
+  <!-- ========================================================================= -->
+  <div class="app-modal" id="cameraProposalModal">
+    <div class="modal-content" style="max-width: 580px; border-color: var(--accent-emerald); box-shadow: 0 0 35px rgba(16,185,129,0.3);">
+      <div class="modal-header" style="background: rgba(16,185,129,0.12); border-bottom-color: rgba(16,185,129,0.3);">
+        <div>
+          <span class="node-status-pill online" style="font-size: 0.65rem;">
+            <span class="dot-sm green"></span> INFRASTRUCTURE GAP RESOLUTION
+          </span>
+          <h3 style="margin-top: 0.3rem; color: #ffffff;"><i class="fa-solid fa-video text-green"></i> Propose New Camera Node for Blind-Spot</h3>
+        </div>
+        <button class="close-modal-btn" id="closeProposalModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.2rem;">
+        <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+          <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">TARGET BLIND-SPOT DEFICIT:</span>
+          <strong id="proposalBlindDesc" style="font-size: 0.85rem; color: #ffffff; display: block; margin-top: 0.2rem;">
+            Service Road South Inflow Gap (2,400 sq.m uncovered)
+          </strong>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Proposed Camera Name:</label>
+            <input type="text" id="propCamName" class="custom-input" value="SG Highway South Service Ingress #02">
+          </div>
+          <div class="form-group">
+            <label>District Sector:</label>
+            <input type="text" id="propDistrict" class="custom-input" value="Ahmedabad (Urban)" readonly>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Recommended Hardware Spec:</label>
+            <input type="text" id="propHardware" class="custom-input" value="4K Ultra-Starlight ANPR + PTZ Dome">
+          </div>
+          <div class="form-group">
+            <label>Estimated CAPEX Budget:</label>
+            <input type="text" id="propBudget" class="custom-input" value="₹45,000 (State Modernization Grant)" readonly style="color: var(--accent-amber); font-weight: 700;">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Optimal Install Latitude (GPS):</label>
+            <input type="text" id="propLat" class="custom-input" value="23.0284" readonly style="font-family: var(--font-mono); color: var(--accent-cyan);">
+          </div>
+          <div class="form-group">
+            <label>Optimal Install Longitude (GPS):</label>
+            <input type="text" id="propLng" class="custom-input" value="72.5058" readonly style="font-family: var(--font-mono); color: var(--accent-cyan);">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" id="btnCancelProposal">Cancel</button>
+        <button type="button" class="action-btn primary" id="btnSubmitProposal" style="background: linear-gradient(135deg, #10b981, #059669);">
+          <i class="fa-solid fa-check"></i> Authorize & Queue Camera Installation
         </button>
       </div>
     </div>

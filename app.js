@@ -245,6 +245,43 @@ async function initGisDashboard() {
     });
   }
 
+  // FOV HUD Event Listeners
+  const btnCloseFovHud = document.getElementById('btnCloseFovHud');
+  const btnProposeFromHud = document.getElementById('btnProposeCameraFromHud');
+  if (btnCloseFovHud) btnCloseFovHud.addEventListener('click', () => clearFovRangeFromMap());
+  if (btnProposeFromHud) btnProposeFromHud.addEventListener('click', () => openCameraProposalModal());
+
+  // Camera Proposal Modal Handlers
+  const propModal = document.getElementById('cameraProposalModal');
+  const closePropBtn = document.getElementById('closeProposalModal');
+  const cancelPropBtn = document.getElementById('btnCancelProposal');
+  const submitPropBtn = document.getElementById('btnSubmitProposal');
+
+  if (closePropBtn && propModal) closePropBtn.addEventListener('click', () => propModal.classList.remove('open'));
+  if (cancelPropBtn && propModal) cancelPropBtn.addEventListener('click', () => propModal.classList.remove('open'));
+
+  if (submitPropBtn && propModal) {
+    submitPropBtn.addEventListener('click', async () => {
+      const payload = {
+        parent_camera_id: activeFovAnalysis?.camera_id,
+        blind_spot_id: activeFovAnalysis?.blind_spot_analysis?.blind_spot_id,
+        proposed_name: document.getElementById('propCamName').value,
+        district: document.getElementById('propDistrict').value,
+        recommended_install_lat: document.getElementById('propLat').value,
+        recommended_install_lng: document.getElementById('propLng').value,
+        recommended_hardware: document.getElementById('propHardware').value,
+        estimated_capex_inr: 45000
+      };
+
+      const res = await window.apiClient.proposeCameraInstallation(payload);
+      propModal.classList.remove('open');
+      clearFovRangeFromMap();
+      alert(`CAMERA INSTALLATION PROPOSAL AUTHORIZED!\n\nProposal Ref: ${res.proposal.proposal_id}\nNode Name: ${res.proposal.proposed_name}\nLocation: Lat ${res.proposal.lat}, Lng ${res.proposal.lng}\nHardware: ${res.proposal.hardware_recommended}\nBudget: ₹${res.proposal.estimated_budget_inr.toLocaleString()} (Queued in State Pipeline).`);
+      await renderGisNodes();
+      await renderRegistryTable();
+    });
+  }
+
   // Tactical Dispatch Modal Close Handlers
   const modalTac = document.getElementById('tacticalDispatchModal');
   const closeTacBtn = document.getElementById('closeTacticalModal');
@@ -515,27 +552,193 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
 
     const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
     marker.bindPopup(`
-      <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4;">
+      <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
         <strong style="color: #00f2fe; font-size: 13px;">${cam.id}</strong><br/>
         <strong>${cam.name}</strong><br/>
         <span style="color: #94a3b8;">Vendor: ${cam.vendor}</span><br/>
         <span style="color: #10b981;">Status: ${cam.status.toUpperCase()}</span><br/>
         <span style="color: #f59e0b;">FOV: ${cam.direction} (${cam.fov_angle}°)</span><br/>
-        <button onclick="pullOnDemandStream('${cam.id}')" style="
-          margin-top: 6px;
-          background: #00f2fe;
-          color: #04101e;
-          border: none;
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-weight: 700;
-          cursor: pointer;
-        ">Pull WebRTC Live Stream</button>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+          <button onclick="inspectCameraFovRange('${cam.id}')" style="
+            background: rgba(0, 242, 254, 0.15);
+            border: 1px solid #00f2fe;
+            color: #00f2fe;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+          "><i class="fa-solid fa-satellite-dish"></i> Check Range & Blind-Spots</button>
+          <button onclick="pullOnDemandStream('${cam.id}')" style="
+            background: #00f2fe;
+            color: #04101e;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+          "><i class="fa-solid fa-play"></i> Pull WebRTC Live Stream</button>
+        </div>
       </div>
     `);
     leafletMarkers.push(marker);
   });
 }
+
+// Global Array for FOV and Blind Spot Map Overlays
+let mapFovLayers = [];
+let activeFovAnalysis = null;
+
+window.inspectCameraFovRange = async function(camId) {
+  if (!leafletMapInstance) return;
+
+  // 1. Switch to Dashboard View if needed
+  const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
+  if (dashNavBtn) dashNavBtn.click();
+  setTimeout(() => leafletMapInstance.invalidateSize(), 150);
+
+  // 2. Fetch FOV & Blind Spot Analysis
+  const analysis = await window.apiClient.getCameraFovAnalysis(camId);
+  activeFovAnalysis = analysis;
+
+  // 3. Clear Previous FOV Layers
+  clearFovRangeFromMap();
+
+  // 4. Draw Optical FOV Range Cone (Cyan Conical Sector)
+  const fovPolygon = L.polygon(analysis.coverage_cone_polygon, {
+    color: '#00f2fe',
+    weight: 2,
+    fillColor: '#00f2fe',
+    fillOpacity: 0.22
+  }).addTo(leafletMapInstance);
+
+  fovPolygon.bindPopup(`
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px;">
+      <strong style="color: #00f2fe;"><i class="fa-solid fa-satellite-dish"></i> OPTICAL COVERAGE CONE</strong><br/>
+      <strong>${analysis.camera_name}</strong><br/>
+      <span>Direction: ${analysis.optical_specs.direction_name} (${analysis.optical_specs.fov_horizontal_degrees}°)</span><br/>
+      <div style="margin-top: 4px; font-size: 11px; color: #94a3b8;">
+        &bull; Max Detection Range: <strong>${analysis.optical_specs.dori_standards.detection_range_meters}m</strong><br/>
+        &bull; Recognition Range: <strong>${analysis.optical_specs.dori_standards.recognition_range_meters}m</strong><br/>
+        &bull; Identification Range: <strong>${analysis.optical_specs.dori_standards.identification_range_meters}m</strong>
+      </div>
+    </div>
+  `);
+  mapFovLayers.push(fovPolygon);
+
+  // 5. Draw Unmonitored Blind Spot Gap (Crimson Striped Sector)
+  const blindSpot = analysis.blind_spot_analysis;
+  const blindPolygon = L.polygon(blindSpot.blind_polygon, {
+    color: '#f43f5e',
+    weight: 2,
+    dashArray: '6, 6',
+    fillColor: '#f43f5e',
+    fillOpacity: 0.35
+  }).addTo(leafletMapInstance);
+
+  blindPolygon.bindPopup(`
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 220px;">
+      <strong style="color: #f43f5e;"><i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE</strong><br/>
+      <span style="font-size: 11px; color: #ffffff;">${blindSpot.location_description}</span><br/>
+      <div style="margin: 4px 0; padding: 4px 6px; background: rgba(244,63,94,0.15); border-radius: 4px;">
+        <span style="color: #fbbf24; font-size: 11px;">Uncovered Area: <strong>~${blindSpot.uncovered_area_sqm.toLocaleString()} sq.m</strong></span><br/>
+        <span style="color: #10b981; font-size: 11px;">Recommended: <strong>${blindSpot.recommended_hardware}</strong></span>
+      </div>
+      <button onclick="openCameraProposalModal()" style="
+        margin-top: 4px;
+        width: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        cursor: pointer;
+      "><i class="fa-solid fa-plus-circle"></i> Install Camera in Blind Zone</button>
+    </div>
+  `);
+  mapFovLayers.push(blindPolygon);
+
+  // 6. Proposed Camera Installation Pin (Green Crosshair)
+  const propIcon = L.divIcon({
+    className: 'prop-cam-pin',
+    html: `<div style="
+      background: #10b981;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 14px #10b981;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #04101e;
+      font-size: 11px;
+      font-weight: 900;
+    "><i class="fa-solid fa-plus"></i></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+
+  const propMarker = L.marker([blindSpot.recommended_install_lat, blindSpot.recommended_install_lng], { icon: propIcon }).addTo(leafletMapInstance);
+  propMarker.bindPopup(`
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 200px;">
+      <strong style="color: #10b981;"><i class="fa-solid fa-location-crosshairs"></i> RECOMMENDED CAMERA LOCATION</strong><br/>
+      <span>Eliminates ${blindSpot.location_description}</span><br/>
+      <button onclick="openCameraProposalModal()" style="
+        margin-top: 6px;
+        width: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+        border: none;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        cursor: pointer;
+      "><i class="fa-solid fa-check"></i> Authorize Installation</button>
+    </div>
+  `);
+  mapFovLayers.push(propMarker);
+
+  // 7. Fit Map Bounds smoothly
+  const allCoords = [...analysis.coverage_cone_polygon, ...blindSpot.blind_polygon];
+  leafletMapInstance.fitBounds(allCoords, { padding: [90, 90], maxZoom: 16 });
+
+  // 8. Populate & Display Floating FOV HUD
+  const fovHud = document.getElementById('fovMapHud');
+  if (fovHud) {
+    document.getElementById('fovHudCamId').textContent = analysis.camera_id;
+    document.getElementById('fovHudCamName').textContent = analysis.camera_name;
+    document.getElementById('fovHudDirection').textContent = `${analysis.optical_specs.direction_name} (${analysis.optical_specs.fov_horizontal_degrees}°)`;
+    document.getElementById('fovHudRange').textContent = `${analysis.optical_specs.dori_standards.detection_range_meters}m Max / ${analysis.optical_specs.dori_standards.recognition_range_meters}m Recog`;
+    document.getElementById('fovHudDistrict').textContent = `${analysis.district} • ${getDeptName(analysis.department_id)}`;
+    
+    document.getElementById('fovBlindSpotDesc').textContent = `${blindSpot.location_description} (~${blindSpot.uncovered_area_sqm.toLocaleString()} sq.m uncovered)`;
+    document.getElementById('fovRecHardware').textContent = blindSpot.recommended_hardware;
+    fovHud.style.display = 'block';
+  }
+};
+
+window.clearFovRangeFromMap = function() {
+  mapFovLayers.forEach(layer => leafletMapInstance.removeLayer(layer));
+  mapFovLayers = [];
+  const fovHud = document.getElementById('fovMapHud');
+  if (fovHud) fovHud.style.display = 'none';
+};
+
+window.openCameraProposalModal = function() {
+  if (!activeFovAnalysis) return;
+  const blind = activeFovAnalysis.blind_spot_analysis;
+  
+  document.getElementById('proposalBlindDesc').textContent = `${blind.location_description} (~${blind.uncovered_area_sqm.toLocaleString()} sq.m uncovered)`;
+  document.getElementById('propCamName').value = `New Node: ${activeFovAnalysis.camera_name} (Blind Zone Elimination)`;
+  document.getElementById('propDistrict').value = activeFovAnalysis.district;
+  document.getElementById('propHardware').value = blind.recommended_hardware;
+  document.getElementById('propLat').value = blind.recommended_install_lat;
+  document.getElementById('propLng').value = blind.recommended_install_lng;
+
+  const modal = document.getElementById('cameraProposalModal');
+  if (modal) modal.classList.add('open');
+};
 
 window.pullOnDemandStream = async function(camId) {
   const session = await window.apiClient.startStreamingSession(camId);
@@ -654,40 +857,35 @@ window.openCameraDetail = async function(camId) {
   document.getElementById('detailVendor').textContent = cam.vendor;
   document.getElementById('detailStorage').textContent = cam.storage_type === 'edge_nvr' ? 'Edge NVR (Normalized Protocol)' : 'Local DVR Buffer';
   document.getElementById('detailRetention').textContent = `${cam.retention_days} Days Ring Buffer`;
-  document.getElementById('detailResolution').textContent = `${cam.resolution} @ 25 FPS`;
-  document.getElementById('detailOnboarded').textContent = cam.onboarded_at ? cam.onboarded_at.split('T')[0] : '2025-11-12';
-  document.getElementById('detailGps').textContent = `${cam.lat}° N, ${cam.lng}° E`;
-  document.getElementById('detailFov').textContent = `${cam.direction} (${cam.fov_angle}°)`;
+  // FOV & Blind Spot Diagnostics in Drawer
+  const fovData = await window.apiClient.getCameraFovAnalysis(cam.id);
+  activeFovAnalysis = fovData;
 
-  const statusEl = document.getElementById('detailStatus');
-  statusEl.textContent = `${cam.status.toUpperCase()} (Uptime: ${cam.status === 'online' ? '99.8%' : cam.status === 'degraded' ? '88.4%' : '0.0%'})`;
-  statusEl.className = `status-text ${cam.status === 'online' ? 'text-green' : cam.status === 'degraded' ? 'text-amber' : 'text-rose'}`;
+  const idRangeEl = document.getElementById('detailIdRange');
+  const recRangeEl = document.getElementById('detailRecRange');
+  const detRangeEl = document.getElementById('detailDetRange');
+  const blindDescEl = document.getElementById('drawerBlindSpotDesc');
 
-  // Health Timeline
-  const timelineTbody = document.getElementById('detailHealthTimeline');
-  timelineTbody.innerHTML = '';
-  const history = cam.health_history || [
-    { time: '06:00', ping_ms: 20, status: 'online' },
-    { time: '12:00', ping_ms: 22, status: 'online' },
-    { time: '17:30', ping_ms: 21, status: 'online' }
-  ];
+  if (idRangeEl) idRangeEl.textContent = `${fovData.optical_specs.dori_standards.identification_range_meters} Meters`;
+  if (recRangeEl) recRangeEl.textContent = `${fovData.optical_specs.dori_standards.recognition_range_meters} Meters`;
+  if (detRangeEl) detRangeEl.textContent = `${fovData.optical_specs.dori_standards.detection_range_meters} Meters`;
+  if (blindDescEl) blindDescEl.textContent = `${fovData.blind_spot_analysis.location_description} (~${fovData.blind_spot_analysis.uncovered_area_sqm.toLocaleString()} sq.m unmonitored). Recommend ${fovData.blind_spot_analysis.recommended_hardware}.`;
 
-  history.forEach(h => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><span style="font-family: var(--font-mono);">${h.time} IST</span></td>
-      <td><strong style="color: ${h.ping_ms > 100 ? 'var(--accent-amber)' : 'var(--accent-cyan)'};">${h.ping_ms} ms</strong></td>
-      <td><span class="node-status-pill ${h.status}">${h.status}</span></td>
-      <td><span style="color: var(--text-muted);">Edge Ring Buffer OK</span></td>
-    `;
-    timelineTbody.appendChild(row);
-  });
+  const inspectFovBtn = document.getElementById('btnDrawerInspectFov');
+  if (inspectFovBtn) {
+    inspectFovBtn.onclick = () => {
+      document.getElementById('camDetailDrawer').classList.remove('open');
+      window.inspectCameraFovRange(cam.id);
+    };
+  }
 
-  const pullBtn = document.getElementById('detailPullStreamBtn');
-  pullBtn.onclick = () => window.pullOnDemandStream(cam.id);
-
-  const dossierBtn = document.getElementById('detailExportDossierBtn');
-  dossierBtn.onclick = () => alert(`Node Dossier for ${cam.id} downloaded with Cryptographic Seal.`);
+  const drawerProposeBtn = document.getElementById('btnDrawerProposeInstall');
+  if (drawerProposeBtn) {
+    drawerProposeBtn.onclick = () => {
+      document.getElementById('camDetailDrawer').classList.remove('open');
+      window.openCameraProposalModal();
+    };
+  }
 
   document.getElementById('camDetailDrawer').classList.add('open');
 };
