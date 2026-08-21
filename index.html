@@ -125,6 +125,62 @@
           </div>
 
           <div class="filter-block">
+            <label><i class="fa-solid fa-earth-asia text-cyan"></i> Gujarat Zone & District Matrix:</label>
+            <select id="gisZoneSelect" class="custom-select">
+              <optgroup label="Statewide View">
+                <option value="zone-all" selected>🌐 Whole Gujarat (All 33 Districts • 80,000+ Nodes)</option>
+              </optgroup>
+              <optgroup label="Central Gujarat Zone (9 Districts)">
+                <option value="zone-central">Central Gujarat Zone Overview</option>
+                <option value="dist-ahmedabad">Ahmedabad (Urban) • 22,400 Nodes</option>
+                <option value="dist-gandhinagar">Gandhinagar (Capital) • 6,200 Nodes</option>
+                <option value="dist-vadodara">Vadodara • 8,400 Nodes</option>
+                <option value="dist-anand">Anand (Milk City) • 3,100 Nodes</option>
+                <option value="dist-kheda">Kheda (Nadiad) • 2,800 Nodes</option>
+                <option value="dist-panchmahal">Panchmahal (Godhra) • 2,400 Nodes</option>
+                <option value="dist-dahod">Dahod (Interstate Border) • 2,900 Nodes</option>
+                <option value="dist-mahisagar">Mahisagar (Lunawada) • 1,600 Nodes</option>
+                <option value="dist-chhotaupedur">Chhota Udepur • 1,400 Nodes</option>
+              </optgroup>
+              <optgroup label="North Gujarat Zone (5 Districts)">
+                <option value="zone-north">North Gujarat Zone Overview</option>
+                <option value="dist-mehsana">Mehsana • 4,200 Nodes</option>
+                <option value="dist-patan">Patan (Heritage) • 2,100 Nodes</option>
+                <option value="dist-banaskantha">Banaskantha (Palanpur/Border) • 3,200 Nodes</option>
+                <option value="dist-sabarkantha">Sabarkantha (Himmatnagar) • 2,300 Nodes</option>
+                <option value="dist-aravalli">Aravalli (Modasa) • 1,500 Nodes</option>
+              </optgroup>
+              <optgroup label="Saurashtra Zone (11 Districts)">
+                <option value="zone-saurashtra">Saurashtra Zone Overview</option>
+                <option value="dist-rajkot">Rajkot (Hub) • 7,800 Nodes</option>
+                <option value="dist-jamnagar">Jamnagar (Refinery & Port) • 4,800 Nodes</option>
+                <option value="dist-dwarka">Devbhumi Dwarka (Coast) • 2,400 Nodes</option>
+                <option value="dist-junagadh">Junagadh (Girnar) • 3,600 Nodes</option>
+                <option value="dist-somnath">Gir Somnath & Sasan Gir • 2,600 Nodes</option>
+                <option value="dist-bhavnagar">Bhavnagar (Ports) • 4,400 Nodes</option>
+                <option value="dist-amreli">Amreli • 2,200 Nodes</option>
+                <option value="dist-porbandar">Porbandar (Coast) • 1,900 Nodes</option>
+                <option value="dist-surendranagar">Surendranagar • 2,900 Nodes</option>
+                <option value="dist-morbi">Morbi (Ceramic Hub) • 3,800 Nodes</option>
+                <option value="dist-botad">Botad (Salangpur) • 1,800 Nodes</option>
+              </optgroup>
+              <optgroup label="South Gujarat Zone (7 Districts)">
+                <option value="zone-south">South Gujarat Zone Overview</option>
+                <option value="dist-surat">Surat (Diamond Metro) • 14,600 Nodes</option>
+                <option value="dist-bharuch">Bharuch (Chemical & Ports) • 3,800 Nodes</option>
+                <option value="dist-navsari">Navsari (Dandi) • 2,600 Nodes</option>
+                <option value="dist-valsad">Valsad (Border Corridor) • 3,800 Nodes</option>
+                <option value="dist-tapi">Tapi (Vyara) • 1,600 Nodes</option>
+                <option value="dist-narmada">Narmada (Statue of Unity) • 2,800 Nodes</option>
+                <option value="dist-dang">Dang (Ahwa Forest) • 900 Nodes</option>
+              </optgroup>
+              <optgroup label="Kutch & Border Zone (1 District)">
+                <option value="zone-kutch">Kutch (Bhuj, Kandla, Mundra & White Rann) • 4,600 Nodes</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="filter-block">
             <label>Department Scope:</label>
             <select id="gisDeptSelect" class="custom-select">
               <option value="ALL">All Departments (Sovereign View)</option>
@@ -132,6 +188,7 @@
               <option value="dept-rto">RTO & Highways</option>
               <option value="dept-amc">AMC Municipal Corp</option>
               <option value="dept-civil">Food & Civil Supplies</option>
+              <option value="dept-forest">State Forest & Wildlife</option>
               <option value="dept-private">Private / Commercial Opt-In</option>
             </select>
           </div>
@@ -266,14 +323,51 @@
             <option value="dept-forest">Forest & Wildlife</option>
             <option value="dept-private">Private Opt-In</option>
           </select>
-          <select id="registryDistrictFilter" class="custom-select" style="max-width: 220px;">
-            <option value="ALL">All 6 Key Districts</option>
-            <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
-            <option value="Jamnagar">Jamnagar</option>
-            <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
-            <option value="Gir Somnath">Gir Somnath</option>
-            <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
-            <option value="Valsad (Coastal Corridor)">Valsad (Coastal Corridor)</option>
+          <select id="registryDistrictFilter" class="custom-select" style="max-width: 260px;">
+            <option value="ALL">All 33 Districts (Statewide)</option>
+            <optgroup label="Central Gujarat">
+              <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
+              <option value="Gandhinagar (Capital)">Gandhinagar (Capital)</option>
+              <option value="Vadodara">Vadodara</option>
+              <option value="Anand (Milk City)">Anand (Milk City)</option>
+              <option value="Kheda (Nadiad)">Kheda (Nadiad)</option>
+              <option value="Panchmahal (Godhra)">Panchmahal (Godhra)</option>
+              <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
+              <option value="Mahisagar (Lunawada)">Mahisagar (Lunawada)</option>
+              <option value="Chhota Udepur">Chhota Udepur</option>
+            </optgroup>
+            <optgroup label="North Gujarat">
+              <option value="Mehsana">Mehsana</option>
+              <option value="Patan (Heritage)">Patan (Heritage)</option>
+              <option value="Banaskantha (Palanpur & Border)">Banaskantha (Palanpur & Border)</option>
+              <option value="Sabarkantha (Himmatnagar)">Sabarkantha (Himmatnagar)</option>
+              <option value="Aravalli (Modasa)">Aravalli (Modasa)</option>
+            </optgroup>
+            <optgroup label="Saurashtra">
+              <option value="Rajkot (Hub)">Rajkot (Hub)</option>
+              <option value="Jamnagar (Refinery & Port)">Jamnagar (Refinery & Port)</option>
+              <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
+              <option value="Junagadh (Girnar)">Junagadh (Girnar)</option>
+              <option value="Gir Somnath (Temple & Coast)">Gir Somnath (Temple & Coast)</option>
+              <option value="Bhavnagar (Ports)">Bhavnagar (Ports)</option>
+              <option value="Amreli">Amreli</option>
+              <option value="Porbandar (Coast)">Porbandar (Coast)</option>
+              <option value="Surendranagar (Gate of Saurashtra)">Surendranagar (Gate of Saurashtra)</option>
+              <option value="Morbi (Ceramic Hub)">Morbi (Ceramic Hub)</option>
+              <option value="Botad (Gadhada & Salangpur)">Botad (Gadhada & Salangpur)</option>
+            </optgroup>
+            <optgroup label="South Gujarat">
+              <option value="Surat (Diamond & Textile Metro)">Surat (Diamond & Textile Metro)</option>
+              <option value="Bharuch (Chemical & Port)">Bharuch (Chemical & Port)</option>
+              <option value="Navsari (Dandi)">Navsari (Dandi)</option>
+              <option value="Valsad (Border Corridor)">Valsad (Border Corridor)</option>
+              <option value="Tapi (Vyara)">Tapi (Vyara)</option>
+              <option value="Narmada (Statue of Unity)">Narmada (Statue of Unity)</option>
+              <option value="Dang (Ahwa - Forest)">Dang (Ahwa - Forest)</option>
+            </optgroup>
+            <optgroup label="Kutch Zone">
+              <option value="Kutch (Ports, SEZ & Border)">Kutch (Ports, SEZ & Border)</option>
+            </optgroup>
           </select>
           <select id="registryTypeFilter" class="custom-select" style="max-width: 140px;">
             <option value="ALL">All Types</option>
@@ -1370,12 +1464,49 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <div class="form-group">
             <label>District Sector:</label>
             <select id="newCamDistrict" class="custom-select">
-              <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
-              <option value="Jamnagar">Jamnagar</option>
-              <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
-              <option value="Gir Somnath">Gir Somnath</option>
-              <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
-              <option value="Valsad (Coastal Corridor)">Valsad (Coastal Corridor)</option>
+              <optgroup label="Central Gujarat">
+                <option value="Ahmedabad (Urban)">Ahmedabad (Urban)</option>
+                <option value="Gandhinagar (Capital)">Gandhinagar (Capital)</option>
+                <option value="Vadodara">Vadodara</option>
+                <option value="Anand (Milk City)">Anand (Milk City)</option>
+                <option value="Kheda (Nadiad)">Kheda (Nadiad)</option>
+                <option value="Panchmahal (Godhra)">Panchmahal (Godhra)</option>
+                <option value="Dahod (Tribal Border)">Dahod (Tribal Border)</option>
+                <option value="Mahisagar (Lunawada)">Mahisagar (Lunawada)</option>
+                <option value="Chhota Udepur">Chhota Udepur</option>
+              </optgroup>
+              <optgroup label="North Gujarat">
+                <option value="Mehsana">Mehsana</option>
+                <option value="Patan (Heritage)">Patan (Heritage)</option>
+                <option value="Banaskantha (Palanpur & Border)">Banaskantha (Palanpur & Border)</option>
+                <option value="Sabarkantha (Himmatnagar)">Sabarkantha (Himmatnagar)</option>
+                <option value="Aravalli (Modasa)">Aravalli (Modasa)</option>
+              </optgroup>
+              <optgroup label="Saurashtra">
+                <option value="Rajkot (Hub)">Rajkot (Hub)</option>
+                <option value="Jamnagar (Refinery & Port)">Jamnagar (Refinery & Port)</option>
+                <option value="Devbhumi Dwarka">Devbhumi Dwarka</option>
+                <option value="Junagadh (Girnar)">Junagadh (Girnar)</option>
+                <option value="Gir Somnath (Temple & Coast)">Gir Somnath (Temple & Coast)</option>
+                <option value="Bhavnagar (Ports)">Bhavnagar (Ports)</option>
+                <option value="Amreli">Amreli</option>
+                <option value="Porbandar (Coast)">Porbandar (Coast)</option>
+                <option value="Surendranagar (Gate of Saurashtra)">Surendranagar (Gate of Saurashtra)</option>
+                <option value="Morbi (Ceramic Hub)">Morbi (Ceramic Hub)</option>
+                <option value="Botad (Gadhada & Salangpur)">Botad (Gadhada & Salangpur)</option>
+              </optgroup>
+              <optgroup label="South Gujarat">
+                <option value="Surat (Diamond & Textile Metro)">Surat (Diamond & Textile Metro)</option>
+                <option value="Bharuch (Chemical & Port)">Bharuch (Chemical & Port)</option>
+                <option value="Navsari (Dandi)">Navsari (Dandi)</option>
+                <option value="Valsad (Border Corridor)">Valsad (Border Corridor)</option>
+                <option value="Tapi (Vyara)">Tapi (Vyara)</option>
+                <option value="Narmada (Statue of Unity)">Narmada (Statue of Unity)</option>
+                <option value="Dang (Ahwa - Forest)">Dang (Ahwa - Forest)</option>
+              </optgroup>
+              <optgroup label="Kutch Zone">
+                <option value="Kutch (Ports, SEZ & Border)">Kutch (Ports, SEZ & Border)</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-group">

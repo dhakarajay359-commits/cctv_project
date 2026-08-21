@@ -129,11 +129,13 @@ async function initGisDashboard() {
   const mapEl = document.getElementById('leafletMap');
   if (!mapEl) return;
 
-  // Initialize Leaflet Map centered on Gujarat (Ahmedabad sector)
+  // Initialize Leaflet Map centered to cover WHOLE GUJARAT (All 33 Districts & 5 Zones)
   leafletMapInstance = L.map('leafletMap', {
-    center: [23.0300, 72.5600],
-    zoom: 11,
-    zoomControl: true
+    center: [22.8, 71.5],
+    zoom: 7.5,
+    zoomControl: true,
+    minZoom: 6,
+    maxZoom: 18
   });
 
   // Dark CartoDB / OSM TileLayer
@@ -143,6 +145,7 @@ async function initGisDashboard() {
   }).addTo(leafletMapInstance);
 
   // Filters
+  const zoneSelect = document.getElementById('gisZoneSelect');
   const deptSelect = document.getElementById('gisDeptSelect');
   const stBtns = document.querySelectorAll('.st-filter-btn');
   const searchInput = document.getElementById('gisSearchInput');
@@ -161,6 +164,26 @@ async function initGisDashboard() {
 
   async function updateMap() {
     await renderGisNodes(currentDept, currentStatus, currentQuery);
+  }
+
+  // Zone & District Matrix Quick Navigator
+  if (zoneSelect) {
+    zoneSelect.addEventListener('change', async (e) => {
+      const val = e.target.value;
+      if (val === 'zone-all') {
+        leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 1.2 });
+      } else if (val.startsWith('zone-')) {
+        const zones = await window.apiClient.getZones();
+        const z = zones.find(item => item.id === val);
+        if (z) leafletMapInstance.flyTo(z.center, z.zoom, { duration: 1.2 });
+      } else if (val.startsWith('dist-')) {
+        const dists = await window.apiClient.getDistricts();
+        const d = dists.find(item => item.id === val);
+        if (d && d.lat && d.lng) {
+          leafletMapInstance.flyTo([d.lat, d.lng], 11, { duration: 1.2 });
+        }
+      }
+    });
   }
 
   if (deptSelect) {
@@ -472,6 +495,7 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
     if (cam.department_id === 'dept-rto') color = '#f59e0b';
     if (cam.department_id === 'dept-amc') color = '#10b981';
     if (cam.department_id === 'dept-civil') color = '#ec4899';
+    if (cam.department_id === 'dept-forest') color = '#84cc16';
     if (cam.department_id === 'dept-private') color = '#a855f7';
 
     const markerHtml = `<div style="
