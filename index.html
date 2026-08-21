@@ -20,47 +20,76 @@
 <body class="dark-theme">
   <!-- TOP CONTROL ROOM HEADER -->
   <header class="app-header">
+    <!-- Brand & Government Identity Logo -->
     <div class="header-left">
       <div class="logo-badge">
-        <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
-        <div class="logo-text">
-          <div class="brand-title">NIRIKSHAN <span class="guj-script">નિરીક્ષણ</span></div>
-          <span class="brand-subtitle">Unified CCTV Intelligence & Analytics Grid &bull; Govt of Gujarat</span>
+        <div class="logo-shield-wrapper">
+          <div class="logo-shield-outer"></div>
+          <div class="logo-shield-inner">
+            <i class="fa-solid fa-shield-halved logo-shield-icon"></i>
+            <span class="logo-radar-sweep"></span>
+          </div>
+        </div>
+        <div class="logo-text-block">
+          <div class="brand-title-row">
+            <span class="brand-title">NIRIKSHAN</span>
+            <span class="guj-script-badge">નિરીક્ષણ</span>
+            <span class="state-gov-chip"><i class="fa-solid fa-landmark"></i> GOVT OF GUJARAT</span>
+          </div>
+          <span class="brand-subtitle">Unified State CCTV Intelligence & Neural Analytics Matrix &bull; 26 Sovereign Departments</span>
         </div>
       </div>
     </div>
 
-    <!-- Department & RBAC Persona Switcher -->
-    <div class="header-rbac-switcher">
-      <div class="rbac-label"><i class="fa-solid fa-user-shield"></i> Active Persona (RBAC):</div>
-      <select id="userRoleSelect" class="rbac-select">
-        <option value="superadmin|dept-police">SuperAdmin &bull; State Command Center (All 26 Depts)</option>
-        <option value="operator|dept-police">Police Operator &bull; Home Dept (Police Feeds)</option>
-        <option value="admin|dept-rto">RTO Inspector &bull; Transport Dept (Highway & Tolls)</option>
-    <!-- Header Actions -->
-       <div class="top-nav-right">
-        <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
-        <div class="persona-switcher-wrap">
-          <label class="persona-label"><i class="fa-solid fa-user-shield"></i> Active Persona (RBAC):</label>
-          <select id="topbarPersonaSelect" class="custom-select persona-select">
-            <option value="superadmin">State Superadmin &bull; IG Jadeja (Full Access)</option>
-            <option value="rto_admin">Dept Admin &bull; R. K. Vaghela (RTO Scoped)</option>
-            <option value="amc_operator">Operator &bull; Priya Shah (AMC Scoped)</option>
-            <option value="forest_viewer">Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
-          </select>
-        </div>
+    <!-- Center Live Fleet Telemetry Telemetry Capsule -->
+    <div class="header-telemetry-capsule">
+      <div class="telemetry-pill live">
+        <span class="live-dot-pulse"></span>
+        <span><strong>80,000+</strong> Sovereign Edge Nodes</span>
+      </div>
+      <div class="telemetry-pill network">
+        <i class="fa-solid fa-bolt text-cyan"></i>
+        <span>WAN Telemetry: <strong>&lt; 5 Kbps</strong></span>
+      </div>
+    </div>
 
-        <div class="live-clock" id="liveClock">2026-08-21 17:30:00 IST</div>
-        <div class="user-pill" id="topUserPill">
+    <!-- Right Header Controls: RBAC Persona Switcher & Live Clock -->
+    <div class="header-actions">
+      <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
+      <div class="persona-switcher-wrap">
+        <div class="persona-label-box">
+          <i class="fa-solid fa-user-shield text-amber"></i>
+          <span>RBAC Persona:</span>
+        </div>
+        <select id="topbarPersonaSelect" class="custom-select persona-select">
+          <option value="superadmin">👑 State Superadmin &bull; IG Jadeja (Full 26 Depts Access)</option>
+          <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO & Highway Scoped)</option>
+          <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC Municipal Scoped)</option>
+          <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
+        </select>
+      </div>
+
+      <!-- Live Digital Military Clock -->
+      <div class="live-clock-badge">
+        <i class="fa-regular fa-clock text-cyan"></i>
+        <span id="liveClock">23:02:35 IST</span>
+      </div>
+
+      <!-- Active User Profile Pill -->
+      <div class="user-pill" id="topUserPill">
+        <div class="user-avatar-hex">
           <i class="fa-solid fa-user-shield"></i>
-          <div>
-            <strong id="topUserName">IG V. R. Jadeja</strong><br/>
-            <span id="topUserDept" style="font-size: 0.68rem; color: var(--text-muted);">State Superadmin</span>
-          </div>
+        </div>
+        <div class="user-info-text">
+          <strong id="topUserName">IG V. R. Jadeja</strong>
+          <span id="topUserDept">State Superadmin &bull; Level-1 Clearance</span>
         </div>
       </div>
-      <span class="status-indicator live"><span class="dot"></span> 80,000+ Nodes Ready</span>
-      <button class="export-btn" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Dossier</button>
+
+      <button class="export-btn" id="exportPdfBtn" title="Export Certified Surveillance Dossier">
+        <i class="fa-solid fa-file-pdf"></i>
+        <span>Export Dossier</span>
+      </button>
     </div>
   </header>
 
