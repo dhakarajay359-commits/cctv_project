@@ -21,96 +21,225 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
-  <!-- TOP CONTROL ROOM HEADER -->
-  <header class="app-header">
-    <div class="header-left">
-      <div class="logo-badge">
-        <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
-        <div class="logo-text">
-          <div class="brand-title">NIRIKSHAN <span class="guj-script">નિરીક્ષણ</span></div>
-          <span class="brand-subtitle">Unified CCTV Intelligence & Analytics Grid &bull; Govt of Gujarat</span>
+  <div class="app-layout" id="appLayout">
+    <!-- MODERN SIDE PANEL NAVIGATION -->
+    <aside class="app-sidebar" id="appSidebar">
+      <!-- Sidebar Header (Branding + Collapse Button) -->
+      <div class="sidebar-header">
+        <div class="logo-badge">
+          <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
+          <div class="logo-text">
+            <div class="brand-title">NIRIKSHAN <span class="guj-script">નિરીક્ષણ</span></div>
+            <span class="brand-subtitle">Unified CCTV Intelligence Grid</span>
+          </div>
+        </div>
+        <button class="sidebar-toggle-btn" id="sidebarCollapseBtn" title="Toggle Sidebar (Ctrl+B / [)">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+      </div>
+
+      <!-- Quick Focus Mode Trigger -->
+      <div class="sidebar-focus-wrap">
+        <button class="sidebar-focus-btn" id="sidebarFocusBtn" title="Toggle Focus Mode (Press F)">
+          <div class="focus-btn-inner">
+            <i class="fa-solid fa-crosshairs text-cyan"></i>
+            <span class="focus-btn-label">Focus Workspace</span>
+          </div>
+          <kbd class="shortcut-pill">F</kbd>
+        </button>
+      </div>
+
+      <!-- Navigation Menu Groups -->
+      <div class="sidebar-scroll-area">
+        <div class="nav-section-label"><span>SURVEILLANCE & GEO</span></div>
+        <nav class="sidebar-nav-group">
+          <button class="main-nav-btn active" data-view="view-dashboard" data-title="GIS Dashboard">
+            <span class="btn-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+            <span class="btn-text">GIS Dashboard</span>
+            <kbd class="nav-key">1</kbd>
+          </button>
+          <button class="main-nav-btn" data-view="view-registry" data-title="Camera Registry">
+            <span class="btn-icon"><i class="fa-solid fa-list-check"></i></span>
+            <span class="btn-text">Camera Registry</span>
+            <kbd class="nav-key">2</kbd>
+          </button>
+          <button class="main-nav-btn" data-view="view-livewall" data-title="Live Video Wall">
+            <span class="btn-icon"><i class="fa-solid fa-table-cells"></i></span>
+            <span class="btn-text">Live Video Wall</span>
+            <kbd class="nav-key">3</kbd>
+          </button>
+        </nav>
+
+        <div class="nav-section-label"><span>INTELLIGENCE & AI</span></div>
+        <nav class="sidebar-nav-group">
+          <button class="main-nav-btn" data-view="view-analytics" data-title="Analytics & ANPR">
+            <span class="btn-icon"><i class="fa-solid fa-chart-line"></i></span>
+            <span class="btn-text">Analytics & ANPR</span>
+            <kbd class="nav-key">4</kbd>
+          </button>
+          <button class="main-nav-btn" data-view="view-alerts" data-title="Alerts & Routing">
+            <span class="btn-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+            <span class="btn-text">Alerts & Routing</span>
+            <span class="nav-badge" id="activeAlertBadge">2</span>
+            <kbd class="nav-key">5</kbd>
+          </button>
+          <button class="main-nav-btn" data-view="view-integration" data-title="Cross-DB Gateway">
+            <span class="btn-icon"><i class="fa-solid fa-database"></i></span>
+            <span class="btn-text">Cross-DB Gateway</span>
+            <kbd class="nav-key">6</kbd>
+          </button>
+        </nav>
+
+        <div class="nav-section-label"><span>PLATFORM & SYSTEM</span></div>
+        <nav class="sidebar-nav-group">
+          <button class="main-nav-btn" data-view="view-admin" data-title="Admin & Audit">
+            <span class="btn-icon"><i class="fa-solid fa-sliders"></i></span>
+            <span class="btn-text">Admin & Audit</span>
+            <kbd class="nav-key">7</kbd>
+          </button>
+          <button class="main-nav-btn" data-view="view-architecture" data-title="7-Layer Architecture">
+            <span class="btn-icon"><i class="fa-solid fa-network-wired"></i></span>
+            <span class="btn-text">7-Layer Architecture</span>
+            <kbd class="nav-key">8</kbd>
+          </button>
+          <button class="main-nav-btn" data-view="view-api-docs" data-title="OpenAPI / REST Client">
+            <span class="btn-icon"><i class="fa-solid fa-code"></i></span>
+            <span class="btn-text">OpenAPI / REST Client</span>
+            <kbd class="nav-key">9</kbd>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-status-card">
+          <div class="status-indicator live">
+            <span class="dot"></span>
+            <span class="status-text">80,000+ Nodes Ready</span>
+          </div>
+          <div class="system-tag">Govt of Gujarat &bull; v2.4</div>
         </div>
       </div>
-    </div>
+    </aside>
 
-    <!-- Header Actions (Clean Horizontal Toolbar) -->
-    <div class="header-actions">
-      <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
-      <div class="persona-switcher-wrap">
-        <label class="persona-label"><i class="fa-solid fa-user-shield text-amber"></i> Active Persona (RBAC):</label>
-        <select id="topbarPersonaSelect" class="custom-select persona-select">
-          <option value="superadmin">👑 State Superadmin &bull; IG Jadeja (Full Access)</option>
-          <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO Scoped)</option>
-          <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC Scoped)</option>
-          <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
-        </select>
-      </div>
-
-      <div class="live-clock" id="liveClock">23:07:00 IST</div>
-
-      <div class="user-pill" id="topUserPill">
-        <i class="fa-solid fa-user-shield text-cyan" style="font-size: 1.1rem;"></i>
-        <div>
-          <strong id="topUserName">IG V. R. Jadeja</strong><br/>
-          <span id="topUserDept" style="font-size: 0.68rem; color: var(--text-muted);">State Superadmin</span>
+    <!-- WORKSPACE WRAPPER -->
+    <div class="app-workspace" id="appWorkspace">
+      <!-- TOP CONTROL ROOM WORKSPACE HEADER -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="workspace-breadcrumb">
+            <span class="breadcrumb-root"><i class="fa-solid fa-satellite-dish text-cyan"></i> Control Grid</span>
+            <span class="breadcrumb-divider">/</span>
+            <span class="breadcrumb-current" id="activeBreadcrumbText">GIS Dashboard</span>
+          </div>
         </div>
-      </div>
 
-      <span class="status-indicator live"><span class="dot"></span> 80,000+ Nodes Ready</span>
-      <button class="export-btn" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Dossier</button>
-    </div>
-  </header>
+        <!-- Header Actions -->
+        <div class="header-actions">
+          <!-- Persona Quick-Switcher (Phase 6 RBAC Deliverable) -->
+          <div class="persona-switcher-wrap">
+            <label class="persona-label"><i class="fa-solid fa-user-shield text-amber"></i> RBAC Active Persona:</label>
+            <select id="topbarPersonaSelect" class="custom-select persona-select">
+              <option value="superadmin">👑 State Superadmin &bull; IG Jadeja (Full Access)</option>
+              <option value="rto_admin">🛡️ Dept Admin &bull; R. K. Vaghela (RTO Scoped)</option>
+              <option value="amc_operator">📹 Operator &bull; Priya Shah (AMC Scoped)</option>
+              <option value="forest_viewer">🌲 Viewer &bull; D. S. Parmar (Forest Scoped &bull; View-Only)</option>
+            </select>
+          </div>
 
-  <!-- NAVIGATION BAR -->
-  <nav class="main-nav-bar">
-    <div class="nav-container">
-      <button class="main-nav-btn active" data-view="view-dashboard"><i class="fa-solid fa-map-location-dot"></i> GIS Dashboard</button>
-      <button class="main-nav-btn" data-view="view-registry"><i class="fa-solid fa-list-check"></i> Camera Registry</button>
-      <button class="main-nav-btn" data-view="view-livewall"><i class="fa-solid fa-table-cells"></i> Live Video Wall</button>
-      <button class="main-nav-btn" data-view="view-analytics"><i class="fa-solid fa-chart-line"></i> Analytics & ANPR</button>
-      <button class="main-nav-btn" data-view="view-alerts"><i class="fa-solid fa-triangle-exclamation"></i> Alerts & Routing <span class="nav-badge" id="activeAlertBadge">2</span></button>
-      <button class="main-nav-btn" data-view="view-integration"><i class="fa-solid fa-database"></i> Cross-DB Gateway</button>
-      <button class="main-nav-btn" data-view="view-admin"><i class="fa-solid fa-sliders"></i> Admin & Audit</button>
-      <button class="main-nav-btn" data-view="view-architecture"><i class="fa-solid fa-network-wired"></i> 7-Layer Architecture</button>
-      <button class="main-nav-btn" data-view="view-api-docs"><i class="fa-solid fa-code"></i> OpenAPI / REST Client</button>
-    </div>
-  </nav>
+          <div class="live-clock" id="liveClock">23:07:00 IST</div>
 
-  <!-- MAIN VIEWPORT CONTAINER -->
-  <main class="main-container">
+          <div class="user-pill" id="topUserPill">
+            <i class="fa-solid fa-user-shield text-cyan" style="font-size: 1.1rem;"></i>
+            <div>
+              <strong id="topUserName">IG V. R. Jadeja</strong><br/>
+              <span id="topUserDept" style="font-size: 0.68rem; color: var(--text-muted);">State Superadmin</span>
+            </div>
+          </div>
+
+          <button class="focus-top-btn" id="topFocusBtn" title="Toggle Focus Mode (Press F)">
+            <i class="fa-solid fa-expand"></i> <span>Focus</span>
+          </button>
+          <button class="export-btn" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Dossier</button>
+        </div>
+      </header>
+
+      <!-- FLOATING EXIT FOCUS PILL (VISIBLE ONLY IN FOCUS MODE) -->
+      <button class="exit-focus-btn" id="exitFocusBtn" title="Exit Focus Mode (Esc or F)">
+        <i class="fa-solid fa-compress text-cyan"></i>
+        <span>Exit Focus Mode</span>
+        <kbd>Esc</kbd>
+      </button>
+
+      <!-- MAIN VIEWPORT CONTAINER -->
+      <main class="main-container">
 
     <!-- ========================================================================= -->
     <!-- VIEW 1: GIS DASHBOARD (HOME) -->
     <!-- ========================================================================= -->
     <section id="view-dashboard" class="app-view active">
-      <!-- Quick Stats Counters -->
+      <!-- Dynamic Telemetry Stats Meter Grid -->
       <div class="stats-counter-grid">
-        <div class="stat-card">
+        <div class="stat-card" id="cardStatCams">
           <div class="stat-icon blue"><i class="fa-solid fa-video"></i></div>
           <div class="stat-data">
-            <div class="stat-number" id="dashTotalCams">80,000+</div>
+            <div class="stat-header-row">
+              <div class="stat-number" id="dashTotalCams">14</div>
+              <span class="stat-badge blue" id="dashCamDeltaBadge"><i class="fa-solid fa-arrow-trend-up"></i> Live Grid</span>
+            </div>
             <div class="stat-title">Integrated Cameras</div>
+            <div class="stat-meter-track">
+              <div class="stat-meter-fill blue" id="dashCamMeterFill" style="width: 100%;"></div>
+            </div>
+            <div class="stat-subtext" id="dashCamSubtext">14 Active Grid Nodes Synced</div>
           </div>
         </div>
-        <div class="stat-card">
+
+        <div class="stat-card" id="cardStatUptime">
           <div class="stat-icon green"><i class="fa-solid fa-signal"></i></div>
           <div class="stat-data">
-            <div class="stat-number text-green" id="dashOnlineRate">98.4%</div>
-            <div class="stat-title">Health Uptime</div>
+            <div class="stat-header-row">
+              <div class="stat-number text-green" id="dashOnlineRate">100%</div>
+              <span class="stat-badge green" id="dashUptimeBadge"><i class="fa-solid fa-circle-check"></i> Optimal</span>
+            </div>
+            <div class="stat-title">Health Uptime (Heartbeat)</div>
+            <div class="stat-meter-track">
+              <div class="stat-meter-fill green" id="dashUptimeMeterFill" style="width: 100%;"></div>
+            </div>
+            <div class="stat-subtext" id="dashUptimeSubtext">14 Online &bull; 0 Offline</div>
           </div>
         </div>
-        <div class="stat-card">
+
+        <div class="stat-card" id="cardStatAnpr">
           <div class="stat-icon amber"><i class="fa-solid fa-car-burst"></i></div>
           <div class="stat-data">
-            <div class="stat-number text-amber" id="dashAnprHits">1,482</div>
+            <div class="stat-header-row">
+              <div class="stat-number text-amber" id="dashAnprHits">1,482</div>
+              <span class="stat-badge amber" id="dashAnprBadge"><i class="fa-solid fa-bolt"></i> YOLOv8</span>
+            </div>
             <div class="stat-title">24h ANPR Detections</div>
+            <div class="stat-meter-track">
+              <div class="stat-meter-fill amber" id="dashAnprMeterFill" style="width: 82%;"></div>
+            </div>
+            <div class="stat-subtext" id="dashAnprSubtext">99.4% OCR Conf &bull; VAHAN Verified</div>
           </div>
         </div>
-        <div class="stat-card">
+
+        <div class="stat-card" id="cardStatAlerts">
           <div class="stat-icon rose"><i class="fa-solid fa-bell"></i></div>
           <div class="stat-data">
-            <div class="stat-number text-rose" id="dashActiveAlerts">2 Active</div>
+            <div class="stat-header-row">
+              <div class="stat-number text-rose" id="dashActiveAlerts">2 Active</div>
+              <span class="stat-badge rose" id="dashAlertsBadge"><i class="fa-solid fa-triangle-exclamation"></i> L1 Event</span>
+            </div>
             <div class="stat-title">Cross-DB Critical Hits</div>
+            <div class="stat-meter-track">
+              <div class="stat-meter-fill rose" id="dashAlertsMeterFill" style="width: 50%;"></div>
+            </div>
+            <div class="stat-subtext" id="dashAlertsSubtext">2 PCR Interceptors En Route</div>
           </div>
         </div>
       </div>
@@ -224,8 +353,8 @@
             </div>
             <!-- Editable Cross-Dept Pursuit Input on GIS Map -->
             <div class="map-pursuit-quick-bar">
-              <label><i class="fa-solid fa-route text-rose"></i> Vehicle Plate No:</label>
-              <input type="text" id="mapPursuitInput" list="pursuitPlateList" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter ANY Vehicle No..." style="width: 190px; font-size: 0.76rem; padding: 0.22rem 0.5rem; text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; color: var(--accent-cyan);">
+              <label><i class="fa-solid fa-route text-rose"></i> Plate:</label>
+              <input type="text" id="mapPursuitInput" list="pursuitPlateList" class="map-pursuit-input" value="GJ-01-AB-1234" placeholder="Enter Vehicle No...">
               <datalist id="pursuitPlateList">
                 <option value="GJ-01-AB-1234">GJ-01-AB-1234 (Stolen Creta)</option>
                 <option value="MP-09-HH-5541">MP-09-HH-5541 (Overweight Truck)</option>
@@ -234,16 +363,16 @@
                 <option value="DL-01-TA-9901">DL-01-TA-9901 (Interstate Transit Alert)</option>
                 <option value="GJ-27-E-4567">GJ-27-E-4567 (Ahmedabad East Alert)</option>
               </datalist>
-              <button class="action-btn primary" id="btnRenderMapPursuit" style="padding: 0.22rem 0.6rem; font-size: 0.72rem; background: linear-gradient(135deg, #f43f5e, #be123c);">
+              <button class="btn-trace-pursuit" id="btnRenderMapPursuit">
                 <i class="fa-solid fa-crosshairs"></i> Trace on Map
               </button>
-              <button class="action-btn" id="btnClearMapPursuit" style="padding: 0.22rem 0.5rem; font-size: 0.72rem; display: none;">
-                <i class="fa-solid fa-xmark"></i> Clear Trail
+              <button class="btn-clear-pursuit" id="btnClearMapPursuit" style="display: none;">
+                <i class="fa-solid fa-xmark"></i> Clear
               </button>
             </div>
 
-            <div class="map-telemetry-badge">
-              <i class="fa-solid fa-bolt"></i> Telemetry Mode: <strong>&lt; 5 Kbps/Node</strong> (Raw Video on Demand)
+            <div class="map-telemetry-badge" title="Bandwidth Discipline: Edge nodes process video locally and send lightweight telemetry metadata (< 5 Kbps). 1080p raw video is pulled only on-demand.">
+              <i class="fa-solid fa-bolt text-cyan"></i> Telemetry Mode: <strong>&lt; 5 Kbps/Node</strong> <span style="opacity: 0.85;">(On-Demand Raw Video)</span>
             </div>
           </div>
 
@@ -1547,7 +1676,9 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <pre id="apiConsoleOutput">// Click 'Execute Query' on any endpoint above to test live JSON contract...</pre>
       </div>
     </section>
-  </main>
+    </main>
+  </div><!-- /.app-workspace -->
+</div><!-- /.app-layout -->
 
   <!-- ONBOARD CAMERA MODAL -->
   <div class="app-modal" id="onboardCameraModal">

@@ -9,6 +9,7 @@ let leafletMarkers = [];
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initPersonaSwitcher();
+  initSidebarAndFocusMode();
   initNavigation();
   initGisDashboard();
   initRegistryView();
@@ -84,6 +85,128 @@ function applyRbacNavigation(allowedViews) {
   });
 }
 
+/* =========================================================================
+   2.1 DYNAMIC REAL-TIME TELEMETRY METERS ENGINE
+   ========================================================================= */
+let lastTotalCams = 14;
+let lastAnprHits = 1482;
+let lastActiveAlerts = 2;
+
+function animateMeterValue(element, start, end, duration = 600, prefix = '', suffix = '') {
+  if (!element) return;
+  const startTime = performance.now();
+  function step(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (end - start) * ease);
+    element.textContent = `${prefix}${current.toLocaleString()}${suffix}`;
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+async function updateDynamicDashboardMeters(bumpCardId = null) {
+  try {
+    const cameras = await window.apiClient.getCameras();
+    const alerts = await window.apiClient.getAlerts();
+    const anprEvents = await window.apiClient.getAnprEvents();
+
+    const currentCamsCount = cameras ? cameras.length : 0;
+    const targetTotalCams = currentCamsCount;
+
+    const totalAlertsActive = alerts ? alerts.filter(a => a.status === 'active' || a.status === 'dispatched').length : 0;
+    const targetAnprHits = (anprEvents ? anprEvents.length : 0) + (currentCamsCount * 105);
+
+    const onlineCams = cameras ? cameras.filter(c => c.status === 'online').length : 0;
+    const offlineCams = currentCamsCount - onlineCams;
+    const uptimePct = currentCamsCount > 0 ? ((onlineCams / currentCamsCount) * 100).toFixed(1) : '100.0';
+
+    // Elements
+    const totalCamsEl = document.getElementById('dashTotalCams');
+    const onlineRateEl = document.getElementById('dashOnlineRate');
+    const anprHitsEl = document.getElementById('dashAnprHits');
+    const activeAlertsEl = document.getElementById('dashActiveAlerts');
+
+    const camSubtextEl = document.getElementById('dashCamSubtext');
+    const uptimeSubtextEl = document.getElementById('dashUptimeSubtext');
+    const anprSubtextEl = document.getElementById('dashAnprSubtext');
+    const alertsSubtextEl = document.getElementById('dashAlertsSubtext');
+
+    const camMeterFill = document.getElementById('dashCamMeterFill');
+    const uptimeMeterFill = document.getElementById('dashUptimeMeterFill');
+    const anprMeterFill = document.getElementById('dashAnprMeterFill');
+    const alertsMeterFill = document.getElementById('dashAlertsMeterFill');
+
+    // Animate numbers (smooth count-up or count-down)
+    if (totalCamsEl) {
+      animateMeterValue(totalCamsEl, lastTotalCams, targetTotalCams, 600, '', '');
+      lastTotalCams = targetTotalCams;
+    }
+
+    if (onlineRateEl) {
+      onlineRateEl.textContent = `${uptimePct}%`;
+    }
+
+    if (anprHitsEl) {
+      animateMeterValue(anprHitsEl, lastAnprHits, targetAnprHits, 600);
+      lastAnprHits = targetAnprHits;
+    }
+
+    if (activeAlertsEl) {
+      activeAlertsEl.textContent = `${totalAlertsActive} Active`;
+      lastActiveAlerts = totalAlertsActive;
+    }
+
+    // Subtexts and meter tracks
+    if (camSubtextEl) {
+      camSubtextEl.innerHTML = `<strong>${currentCamsCount}</strong> Active Grid Nodes Synced`;
+    }
+    if (camMeterFill) {
+      const camWidth = Math.min(100, Math.max(10, currentCamsCount * 7));
+      camMeterFill.style.width = `${camWidth}%`;
+    }
+
+    if (uptimeSubtextEl) {
+      uptimeSubtextEl.innerHTML = `<strong>${onlineCams}</strong> Online &bull; ${offlineCams} Offline`;
+    }
+    if (uptimeMeterFill) {
+      uptimeMeterFill.style.width = `${uptimePct}%`;
+    }
+
+    if (anprSubtextEl) {
+      anprSubtextEl.innerHTML = `<strong>99.4%</strong> OCR Conf &bull; VAHAN Verified`;
+    }
+    if (anprMeterFill) {
+      const anprWidth = Math.min(100, Math.max(15, (targetAnprHits / 2000) * 100));
+      anprMeterFill.style.width = `${anprWidth}%`;
+    }
+
+    if (alertsSubtextEl) {
+      alertsSubtextEl.innerHTML = `<strong>${totalAlertsActive}</strong> PCR Interceptors En Route`;
+    }
+    if (alertsMeterFill) {
+      const alertWidth = Math.min(100, Math.max(10, totalAlertsActive * 30));
+      alertsMeterFill.style.width = `${alertWidth}%`;
+    }
+
+    // Trigger pulse bump animation on target card
+    if (bumpCardId) {
+      const card = document.getElementById(bumpCardId);
+      if (card) {
+        card.classList.remove('meter-bump');
+        void card.offsetWidth; // trigger reflow
+        card.classList.add('meter-bump');
+        setTimeout(() => card.classList.remove('meter-bump'), 800);
+      }
+    }
+  } catch (err) {
+    console.error('Error updating telemetry meters:', err);
+  }
+}
+
 async function refreshAllData() {
   await renderGisNodes();
   await renderRegistryTable();
@@ -91,18 +214,105 @@ async function refreshAllData() {
   await renderAnalyticsTable();
   await renderAlerts();
   await renderAdminView();
+  await updateDynamicDashboardMeters();
 }
 
 /* =========================================================================
-   3. VIEW NAVIGATION
+   3. SIDEBAR & FOCUS MODE CONTROLLER
+   ========================================================================= */
+function initSidebarAndFocusMode() {
+  const sidebar = document.getElementById('appSidebar');
+  const collapseBtn = document.getElementById('sidebarCollapseBtn');
+  const mobileToggleBtn = document.getElementById('mobileSidebarToggle');
+  const sidebarFocusBtn = document.getElementById('sidebarFocusBtn');
+  const topFocusBtn = document.getElementById('topFocusBtn');
+  const exitFocusBtn = document.getElementById('exitFocusBtn');
+
+  // Load persisted pin state if user locked it open
+  const isPinned = localStorage.getItem('nirikshan_sidebar_pinned') === 'true';
+  if (isPinned && sidebar) {
+    sidebar.classList.add('pinned');
+  }
+
+  function toggleSidebarPin() {
+    if (!sidebar) return;
+    sidebar.classList.toggle('pinned');
+    const pinned = sidebar.classList.contains('pinned');
+    localStorage.setItem('nirikshan_sidebar_pinned', pinned);
+    if (leafletMapInstance) {
+      setTimeout(() => leafletMapInstance.invalidateSize(), 300);
+    }
+  }
+
+  if (collapseBtn) {
+    collapseBtn.addEventListener('click', toggleSidebarPin);
+  }
+
+  if (mobileToggleBtn && sidebar) {
+    mobileToggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('mobile-open');
+    });
+  }
+
+  function toggleFocusMode() {
+    document.body.classList.toggle('focus-mode');
+    if (leafletMapInstance) {
+      setTimeout(() => leafletMapInstance.invalidateSize(), 300);
+    }
+  }
+
+  function exitFocusMode() {
+    document.body.classList.remove('focus-mode');
+    if (leafletMapInstance) {
+      setTimeout(() => leafletMapInstance.invalidateSize(), 300);
+    }
+  }
+
+  if (sidebarFocusBtn) sidebarFocusBtn.addEventListener('click', toggleFocusMode);
+  if (topFocusBtn) topFocusBtn.addEventListener('click', toggleFocusMode);
+  if (exitFocusBtn) exitFocusBtn.addEventListener('click', exitFocusMode);
+
+  // Global Keyboard Shortcuts (F = focus mode, [ or Ctrl+B = toggle collapse, 1-9 = jump to view, Esc = exit focus)
+  document.addEventListener('keydown', (e) => {
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+
+    if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) {
+      exitFocusMode();
+      return;
+    }
+
+    if (isTyping) return;
+
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleFocusMode();
+    } else if (e.key === '[' || (e.ctrlKey && e.key.toLowerCase() === 'b')) {
+      e.preventDefault();
+      toggleSidebarCollapse();
+    } else if (e.key >= '1' && e.key <= '9') {
+      const idx = parseInt(e.key, 10) - 1;
+      const visibleNavBtns = Array.from(document.querySelectorAll('.main-nav-btn')).filter(btn => btn.style.display !== 'none');
+      if (visibleNavBtns[idx]) {
+        visibleNavBtns[idx].click();
+      }
+    }
+  });
+}
+
+/* =========================================================================
+   4. VIEW NAVIGATION
    ========================================================================= */
 function initNavigation() {
   const navBtns = document.querySelectorAll('.main-nav-btn');
   const views = document.querySelectorAll('.app-view');
+  const breadcrumbText = document.getElementById('activeBreadcrumbText');
 
   navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const viewId = btn.getAttribute('data-view');
+      const title = btn.getAttribute('data-title') || btn.querySelector('.btn-text')?.textContent || btn.textContent.trim();
+
       navBtns.forEach(b => b.classList.remove('active'));
       views.forEach(v => v.classList.remove('active'));
 
@@ -110,18 +320,28 @@ function initNavigation() {
       const targetView = document.getElementById(viewId);
       if (targetView) {
         targetView.classList.add('active');
-        
-        // If GIS Dashboard is opened, trigger Leaflet size recalculation
-        if (viewId === 'view-dashboard' && leafletMapInstance) {
-          setTimeout(() => leafletMapInstance.invalidateSize(), 150);
-        }
+      }
+
+      if (breadcrumbText) {
+        breadcrumbText.textContent = title;
+      }
+
+      // Close mobile sidebar if open
+      const sidebar = document.getElementById('appSidebar');
+      if (sidebar && sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+      }
+
+      // If GIS Dashboard is opened or views change, trigger Leaflet size recalculation
+      if (leafletMapInstance) {
+        setTimeout(() => leafletMapInstance.invalidateSize(), 200);
       }
     });
   });
 }
 
-/*/* =========================================================================
-   4. GIS DASHBOARD & LEAFLET MAP (MULTI-DEPT SPATIAL MATRIX)
+/* =========================================================================
+   5. GIS DASHBOARD & LEAFLET MAP (MULTI-DEPT SPATIAL MATRIX)
    ========================================================================= */
 let mapTrajectoryLayers = [];
 
@@ -277,8 +497,8 @@ async function initGisDashboard() {
       propModal.classList.remove('open');
       clearFovRangeFromMap();
       alert(`CAMERA INSTALLATION PROPOSAL AUTHORIZED!\n\nProposal Ref: ${res.proposal.proposal_id}\nNode Name: ${res.proposal.proposed_name}\nLocation: Lat ${res.proposal.lat}, Lng ${res.proposal.lng}\nHardware: ${res.proposal.hardware_recommended}\nBudget: ₹${res.proposal.estimated_budget_inr.toLocaleString()} (Queued in State Pipeline).`);
-      await renderGisNodes();
-      await renderRegistryTable();
+      await refreshAllData();
+      await updateDynamicDashboardMeters('cardStatCams');
     });
   }
 
@@ -288,7 +508,17 @@ async function initGisDashboard() {
   const ackTacBtn = document.getElementById('btnAckTacticalModal');
 
   if (closeTacBtn && modalTac) closeTacBtn.addEventListener('click', () => modalTac.classList.remove('open'));
-  if (ackTacBtn && modalTac) ackTacBtn.addEventListener('click', () => modalTac.classList.remove('open'));
+  if (ackTacBtn && modalTac) {
+    ackTacBtn.addEventListener('click', () => {
+      modalTac.classList.remove('open');
+      // Seamlessly navigate to Live Video Wall
+      const liveWallBtn = document.querySelector('.main-nav-btn[data-view="view-livewall"]');
+      if (liveWallBtn) {
+        liveWallBtn.click();
+      }
+      updateDynamicDashboardMeters('cardStatAlerts');
+    });
+  }
 
   // Initial load
   await updateMap();
@@ -743,13 +973,10 @@ window.openCameraProposalModal = function() {
 window.pullOnDemandStream = async function(camId) {
   const session = await window.apiClient.startStreamingSession(camId);
   // Switch to Live Wall view
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
-
-  const liveWallNav = document.querySelector('[data-view="view-livewall"]');
-  const liveWallView = document.getElementById('view-livewall');
-  if (liveWallNav) liveWallNav.classList.add('active');
-  if (liveWallView) liveWallView.classList.add('active');
+  const liveWallNav = document.querySelector('.main-nav-btn[data-view="view-livewall"]');
+  if (liveWallNav) {
+    liveWallNav.click();
+  }
 
   await renderLiveWall();
   alert(`On-Demand WebRTC Relay Established!\nSession ID: ${session.session_id}\nCamera: ${session.camera_id} (${session.camera_name})\nBandwidth: ${session.bitrate_mbps} Mbps (Auto-stops in 5 mins).`);
@@ -834,15 +1061,31 @@ async function renderRegistryTable() {
       <td>${cam.retention_days} Days Edge Buffer</td>
       <td><span style="font-family: var(--font-mono);">${cam.resolution}</span></td>
       <td>
-        <button class="action-btn" onclick="event.stopPropagation(); openCameraDetail('${cam.id}')" style="padding: 0.25rem 0.6rem; font-size: 0.72rem;">
-          <i class="fa-solid fa-eye"></i> Details
-        </button>
+        <div style="display: flex; gap: 0.35rem;">
+          <button class="action-btn" onclick="event.stopPropagation(); openCameraDetail('${cam.id}')" title="Inspect Camera Details & FOV" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;">
+            <i class="fa-solid fa-eye"></i> Details
+          </button>
+          <button class="action-btn" onclick="event.stopPropagation(); window.deleteCameraById('${cam.id}')" title="Decommission & Remove Node" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; background: rgba(244,63,94,0.15); color: var(--accent-rose); border-color: rgba(244,63,94,0.35);">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
       </td>
     `;
     tr.addEventListener('click', () => openCameraDetail(cam.id));
     tbody.appendChild(tr);
   });
 }
+
+// Global Camera Decommission & Dynamic Count Decrement
+window.deleteCameraById = async function(camId) {
+  const cam = await window.apiClient.getCameraById(camId);
+  const name = cam ? cam.name : camId;
+  if (confirm(`DECOMMISSION CAMERA:\n\nAre you sure you want to decommission and remove "${name}" (${camId}) from the statewide live grid?\n\nThis will immediately decrease the live telemetry counter.`)) {
+    await window.apiClient.deleteCamera(camId);
+    await refreshAllData();
+    await updateDynamicDashboardMeters('cardStatCams');
+  }
+};
 
 // Open Camera Detail Slide-Over Drawer
 window.openCameraDetail = async function(camId) {
@@ -1132,7 +1375,227 @@ function startSessionInactivityTimer() {
   }, 1000);
 }
 
+// Active live stream canvas animation frames and webcam streams
+const activeStreamAnimFrames = new Map();
+const activeWebcamStreams = new Map();
+
+function cleanupLiveStreamCanvases() {
+  activeStreamAnimFrames.forEach((reqId) => cancelAnimationFrame(reqId));
+  activeStreamAnimFrames.clear();
+}
+
+function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  canvas.width = 640;
+  canvas.height = 360;
+
+  // Initialize realistic vehicles on perspective road
+  const vehicles = [
+    { x: 220, y: 120, speed: 1.4, width: 38, height: 58, color: '#f8fafc', plate: 'GJ-01-AB-1234', isTarget: hasAnprHit, label: 'SUV' },
+    { x: 340, y: 40, speed: 1.9, width: 34, height: 50, color: '#38bdf8', plate: 'GJ-01-EF-8812', isTarget: false, label: 'SEDAN' },
+    { x: 450, y: 200, speed: 1.1, width: 44, height: 82, color: '#f59e0b', plate: 'MP-09-HH-5541', isTarget: false, label: 'TRUCK' },
+    { x: 280, y: 270, speed: 1.6, width: 32, height: 46, color: '#e11d48', plate: 'GJ-27-K-4401', isTarget: false, label: 'HATCH' }
+  ];
+
+  let laneOffset = 0;
+
+  function renderFrame() {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // 1. Sky & Ambient Night Horizon
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.4);
+    skyGrad.addColorStop(0, '#040711');
+    skyGrad.addColorStop(1, '#0b1324');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, h * 0.4);
+
+    // City & Infrastructure silhouette
+    ctx.fillStyle = '#070e1b';
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.4);
+    ctx.lineTo(w * 0.15, h * 0.35);
+    ctx.lineTo(w * 0.35, h * 0.38);
+    ctx.lineTo(w * 0.6, h * 0.33);
+    ctx.lineTo(w * 0.82, h * 0.37);
+    ctx.lineTo(w, h * 0.34);
+    ctx.lineTo(w, h * 0.4);
+    ctx.closePath();
+    ctx.fill();
+
+    // 2. Asphalt Road Surface
+    const roadGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
+    roadGrad.addColorStop(0, '#101726');
+    roadGrad.addColorStop(1, '#050912');
+    ctx.fillStyle = roadGrad;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.25, h * 0.4);
+    ctx.lineTo(w * 0.75, h * 0.4);
+    ctx.lineTo(w * 0.96, h);
+    ctx.lineTo(w * 0.04, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // Solid Edge Markings (Yellow)
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.25, h * 0.4);
+    ctx.lineTo(w * 0.04, h);
+    ctx.moveTo(w * 0.75, h * 0.4);
+    ctx.lineTo(w * 0.96, h);
+    ctx.stroke();
+
+    // Dashed White Lane Dividers
+    laneOffset = (laneOffset + 3.0) % 40;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([14, 18]);
+    ctx.lineDashOffset = -laneOffset;
+
+    // Center divider
+    ctx.beginPath();
+    ctx.moveTo(w * 0.5, h * 0.4);
+    ctx.lineTo(w * 0.5, h);
+    // Left lane divider
+    ctx.moveTo(w * 0.375, h * 0.4);
+    ctx.lineTo(w * 0.27, h);
+    // Right lane divider
+    ctx.moveTo(w * 0.625, h * 0.4);
+    ctx.lineTo(w * 0.73, h);
+    ctx.stroke();
+    ctx.setLineDash([]); // reset dash
+
+    // 3. Vehicles with Headlights and Dynamic Bounding Boxes
+    vehicles.forEach(v => {
+      v.y += v.speed;
+      if (v.y > h + 50) {
+        v.y = h * 0.4 - 30;
+        v.speed = 1.2 + Math.random() * 1.0;
+      }
+
+      const progress = Math.max(0.1, (v.y - h * 0.4) / (h * 0.6));
+      const scale = 0.4 + progress * 0.8;
+      const curW = v.width * scale;
+      const curH = v.height * scale;
+      const curX = v.x - (curW / 2);
+      const curY = v.y;
+
+      // Headlight Beam Cone illumination
+      const beamGrad = ctx.createRadialGradient(curX + curW / 2, curY + curH + 30 * scale, 5, curX + curW / 2, curY + curH + 50 * scale, curW * 2);
+      beamGrad.addColorStop(0, 'rgba(255, 255, 220, 0.24)');
+      beamGrad.addColorStop(1, 'rgba(255, 255, 220, 0)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(curX, curY + curH);
+      ctx.lineTo(curX - curW * 0.8, curY + curH + 85 * scale);
+      ctx.lineTo(curX + curW * 1.8, curY + curH + 85 * scale);
+      ctx.lineTo(curX + curW, curY + curH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Vehicle Body
+      ctx.fillStyle = v.color;
+      ctx.beginPath();
+      ctx.roundRect(curX, curY, curW, curH, 4 * scale);
+      ctx.fill();
+
+      // Glass Windows
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(curX + 2 * scale, curY + 7 * scale, curW - 4 * scale, curH * 0.22);
+      ctx.fillRect(curX + 2 * scale, curY + curH * 0.65, curW - 4 * scale, curH * 0.18);
+
+      // Headlights (White) / Taillights (Red)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(curX + 2, curY + curH - 3, 4 * scale, 3 * scale);
+      ctx.fillRect(curX + curW - 4 * scale - 2, curY + curH - 3, 4 * scale, 3 * scale);
+
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(curX + 2, curY, 4 * scale, 3 * scale);
+      ctx.fillRect(curX + curW - 4 * scale - 2, curY, 4 * scale, 3 * scale);
+
+      // AI Detection Bounding Box & License Plate Tag
+      if (curY > h * 0.38 && curY < h * 0.92) {
+        const isAlert = v.isTarget;
+        ctx.strokeStyle = isAlert ? '#f43f5e' : '#10b981';
+        ctx.lineWidth = isAlert ? 2 : 1.5;
+        ctx.strokeRect(curX - 4, curY - 4, curW + 8, curH + 8);
+
+        // Corner Brackets
+        ctx.fillStyle = isAlert ? '#f43f5e' : '#10b981';
+        const bl = 5;
+        ctx.fillRect(curX - 5, curY - 5, bl, 2);
+        ctx.fillRect(curX - 5, curY - 5, 2, bl);
+        ctx.fillRect(curX + curW + 5 - bl, curY - 5, bl, 2);
+        ctx.fillRect(curX + curW + 3, curY - 5, 2, bl);
+
+        // AI Tag Pill above vehicle
+        ctx.fillStyle = isAlert ? 'rgba(244, 63, 94, 0.92)' : 'rgba(16, 185, 129, 0.88)';
+        ctx.fillRect(curX - 4, curY - 17, Math.max(78, curW + 8), 14);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 8px "JetBrains Mono", monospace';
+        ctx.fillText(isAlert ? `[TARGET] ${v.plate}` : `${v.plate}`, curX - 1, curY - 7);
+      }
+    });
+
+    // 4. Tactical CCTV Reticle in Center
+    ctx.strokeStyle = 'rgba(0, 242, 254, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(w / 2 - 14, h / 2);
+    ctx.lineTo(w / 2 + 14, h / 2);
+    ctx.moveTo(w / 2, h / 2 - 14);
+    ctx.lineTo(w / 2, h / 2 + 14);
+    ctx.stroke();
+
+    const animId = requestAnimationFrame(renderFrame);
+    activeStreamAnimFrames.set(canvasId, animId);
+  }
+
+  renderFrame();
+}
+
+window.toggleWebcamFeed = async function(camId) {
+  const cell = document.querySelector(`.wall-feed-cell[data-cam-id="${camId}"]`);
+  if (!cell) return;
+
+  if (activeWebcamStreams.has(camId)) {
+    // Stop Webcam
+    const stream = activeWebcamStreams.get(camId);
+    stream.getTracks().forEach(t => t.stop());
+    activeWebcamStreams.delete(camId);
+    await renderLiveWall();
+  } else {
+    // Request Webcam
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 } });
+      activeWebcamStreams.set(camId, stream);
+      
+      const canvas = document.getElementById(`canvas_${camId}`);
+      if (canvas) canvas.style.display = 'none';
+
+      let video = cell.querySelector('.live-stream-video');
+      if (!video) {
+        video = document.createElement('video');
+        video.className = 'live-stream-video';
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true;
+        cell.prepend(video);
+      }
+      video.srcObject = stream;
+    } catch (err) {
+      alert(`Webcam access: ${err.message || 'Camera permission not granted.'}\nRunning high-precision AI traffic simulation stream.`);
+    }
+  }
+};
+
 async function renderLiveWall() {
+  cleanupLiveStreamCanvases();
   const wallGrid = document.getElementById('videoWallGrid');
   const activeCountEl = document.getElementById('liveWallActiveSessions');
   const wanLoadEl = document.getElementById('liveWallWanLoad');
@@ -1160,19 +1623,22 @@ async function renderLiveWall() {
 
   displayCams.forEach((cam, idx) => {
     const isSessionActive = sessionData.sessions.some(s => s.camera_id === cam.id);
+    const hasAnprHit = idx === 0 && isSessionActive;
+    const isFaceHit = idx === 1 && isSessionActive;
     const cell = document.createElement('div');
     cell.className = `wall-feed-cell ${!isSessionActive ? 'idle-mode' : ''}`;
+    cell.setAttribute('data-cam-id', cam.id);
 
     let overlayHtml = '';
-    if (idx === 0 && isSessionActive) {
-      overlayHtml = '<div class="anpr-overlay-tag">ANPR Hit: GJ-01-AB-1234 (VAHAN Alert)</div>';
-    } else if (idx === 1 && isSessionActive) {
-      overlayHtml = '<div class="anpr-overlay-tag" style="border-color: var(--accent-rose);">Face Match: Vikram K. (eGujCop Alert)</div>';
+    if (hasAnprHit) {
+      overlayHtml = '<div class="anpr-overlay-tag"><i class="fa-solid fa-car-burst text-rose"></i> ANPR Hit: GJ-01-AB-1234 (VAHAN Stolen)</div>';
+    } else if (isFaceHit) {
+      overlayHtml = '<div class="anpr-overlay-tag" style="border-color: var(--accent-rose);"><i class="fa-solid fa-user-shield text-rose"></i> Face Match: Vikram K. (CCTNS Flag)</div>';
     }
 
     cell.innerHTML = `
       <div class="wall-feed-top">
-        <span class="feed-title-badge" title="${cam.name}">${cam.id} &bull; ${cam.name.slice(0, 22)}...</span>
+        <span class="feed-title-badge" title="${cam.name}"><i class="fa-solid fa-video text-cyan"></i> ${cam.id} &bull; ${cam.name.slice(0, 22)}...</span>
         <span class="feed-vendor-chip">${cam.vendor.split(' ')[0]} ${cam.resolution}</span>
         ${isSessionActive 
           ? `<span class="feed-live-indicator"><span class="dot-sm" style="background: var(--accent-rose);"></span> LIVE RELAY</span>`
@@ -1180,28 +1646,33 @@ async function renderLiveWall() {
         }
       </div>
 
-      <div class="feed-center-sim">
-        ${isSessionActive 
-          ? `
-            <i class="fa-solid fa-satellite-dish feed-stream-icon"></i>
-            <span class="feed-stream-text">Active On-Demand WebRTC Relay</span>
-            <span class="feed-stream-sub">${cam.vendor} &bull; 25 FPS &bull; ${cam.resolution}</span>
-            ${overlayHtml}
-          `
-          : `
+      ${isSessionActive 
+        ? `
+          <canvas class="live-stream-canvas" id="canvas_${cam.id}"></canvas>
+          <div class="stream-watermark-overlay" id="wm_${cam.id}">
+            <i class="fa-solid fa-crosshairs text-cyan"></i>
+            <span>${cam.id} &bull; 25.0 FPS</span>
+          </div>
+          ${overlayHtml}
+        `
+        : `
+          <div class="feed-center-sim" style="height: 100%;">
             <i class="fa-solid fa-video-slash" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 0.4rem;"></i>
             <span style="font-size: 0.8rem; color: var(--text-secondary);">Stream Idle &bull; Bandwidth Preserved</span>
             <button class="action-btn primary" onclick="startCellSession('${cam.id}')" style="margin-top: 0.5rem; font-size: 0.72rem; padding: 0.25rem 0.6rem;">
               <i class="fa-solid fa-play"></i> Start On-Demand Pull
             </button>
-          `
-        }
-      </div>
+          </div>
+        `
+      }
 
       <div class="wall-feed-bottom">
         <div class="feed-controls-group">
           ${isSessionActive ? `
-            <button class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.4);">
+            <button class="feed-ctrl-btn" onclick="toggleWebcamFeed('${cam.id}')" title="Toggle Physical WebCam Stream" style="color: var(--accent-cyan);">
+              <i class="fa-solid fa-camera-rotate"></i> WebCam
+            </button>
+            <button class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Optical Range & Blind-Spots">
               <i class="fa-solid fa-satellite-dish"></i> Range
             </button>
             <button class="feed-ctrl-btn" onclick="captureFeedSnapshot('${cam.id}', '${cam.name}')" title="Capture Forensic Snapshot">
@@ -1222,7 +1693,15 @@ async function renderLiveWall() {
         <span class="feed-timer-chip">${isSessionActive ? 'Auto-Stop: 05:00' : 'Idle'}</span>
       </div>
     `;
+
     wallGrid.appendChild(cell);
+
+    // Initialize the live canvas stream if session is active
+    if (isSessionActive) {
+      setTimeout(() => {
+        startCanvasLiveStream(`canvas_${cam.id}`, cam, hasAnprHit, isFaceHit);
+      }, 50);
+    }
   });
 }
 
@@ -1714,6 +2193,7 @@ window.simulateAnprStolenVehicleIntercept = async function() {
 
   await renderAlerts();
   await renderAnalyticsTable();
+  await updateDynamicDashboardMeters('cardStatAlerts');
 };
 
 /* =========================================================================
@@ -2074,6 +2554,7 @@ function initModalHandlers() {
       modal.classList.remove('open');
       form.reset();
       await refreshAllData();
+      await updateDynamicDashboardMeters('cardStatCams');
       alert(`Camera ${newCam.name} onboarded successfully in ${newCam.district} with 15-day Edge Buffer!`);
     });
   }
@@ -2151,6 +2632,7 @@ function initAdapterWizard() {
         const res = await window.apiClient.onboardViaAdapter(payload);
         wizardModal.classList.remove('open');
         await refreshAllData();
+        await updateDynamicDashboardMeters('cardStatCams');
         alert(`Edge Adapter Integration Complete!\nCamera "${res.camera.name}" (${selectedProtocol.toUpperCase()}) registered to GIS Master Registry.\nZero hardware replacement CAPEX incurred.`);
       }
     });

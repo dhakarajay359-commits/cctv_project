@@ -1244,6 +1244,16 @@ class NirikshanApiClient {
     return newCam;
   }
 
+  async deleteCamera(id) {
+    const idx = this.cameras.findIndex(c => c.id === id);
+    if (idx !== -1) {
+      const removed = this.cameras.splice(idx, 1)[0];
+      this.logAudit('CAMERA_DECOMMISSIONED_DELETED', `${removed.id} (${removed.name})`);
+      return { status: 'success', deleted: removed };
+    }
+    return { status: 'error', message: 'Camera not found' };
+  }
+
   async bulkImportCameras(csvRows) {
     const imported = [];
     csvRows.forEach(row => {
