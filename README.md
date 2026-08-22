@@ -5,6 +5,8 @@
 [![Docker](https://img.shields.io/badge/Docker-Microservices%20Ready-2563eb?style=for-the-badge)](./docker-compose.yml)
 [![DPDP Act](https://img.shields.io/badge/DPDP%20Act%202023-Consent%20Compliant-a855f7?style=for-the-badge)](./src/api/client.js)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/dhakarajay359-commits/cctv_project)
+
 **Nirikshan** is a modular, API-first unified CCTV intelligence and surveillance analytics platform designed for state governments to integrate heterogeneous camera infrastructure across **26+ sovereign departments** (Police, RTO, Municipal Corporations, Civil Supplies, Forest & Wildlife, and Private Commercial Opt-In Feeds).
 
 ---
@@ -67,11 +69,20 @@ docker-compose up -d
 docker-compose ps
 ```
 
+### Option 3: 1-Click Render Blueprint Cloud Deployment
+1. Connect your GitHub repository to [Render.com](https://render.com).
+2. Go to **Blueprints** -> **New Blueprint Instance**.
+3. Select your `cctv_project` repository.
+4. Render will automatically detect [`render.yaml`](./render.yaml) and deploy the dashboard web service with automatic SSL, zero downtime deploys, and health checks (`/healthz`).
+
 ---
 
 ## 📁 Repository Structure
 
 ```
+├── render.yaml           # Render.com Blueprint Infrastructure as Code Specification
+├── server.js             # Production Node.js Web Server with /healthz endpoint
+├── package.json          # Node runtime engine configuration & scripts
 ├── index.html            # Master Command Dashboard Application UI
 ├── style.css             # High-Density 24/7 Glassmorphic Dark Design System
 ├── app.js                # UI Controller, GIS Leaflet Matrix & Event Orchestration
