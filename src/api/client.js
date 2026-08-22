@@ -1542,6 +1542,10 @@ class NirikshanApiClient {
     return result;
   }
 
+  async getAnprEvents(filters = {}) {
+    return this.getEvents({ ...filters, type: 'anpr' });
+  }
+
   async getEventById(id) {
     const evt = this.events.find(e => e.id === id);
     if (evt) {

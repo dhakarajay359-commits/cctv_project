@@ -336,7 +336,14 @@
             <label>Quick Node Search:</label>
             <div class="search-input-wrap">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="gisSearchInput" class="custom-input" placeholder="Search junction, IP, or camera...">
+              <input type="text" id="gisSearchInput" class="custom-input" placeholder="Search junction, IP, or camera..." style="padding-right: 2.2rem;">
+              <button type="button" class="voice-search-btn" id="gisVoiceSearchBtn" title="Voice Search / AI Commands (Click to Speak)">
+                <i class="fa-solid fa-microphone"></i>
+              </button>
+            </div>
+            <div class="voice-status-pill" id="gisVoiceStatusPill" style="display: none;">
+              <span class="voice-pulse-dot"></span>
+              <span class="voice-transcript-text" id="gisVoiceTranscriptText">Listening for command...</span>
             </div>
           </div>
 
@@ -705,6 +712,9 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <p>Session-based on-demand video relays. Streams only start when requested by an operator and auto-stop on inactivity to enforce strict WAN bandwidth discipline.</p>
         </div>
         <div class="wall-header-actions">
+          <button class="action-btn" id="btnPopoutVideoWall" title="Open Multi-Monitor Detached Wall Window" style="background: rgba(168, 85, 247, 0.15); border-color: var(--accent-purple); color: #c084fc; font-size: 0.76rem; padding: 0.35rem 0.75rem;">
+            <i class="fa-solid fa-up-right-from-square"></i> Pop-Out 4K Wall
+          </button>
           <button class="action-btn" id="btnToggleLiveFovAnalyzer" style="background: rgba(0, 242, 254, 0.12); border-color: var(--accent-cyan); color: var(--accent-cyan); font-size: 0.76rem; padding: 0.35rem 0.75rem;">
             <i class="fa-solid fa-satellite-dish"></i> Check Range & Blind-Spots
           </button>

@@ -112,7 +112,9 @@ async function updateDynamicDashboardMeters(bumpCardId = null) {
   try {
     const cameras = await window.apiClient.getCameras();
     const alerts = await window.apiClient.getAlerts();
-    const anprEvents = await window.apiClient.getAnprEvents();
+    const anprEvents = window.apiClient.getAnprEvents 
+      ? await window.apiClient.getAnprEvents() 
+      : (window.apiClient.getEvents ? await window.apiClient.getEvents({ type: 'anpr' }) : []);
 
     const currentCamsCount = cameras ? cameras.length : 0;
     const targetTotalCams = currentCamsCount;
@@ -257,6 +259,7 @@ function initSidebarAndFocusMode() {
   function toggleFocusMode() {
     document.body.classList.toggle('focus-mode');
     if (leafletMapInstance) {
+      setTimeout(() => leafletMapInstance.invalidateSize(), 50);
       setTimeout(() => leafletMapInstance.invalidateSize(), 300);
     }
   }
@@ -264,6 +267,7 @@ function initSidebarAndFocusMode() {
   function exitFocusMode() {
     document.body.classList.remove('focus-mode');
     if (leafletMapInstance) {
+      setTimeout(() => leafletMapInstance.invalidateSize(), 50);
       setTimeout(() => leafletMapInstance.invalidateSize(), 300);
     }
   }
@@ -520,6 +524,12 @@ async function initGisDashboard() {
     });
   }
 
+  // AI Voice Command Assistant Integration (Mic HUD in GIS Search Bar)
+  initGisVoiceAssistant(updateMap);
+
+  // Dynamic Supercluster Zoom Switch Listener
+  leafletMapInstance.on('zoomend', () => updateMap());
+
   // Initial load
   await updateMap();
 }
@@ -728,8 +738,162 @@ window.dispatchPcrFromMap = async function(plate, loc) {
   await triggerTacticalRoadblockDispatch(plate, loc);
 };
 
+// 5.1 AI VOICE COMMAND ASSISTANT (INTEGRATED IN GIS SEARCH BAR)
+function initGisVoiceAssistant(updateMapCallback) {
+  const voiceBtn = document.getElementById('gisVoiceSearchBtn');
+  const searchInput = document.getElementById('gisSearchInput');
+  const statusPill = document.getElementById('gisVoiceStatusPill');
+  const transcriptText = document.getElementById('gisVoiceTranscriptText');
+  const zoneSelect = document.getElementById('gisZoneSelect');
+  const deptSelect = document.getElementById('gisDeptSelect');
+
+  if (!voiceBtn) return;
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isListening = false;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-IN';
+
+    recognition.onstart = () => {
+      isListening = true;
+      voiceBtn.classList.add('listening');
+      if (statusPill) {
+        statusPill.style.display = 'inline-flex';
+        statusPill.classList.remove('success');
+        transcriptText.textContent = 'Listening for voice command...';
+      }
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0])
+        .map(result => result.transcript)
+        .join('');
+
+      if (transcriptText) transcriptText.textContent = `"${transcript}"`;
+      if (event.results[0].isFinal) {
+        processVoiceCommand(transcript);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      isListening = false;
+      voiceBtn.classList.remove('listening');
+      if (statusPill) {
+        transcriptText.textContent = 'Voice error / mic not available.';
+        setTimeout(() => { statusPill.style.display = 'none'; }, 2500);
+      }
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      voiceBtn.classList.remove('listening');
+      setTimeout(() => {
+        if (statusPill && !statusPill.classList.contains('success')) {
+          statusPill.style.display = 'none';
+        }
+      }, 2500);
+    };
+  }
+
+  function processVoiceCommand(rawCmd) {
+    const cmd = (rawCmd || '').trim().toLowerCase();
+    if (!cmd) return;
+
+    if (statusPill) {
+      statusPill.classList.add('success');
+      transcriptText.textContent = `✓ Command: "${rawCmd}"`;
+      setTimeout(() => { statusPill.style.display = 'none'; }, 3000);
+    }
+
+    // 1. Vehicle Pursuit Command ("track GJ-01-AB-1234", "chase MP-09", etc.)
+    if (cmd.includes('track') || cmd.includes('chase') || cmd.includes('pursuit') || cmd.includes('plate') || cmd.includes('vehicle')) {
+      const words = rawCmd.split(/\s+/);
+      const plateCandidate = words.find(w => w.includes('-') || w.match(/^[A-Z0-9]{4,12}$/i)) || 'GJ-01-AB-1234';
+      const mapPursuitInput = document.getElementById('mapPursuitInput');
+      if (mapPursuitInput) mapPursuitInput.value = plateCandidate.toUpperCase();
+      renderTrajectoryOnGisMap(plateCandidate.toUpperCase());
+      return;
+    }
+
+    // 2. Focus Mode Command ("focus", "full screen", "exit focus")
+    if (cmd.includes('focus') || cmd.includes('full screen') || cmd.includes('fullscreen')) {
+      document.body.classList.toggle('focus-mode');
+      if (leafletMapInstance) setTimeout(() => leafletMapInstance.invalidateSize(), 200);
+      return;
+    }
+
+    // 3. Department Filters ("police", "rto", "amc", "forest")
+    if (cmd.includes('police')) {
+      if (deptSelect) { deptSelect.value = 'dept-police'; deptSelect.dispatchEvent(new Event('change')); }
+      return;
+    } else if (cmd.includes('rto') || cmd.includes('highway')) {
+      if (deptSelect) { deptSelect.value = 'dept-rto'; deptSelect.dispatchEvent(new Event('change')); }
+      return;
+    } else if (cmd.includes('amc') || cmd.includes('smart city')) {
+      if (deptSelect) { deptSelect.value = 'dept-amc'; deptSelect.dispatchEvent(new Event('change')); }
+      return;
+    } else if (cmd.includes('forest')) {
+      if (deptSelect) { deptSelect.value = 'dept-forest'; deptSelect.dispatchEvent(new Event('change')); }
+      return;
+    }
+
+    // 4. District Zoom Navigation
+    const districtMatches = [
+      { key: 'ahmedabad', val: 'dist-ahmedabad' },
+      { key: 'dahod', val: 'dist-dahod' },
+      { key: 'surat', val: 'dist-surat' },
+      { key: 'rajkot', val: 'dist-rajkot' },
+      { key: 'dwarka', val: 'dist-dwarka' },
+      { key: 'jamnagar', val: 'dist-jamnagar' },
+      { key: 'gandhinagar', val: 'dist-gandhinagar' },
+      { key: 'vadodara', val: 'dist-vadodara' },
+      { key: 'kutch', val: 'zone-kutch' }
+    ];
+
+    const match = districtMatches.find(m => cmd.includes(m.key));
+    if (match && zoneSelect) {
+      zoneSelect.value = match.val;
+      zoneSelect.dispatchEvent(new Event('change'));
+      return;
+    }
+
+    // 5. Default: Pass to search input
+    if (searchInput) {
+      searchInput.value = rawCmd;
+      searchInput.dispatchEvent(new Event('input'));
+    }
+  }
+
+  voiceBtn.addEventListener('click', () => {
+    if (recognition) {
+      if (isListening) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (e) {
+          recognition.stop();
+        }
+      }
+    } else {
+      const fallbackPrompt = prompt('AI Command Input (e.g. "Track GJ-01-AB-1234", "Show Dahod", "Filter Police", "Focus"):', 'Track GJ-01-AB-1234');
+      if (fallbackPrompt) {
+        processVoiceCommand(fallbackPrompt);
+      }
+    }
+  });
+}
+
+// 5.2 GEO-SPATIAL SUPERCLUSTER & NODE RENDERING ENGINE
 async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
   const cameras = await window.apiClient.getCameras(dept, status, search);
+  const districts = await window.apiClient.getDistricts();
   const nodesList = document.getElementById('gisNodesList');
   if (!nodesList) return;
   nodesList.innerHTML = '';
@@ -738,8 +902,8 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
   leafletMarkers.forEach(m => leafletMapInstance.removeLayer(m));
   leafletMarkers = [];
 
+  // Populate Sidebar List
   cameras.forEach(cam => {
-    // 1. Sidebar Card
     const card = document.createElement('div');
     card.className = 'node-item-card';
     card.innerHTML = `
@@ -756,62 +920,100 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       leafletMapInstance.setView([cam.lat, cam.lng], 14, { animate: true });
     });
     nodesList.appendChild(card);
-
-    // 2. Leaflet Marker
-    let color = '#3b82f6';
-    if (cam.department_id === 'dept-rto') color = '#f59e0b';
-    if (cam.department_id === 'dept-amc') color = '#10b981';
-    if (cam.department_id === 'dept-civil') color = '#ec4899';
-    if (cam.department_id === 'dept-forest') color = '#84cc16';
-    if (cam.department_id === 'dept-private') color = '#a855f7';
-
-    const markerHtml = `<div style="
-      background: ${color};
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid #ffffff;
-      box-shadow: 0 0 10px ${color};
-    "></div>`;
-
-    const customIcon = L.divIcon({
-      className: 'custom-leaflet-pin',
-      html: markerHtml,
-      iconSize: [16, 16]
-    });
-
-    const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
-    marker.bindPopup(`
-      <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
-        <strong style="color: #00f2fe; font-size: 13px;">${cam.id}</strong><br/>
-        <strong>${cam.name}</strong><br/>
-        <span style="color: #94a3b8;">Vendor: ${cam.vendor}</span><br/>
-        <span style="color: #10b981;">Status: ${cam.status.toUpperCase()}</span><br/>
-        <span style="color: #f59e0b;">FOV: ${cam.direction} (${cam.fov_angle}°)</span><br/>
-        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
-          <button onclick="inspectCameraFovRange('${cam.id}')" style="
-            background: rgba(0, 242, 254, 0.15);
-            border: 1px solid #00f2fe;
-            color: #00f2fe;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            cursor: pointer;
-          "><i class="fa-solid fa-satellite-dish"></i> Check Range & Blind-Spots</button>
-          <button onclick="pullOnDemandStream('${cam.id}')" style="
-            background: #00f2fe;
-            color: #04101e;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            cursor: pointer;
-          "><i class="fa-solid fa-play"></i> Pull WebRTC Live Stream</button>
-        </div>
-      </div>
-    `);
-    leafletMarkers.push(marker);
   });
+
+  const currentZoom = leafletMapInstance.getZoom();
+
+  // High Performance Clustering Mode for Overview Zoom (< 8.5)
+  if (currentZoom < 8.5 && !search && dept === 'ALL') {
+    districts.forEach(dist => {
+      if (!dist.lat || !dist.lng) return;
+      const countLabel = dist.total_cams >= 1000 ? `${(dist.total_cams / 1000).toFixed(1)}k` : dist.total_cams;
+      const clusterHtml = `
+        <div class="leaflet-cluster-badge" style="width: 44px; height: 44px;">
+          ${countLabel}
+        </div>
+      `;
+      const clusterIcon = L.divIcon({
+        className: 'custom-cluster-pin',
+        html: clusterHtml,
+        iconSize: [44, 44]
+      });
+
+      const clusterMarker = L.marker([dist.lat, dist.lng], { icon: clusterIcon }).addTo(leafletMapInstance);
+      clusterMarker.bindPopup(`
+        <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
+          <strong style="color: #00f2fe; font-size: 13px;">${dist.name} Sector Cluster</strong><br/>
+          <span>Total Integrated Cameras: <strong>${dist.total_cams.toLocaleString()} Nodes</strong></span><br/>
+          <span>Coverage Health Score: <strong>${dist.coverage_score}% (${dist.gap_status})</strong></span><br/>
+          <button onclick="leafletMapInstance.setView([${dist.lat}, ${dist.lng}], 11, { animate: true });" style="
+            margin-top: 6px; width: 100%; background: #00f2fe; color: #04101e; border: none; padding: 5px 8px; border-radius: 4px; font-weight: 700; cursor: pointer;
+          "><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom Into District Fleet</button>
+        </div>
+      `);
+      clusterMarker.on('click', () => {
+        leafletMapInstance.setView([dist.lat, dist.lng], 11, { animate: true });
+      });
+      leafletMarkers.push(clusterMarker);
+    });
+  } else {
+    // Individual Node Pins for Zoom >= 8.5 or Active Filter/Search
+    cameras.forEach(cam => {
+      let color = '#3b82f6';
+      if (cam.department_id === 'dept-rto') color = '#f59e0b';
+      if (cam.department_id === 'dept-amc') color = '#10b981';
+      if (cam.department_id === 'dept-civil') color = '#ec4899';
+      if (cam.department_id === 'dept-forest') color = '#84cc16';
+      if (cam.department_id === 'dept-private') color = '#a855f7';
+
+      const markerHtml = `<div style="
+        background: ${color};
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 10px ${color};
+      "></div>`;
+
+      const customIcon = L.divIcon({
+        className: 'custom-leaflet-pin',
+        html: markerHtml,
+        iconSize: [16, 16]
+      });
+
+      const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
+      marker.bindPopup(`
+        <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
+          <strong style="color: #00f2fe; font-size: 13px;">${cam.id}</strong><br/>
+          <strong>${cam.name}</strong><br/>
+          <span style="color: #94a3b8;">Vendor: ${cam.vendor}</span><br/>
+          <span style="color: #10b981;">Status: ${cam.status.toUpperCase()}</span><br/>
+          <span style="color: #f59e0b;">FOV: ${cam.direction} (${cam.fov_angle}°)</span><br/>
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+            <button onclick="inspectCameraFovRange('${cam.id}')" style="
+              background: rgba(0, 242, 254, 0.15);
+              border: 1px solid #00f2fe;
+              color: #00f2fe;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-weight: 700;
+              cursor: pointer;
+            "><i class="fa-solid fa-satellite-dish"></i> Check Range & Blind-Spots</button>
+            <button onclick="pullOnDemandStream('${cam.id}')" style="
+              background: #00f2fe;
+              color: #04101e;
+              border: none;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-weight: 700;
+              cursor: pointer;
+            "><i class="fa-solid fa-play"></i> Pull WebRTC Live Stream</button>
+          </div>
+        </div>
+      `);
+      leafletMarkers.push(marker);
+    });
+  }
 }
 
 // Global Array for FOV and Blind Spot Map Overlays
@@ -1130,6 +1332,21 @@ window.openCameraDetail = async function(camId) {
     };
   }
 
+  const pullStreamBtn = document.getElementById('detailPullStreamBtn');
+  if (pullStreamBtn) {
+    pullStreamBtn.onclick = () => {
+      document.getElementById('camDetailDrawer').classList.remove('open');
+      window.pullOnDemandStream(cam.id);
+    };
+  }
+
+  const exportDossierBtn = document.getElementById('detailExportDossierBtn');
+  if (exportDossierBtn) {
+    exportDossierBtn.onclick = () => {
+      window.print();
+    };
+  }
+
   document.getElementById('camDetailDrawer').classList.add('open');
 };
 
@@ -1312,6 +1529,11 @@ async function initLiveWallView() {
     });
   });
 
+  const btnPopout = document.getElementById('btnPopoutVideoWall');
+  if (btnPopout) {
+    btnPopout.addEventListener('click', () => window.openDetachedVideoWall());
+  }
+
   if (btnStopAll) {
     btnStopAll.addEventListener('click', async () => {
       const active = await window.apiClient.getActiveStreamingSessions();
@@ -1350,6 +1572,71 @@ window.inspectLiveFeedFov = async function(camId) {
 
   panel.style.display = 'block';
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+window.openDetachedVideoWall = async function() {
+  const cameras = await window.apiClient.getCameras();
+  const activeFeeds = cameras.slice(0, 4);
+
+  const popoutWin = window.open('', 'NirikshanDetachedVideoWall', 'width=1440,height=840,menubar=no,toolbar=no,location=no,status=no');
+  if (!popoutWin) {
+    alert('Pop-up was blocked by browser. Please allow popups for localhost to use Multi-Monitor mode.');
+    return;
+  }
+
+  const feedsHtml = activeFeeds.map((cam, idx) => `
+    <div style="background: #0d121c; border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 8px 12px; background: rgba(10, 14, 23, 0.95); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
+        <strong style="color: #00f2fe; font-size: 12px; font-family: monospace;">${cam.id} • ${cam.name}</strong>
+        <span style="color: #10b981; font-size: 11px; font-weight: 700;">● LIVE WEBRTC RELAY</span>
+      </div>
+      <div style="flex: 1; min-height: 280px; background: radial-gradient(circle at center, #131d2e 0%, #06090e 100%); display: flex; align-items: center; justify-content: center; position: relative;">
+        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.65); padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #f8fafc; font-family: monospace;">
+          ${cam.vendor} • ${cam.resolution}
+        </div>
+        <div style="position: absolute; top: 10px; right: 10px; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: monospace;">
+          25 FPS • WAN &lt; 2.4 Mbps
+        </div>
+        <div style="text-align: center; color: rgba(255,255,255,0.4);">
+          <div style="font-size: 32px; margin-bottom: 6px; color: #00f2fe;"><i class="fa-solid fa-video"></i> 📹</div>
+          <div style="font-size: 13px; font-weight: 600; color: #94a3b8;">Active WebRTC Stream Relay Channel #${idx+1}</div>
+          <div style="font-size: 11px; font-family: monospace; color: #64748b; margin-top: 4px;">Lat: ${cam.lat} • Lng: ${cam.lng}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  popoutWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>NIRIKSHAN 4K Multi-Monitor Detached Live Video Wall</title>
+      <meta charset="UTF-8">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #070a0f; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { height: 52px; padding: 0 18px; background: #0d121c; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
+        .grid { flex: 1; padding: 12px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="background: #00f2fe; color: #04101e; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 11px;">4K MULTI-MONITOR</span>
+          <strong style="font-size: 13px; letter-spacing: 0.04em;">NIRIKSHAN DETACHED LIVE VIDEO WALL</strong>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00f2fe; background: rgba(0,242,254,0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(0,242,254,0.3);">
+          BANDWIDTH: 4.8 Mbps PEAK • ON-DEMAND RELAY
+        </div>
+      </header>
+      <div class="grid">
+        ${feedsHtml}
+      </div>
+    </body>
+    </html>
+  `);
+  popoutWin.document.close();
 };
 
 function startSessionInactivityTimer() {

@@ -762,8 +762,8 @@ body.dark-theme {
   position: fixed;
   top: 1rem;
   right: 1.5rem;
-  z-index: 9999;
-  background: rgba(10, 14, 23, 0.92);
+  z-index: 2000;
+  background: rgba(10, 14, 23, 0.94);
   border: 1px solid var(--accent-cyan);
   color: #ffffff;
   padding: 0.5rem 1rem;
@@ -776,6 +776,7 @@ body.dark-theme {
   gap: 0.5rem;
   animation: focusBtnPulse 2.5s infinite;
   backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
 }
 
 .exit-focus-btn kbd {
@@ -825,8 +826,16 @@ body.focus-mode .exit-focus-btn {
 }
 
 body.focus-mode .main-container {
-  padding-top: 1.5rem;
+  padding: 1rem 1.25rem 2rem;
   max-width: 100%;
+}
+
+body.focus-mode .gis-master-layout {
+  min-height: calc(100vh - 170px);
+}
+
+body.focus-mode .leaflet-container-view {
+  min-height: calc(100vh - 250px);
 }
 
 /* =========================================================================
@@ -834,9 +843,9 @@ body.focus-mode .main-container {
    ========================================================================= */
 .main-container {
   width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: calc(64px + 1.4rem) 1.8rem 4rem;
+  max-width: 100%;
+  margin: 0;
+  padding: calc(64px + 1.2rem) 1.5rem 3rem;
   box-sizing: border-box;
 }
 
@@ -1205,6 +1214,101 @@ body.focus-mode .main-container {
 .search-bar-wrap:focus-within i,
 .search-input-wrap:focus-within i {
   color: var(--accent-cyan);
+}
+
+.voice-search-btn {
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  color: var(--accent-cyan);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.voice-search-btn:hover {
+  background: var(--accent-cyan);
+  color: #04101e;
+  box-shadow: 0 0 12px var(--accent-cyan);
+}
+
+.voice-search-btn.listening {
+  background: var(--accent-rose);
+  color: #ffffff;
+  border-color: var(--accent-rose);
+  animation: micPulse 1.2s infinite;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.7);
+}
+
+@keyframes micPulse {
+  0% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.18); }
+  100% { transform: translateY(-50%) scale(1); }
+}
+
+.voice-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+  padding: 0.25rem 0.65rem;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  color: #fb7185;
+  font-family: var(--font-mono);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.voice-status-pill.success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: var(--accent-emerald);
+}
+
+.voice-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-rose);
+  animation: pulse 1s infinite;
+}
+
+.voice-status-pill.success .voice-pulse-dot {
+  background: var(--accent-emerald);
+}
+
+/* LEAFLET CLUSTER PIN BADGES (SUB-ZOOM AGGREGATION) */
+.leaflet-cluster-badge {
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.95) 0%, rgba(14, 165, 233, 0.95) 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.8), inset 0 0 6px rgba(0, 0, 0, 0.35);
+  color: #04101e;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.leaflet-cluster-badge:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 24px var(--accent-cyan);
 }
 
 .gis-nodes-list {
