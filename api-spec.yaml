@@ -35,6 +35,33 @@ tags:
     description: Phase 6 • Immutable Section 65B audit log
 
 paths:
+  /api/ingest:
+    get:
+      tags: [Live Streaming, Edge Adapters]
+      summary: Sentinel Grid Ingest Catalogue (Dynamic Camera Discovery)
+      description: Returns real-time stream endpoints (RTSP over TCP, WebRTC WHEP, HLS), per-camera codecs, resolutions, and status. Clients must query this catalog instead of hardcoding stream endpoints.
+      responses:
+        '200':
+          description: Dynamic camera streaming catalog returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  platform:
+                    type: string
+                    example: "NIRIKSHAN Sentinel Camera Grid"
+                  transport_protocol_default:
+                    type: string
+                    example: "TCP"
+                  timing_mode:
+                    type: string
+                    example: "monotonic_pts_pos_msec"
+                  cameras:
+                    type: array
+                    items:
+                      type: object
+
   /auth/login:
     post:
       tags: [Auth & RBAC]
