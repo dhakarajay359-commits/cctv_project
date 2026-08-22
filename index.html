@@ -467,8 +467,11 @@
     <section id="view-registry" class="app-view">
       <div class="view-header-bar">
         <div>
-          <div class="phase-tag-badge"><i class="fa-solid fa-cube"></i> Phase 1 &bull; Model 1 Deliverable</div>
-          <h2><i class="fa-solid fa-list-check"></i> Master Camera Registry & Gap-Analysis Portal</h2>
+          <div class="tech-pills-row">
+            <span class="tech-functional-pill emerald"><i class="fa-solid fa-link"></i> Feed Integration &bull; ONVIF S/T, RTSP &amp; NetSDK Protocol Normalization</span>
+            <span class="phase-tag-badge"><i class="fa-solid fa-cube"></i> Phase 1 &bull; Model 1 Deliverable</span>
+          </div>
+          <h2><i class="fa-solid fa-list-check"></i> Master Camera Registry &amp; Gap-Analysis Portal</h2>
           <p>Centralized geospatial inventory with department ownership, vendor specs, 15-day retention policies, heartbeat monitoring, and district gap analysis.</p>
         </div>
         <div class="registry-actions-group">
@@ -707,8 +710,12 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     <section id="view-livewall" class="app-view">
       <div class="view-header-bar">
         <div>
-          <div class="phase-tag-badge"><i class="fa-solid fa-play"></i> Phase 3 &bull; Model 2 Deliverable</div>
-          <h2><i class="fa-solid fa-table-cells"></i> Unified Live Viewing & Dynamic Video Wall</h2>
+          <div class="tech-pills-row">
+            <span class="tech-functional-pill"><i class="fa-solid fa-wifi"></i> Live Monitoring &bull; On-Demand WebRTC Video Relay</span>
+            <span class="tech-functional-pill purple"><i class="fa-solid fa-film"></i> Video Intelligence &bull; Optical DORI &amp; Blind-Spot Analysis</span>
+            <span class="phase-tag-badge"><i class="fa-solid fa-play"></i> Phase 3 &bull; Model 2 Deliverable</span>
+          </div>
+          <h2><i class="fa-solid fa-table-cells"></i> Unified Live Viewing &amp; Dynamic Video Wall</h2>
           <p>Session-based on-demand video relays. Streams only start when requested by an operator and auto-stop on inactivity to enforce strict WAN bandwidth discipline.</p>
         </div>
         <div class="wall-header-actions">
@@ -850,8 +857,13 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     <section id="view-analytics" class="app-view">
       <div class="view-header-bar">
         <div>
-          <div class="phase-tag-badge"><i class="fa-solid fa-brain"></i> Phase 4 &bull; Model 2 Deliverable</div>
-          <h2><i class="fa-solid fa-microscope"></i> Vision Analytics Engine & ANPR Event Detection</h2>
+          <div class="tech-pills-row">
+            <span class="tech-functional-pill emerald"><i class="fa-solid fa-eye"></i> Object &amp; Face Detection &bull; YOLOv8 Vision &amp; CCTNS Matching</span>
+            <span class="tech-functional-pill rose"><i class="fa-solid fa-car-side"></i> Vehicle Tracking &bull; Speed Delta &amp; Pursuit Vectors</span>
+            <span class="tech-functional-pill amber"><i class="fa-solid fa-microchip"></i> AI Analytics &bull; OCR ANPR Inference</span>
+            <span class="phase-tag-badge"><i class="fa-solid fa-brain"></i> Phase 4 &bull; Model 2 Deliverable</span>
+          </div>
+          <h2><i class="fa-solid fa-microscope"></i> Vision Analytics Engine &amp; ANPR Event Detection</h2>
           <p>Real-time computer vision inference pipeline with automated optical license plate recognition (ANPR), bounding box extraction, camera-wise indexing, and cross-department forensic search.</p>
         </div>
       </div>
@@ -1045,8 +1057,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     <section id="view-alerts" class="app-view">
       <div class="view-header-bar">
         <div>
-          <div class="phase-tag-badge"><i class="fa-solid fa-tower-broadcast"></i> Phase 5 &bull; Alert Bus & Event Engine (L5)</div>
-          <h2><i class="fa-solid fa-bell"></i> Real-Time Alerts & PCR Interceptor Dispatch</h2>
+          <div class="tech-pills-row">
+            <span class="tech-functional-pill rose"><i class="fa-solid fa-microchip"></i> AI Analytics &bull; Real-Time Kafka Threat Bus &amp; Automated Escalation</span>
+            <span class="phase-tag-badge"><i class="fa-solid fa-tower-broadcast"></i> Phase 5 &bull; Alert Bus &amp; Event Engine (L5)</span>
+          </div>
+          <h2><i class="fa-solid fa-bell"></i> Real-Time Alerts &amp; PCR Interceptor Dispatch</h2>
           <p>Kafka topic-partitioned alert stream delivering sub-second automated intercepts from VAHAN, eGujCop, and NAFIS vision events directly to department control rooms.</p>
         </div>
         <div class="alert-header-actions">
@@ -1176,36 +1191,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     <section id="view-admin" class="app-view">
       <div class="view-header-bar">
         <div>
-          <h2><i class="fa-solid fa-sliders"></i> System Administration & Security Governance</h2>
-          <p>Multi-tenant sovereign RBAC, immutable cryptographic audit trail, and citizen/commercial consent records.</p>
-        </div>
-      </div>
-
-      <div class="admin-sections-grid">
-        <!-- Audit Trail -->
-        <div class="admin-card">
-          <div class="admin-card-header">
-            <h3><i class="fa-solid fa-receipt"></i> Immutable Audit Trail (Zero-Trust)</h3>
-            <span class="badge-count" id="auditCount">4 Records</span>
+          <div class="tech-pills-row">
+            <span class="tech-functional-pill amber"><i class="fa-solid fa-lock"></i> Cybersecurity &bull; DPDP Act 2023 Consent Lifecycle &amp; Sec 65B Audit Trail</span>
+            <span class="phase-tag-badge"><i class="fa-solid fa-lock"></i> Phase 6 &bull; Security, RBAC &amp; Governance (L6)</span>
           </div>
-          <div class="table-card compact">
-            <table class="data-table" id="auditTable">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>User / Service</th>
-                  <th>Role</th>
-                  <th>Action</th>
-                  <th>Target Resource</th>
-                  <th>Origin IP</th>
-                </tr>
-              </thead>
-              <tbody id="auditTableBody">
-                <!-- Dynamic logs -->
-              </tbody>
-            </table>
-          <div class="phase-tag-badge"><i class="fa-solid fa-lock"></i> Phase 6 &bull; Security, RBAC & Governance (L6)</div>
-          <h2><i class="fa-solid fa-scale-balanced"></i> Security, RBAC & Department Governance</h2>
+          <h2><i class="fa-solid fa-scale-balanced"></i> Security, RBAC &amp; Department Governance</h2>
           <p>Multi-tenant department data sovereignty, immutable zero-trust audit trail, private camera citizen consent ledger, and role-scoped permissions.</p>
         </div>
         <div class="admin-header-actions">
@@ -1424,8 +1414,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     <section id="view-architecture" class="app-view">
       <div class="view-header-bar">
         <div>
-          <div class="phase-tag-badge"><i class="fa-solid fa-layer-group"></i> Phase 7 &bull; Architectural Blueprint & ROI (L0–L6)</div>
-          <h2><i class="fa-solid fa-sitemap"></i> 7-Layer Architecture & State Bandwidth Feasibility</h2>
+          <div class="tech-pills-row">
+            <span class="tech-functional-pill blue"><i class="fa-solid fa-server"></i> Scalable Architecture &bull; 7-Layer Decoupled Microservice Stack</span>
+            <span class="phase-tag-badge"><i class="fa-solid fa-layer-group"></i> Phase 7 &bull; Architectural Blueprint &amp; ROI (L0–L6)</span>
+          </div>
+          <h2><i class="fa-solid fa-sitemap"></i> 7-Layer Architecture &amp; State Bandwidth Feasibility</h2>
           <p>A decoupled, microservice-ready blueprint proving how Nirikshan scales to 80,000+ cameras with 93.7% taxpayer savings vs legacy centralized recording.</p>
         </div>
       </div>
