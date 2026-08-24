@@ -859,89 +859,91 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
       <!-- ========================================================================= -->
       <!-- AUTHORITY SUSPECT REGISTRATION & ACTIVE INTERCEPTION WATCHLIST HUB -->
       <!-- ========================================================================= -->
-      <div class="anpr-lab-card" style="margin-top: 1rem; border-color: rgba(244,63,94,0.5); background: linear-gradient(180deg, rgba(244,63,94,0.08) 0%, rgba(13,20,36,0.95) 100%);">
-        <div class="anpr-lab-header">
+      <div class="anpr-lab-card" style="margin-top: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div class="anpr-lab-header" style="margin-bottom: 0.8rem;">
           <div class="anpr-lab-title">
-            <i class="fa-solid fa-shield-virus text-rose" style="font-size: 1.5rem;"></i>
+            <i class="fa-solid fa-shield-halved text-cyan" style="font-size: 1.4rem;"></i>
             <div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span class="node-status-pill online" style="background: rgba(244,63,94,0.2); color: var(--accent-rose); border-color: var(--accent-rose); font-size: 0.68rem; font-weight: 800;">
-                  <span class="dot-sm" style="background: var(--accent-rose);"></span> LAW ENFORCEMENT &amp; CRIME HOTLIST
+                <span class="phase-tag-badge" style="background: rgba(37,99,235,0.12); border-color: rgba(37,99,235,0.3); color: #38bdf8; margin-bottom: 0;">
+                  <i class="fa-solid fa-shield"></i> Law Enforcement Registry
                 </span>
-                <span class="kafka-badge"><i class="fa-solid fa-bolt"></i> Real-Time AI Interception Armed</span>
+                <span class="kafka-badge" style="background: rgba(16,185,129,0.1); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.25);">
+                  <i class="fa-solid fa-circle-check"></i> Real-Time Interception Active
+                </span>
               </div>
-              <h3 style="margin-top: 0.2rem;">State Police Authority &bull; Suspect Vehicle Registration &amp; Crime Flagging Hub</h3>
-              <p>Register suspect vehicles with specific crime details. The AI detection engine continuously monitors live CCTV feeds without alerting on regular traffic, and <strong>instantly triggers a red alert, captures a forensic snapshot, and plots the GIS pursuit route</strong> the moment a registered suspect passes a camera.</p>
+              <h3 style="margin-top: 0.35rem; font-size: 1.15rem;">Suspect Vehicle Registration &amp; Crime Hotlist Management</h3>
+              <p style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">Register suspect vehicles with specific FIR and crime details to enable automated real-time CCTV camera matching, instant pursuit routing, and automated intercept alerting.</p>
             </div>
           </div>
         </div>
 
         <!-- Registration Form Grid -->
-        <form id="suspectRegistrationForm" style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 160px; gap: 0.75rem; align-items: end; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <form id="suspectRegistrationForm" style="margin-top: 0.8rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 160px; gap: 0.75rem; align-items: end; background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-car-side"></i> Vehicle Plate No:*</label>
-            <input type="text" id="regSuspectPlate" class="custom-input" placeholder="e.g. GJ-01-AB-1234" required style="font-family: var(--font-mono); font-weight: 800; text-transform: uppercase;">
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Vehicle Plate Number *</label>
+            <input type="text" id="regSuspectPlate" class="custom-input" placeholder="e.g. GJ-01-AB-1234" required style="font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--accent-rose); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-handcuffs"></i> Crime Offense Category:*</label>
-            <input type="text" id="regSuspectCrime" class="custom-input" placeholder="e.g. Armed Bank Robbery / Kidnapping" required>
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Crime Category / Offense *</label>
+            <input type="text" id="regSuspectCrime" class="custom-input" placeholder="e.g. Armed Robbery / Kidnapping" required>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-file-invoice"></i> FIR Reference &amp; Station:</label>
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">FIR Reference &amp; Station</label>
             <input type="text" id="regSuspectFir" class="custom-input" placeholder="e.g. FIR-892/2026 (Satellite PS)">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-user-ninja"></i> Suspect Name / Alias:</label>
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Suspect Name / Alias</label>
             <input type="text" id="regSuspectName" class="custom-input" placeholder="e.g. Vikram Ramsinh Solanki">
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--accent-amber); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-triangle-exclamation"></i> Threat Priority:</label>
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Threat Priority</label>
             <select id="regSuspectPriority" class="custom-select">
-              <option value="CRITICAL">CRITICAL (Red Notice)</option>
-              <option value="HIGH">HIGH (Arrest Warrant)</option>
-              <option value="MEDIUM">MEDIUM (BOLO Tracking)</option>
+              <option value="CRITICAL">Critical (Red Notice)</option>
+              <option value="HIGH">High (Arrest Warrant)</option>
+              <option value="MEDIUM">Medium (BOLO Tracking)</option>
             </select>
           </div>
-          <button type="submit" class="action-btn primary" id="btnRegisterSuspect" style="height: 38px; background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 0 16px rgba(244,63,94,0.4); font-weight: 800; font-size: 0.78rem;">
-            <i class="fa-solid fa-plus-circle"></i> Register Suspect
+          <button type="submit" class="action-btn primary" id="btnRegisterSuspect" style="height: 38px; font-weight: 700; font-size: 0.8rem;">
+            <i class="fa-solid fa-plus"></i> Register Suspect
           </button>
         </form>
 
         <!-- Quick 1-Click Suspect Presets Bar -->
-        <div class="quick-samples-bar" style="margin-top: 0.8rem; margin-bottom: 0.8rem;">
-          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;"><i class="fa-solid fa-bolt text-amber"></i> Quick Authority Test Presets:</span>
+        <div class="quick-samples-bar" style="margin-top: 0.75rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">Sample Test Presets:</span>
           <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('GJ-01-AB-1234', 'Armed Bank Robbery & Kidnapping (Sec 392/364 IPC)', 'FIR-892/2026 (Satellite PS)', 'Vikram Ramsinh Solanki', 'CRITICAL');">
-            🚨 GJ-01-AB-1234 (Armed Robbery &bull; White Creta)
+            GJ-01-AB-1234 &bull; White Creta
           </button>
           <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('MP-09-HH-5541', 'Inter-State PDS Grain Siphoning & Toll Evasion', 'FIR-104/2026 (Civil Supplies)', 'Pravin Khimji Patel', 'HIGH');">
-            ⚠️ MP-09-HH-5541 (PDS Smuggling &bull; Tata Truck)
+            MP-09-HH-5541 &bull; Tata Truck
           </button>
           <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('GJ-27-EA-5500', 'Extortion & Non-Bailable Hit-and-Run Warrant', 'FIR-312/2026 (Crime Branch)', 'Sanjay K. Barot', 'CRITICAL');">
-            🚨 GJ-27-EA-5500 (Hit &amp; Run Warrant)
+            GJ-27-EA-5500 &bull; Hit &amp; Run Warrant
           </button>
         </div>
 
         <!-- Active Suspect Watchlist Table -->
         <div style="margin-top: 0.8rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <h4 style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.05em;">
+            <h4 style="font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.04em;">
               <i class="fa-solid fa-list-check text-cyan"></i> Active State Hotlist Targets Armed on AI Grid:
             </h4>
-            <span id="activeSuspectCountBadge" style="font-size: 0.72rem; color: var(--accent-rose); font-family: var(--font-mono); font-weight: 800;">
-              2 Active Targets
+            <span id="activeSuspectCountBadge" style="font-size: 0.72rem; color: var(--accent-rose); font-family: var(--font-mono); font-weight: 700;">
+              2 Active Targets Armed
             </span>
           </div>
-          <div style="overflow-x: auto; background: rgba(10, 14, 23, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
-            <table class="compact-table" style="width: 100%; font-size: 0.75rem;">
+          <div style="overflow-x: auto; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <table class="compact-table" style="width: 100%; font-size: 0.75rem; border-collapse: collapse;">
               <thead>
                 <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-color);">
-                  <th style="padding: 6px 10px; text-align: left;">Plate Number</th>
-                  <th style="padding: 6px 10px; text-align: left;">Crime Category &amp; Offense</th>
-                  <th style="padding: 6px 10px; text-align: left;">FIR Reference</th>
-                  <th style="padding: 6px 10px; text-align: left;">Suspect Driver</th>
-                  <th style="padding: 6px 10px; text-align: center;">Priority</th>
-                  <th style="padding: 6px 10px; text-align: center;">AI State</th>
-                  <th style="padding: 6px 10px; text-align: right;">Instant Tactical Actions</th>
+                  <th style="padding: 8px 12px; text-align: left; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Plate Number</th>
+                  <th style="padding: 8px 12px; text-align: left; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Crime Category &amp; Offense</th>
+                  <th style="padding: 8px 12px; text-align: left; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">FIR Reference</th>
+                  <th style="padding: 8px 12px; text-align: left; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Suspect Driver</th>
+                  <th style="padding: 8px 12px; text-align: center; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Priority</th>
+                  <th style="padding: 8px 12px; text-align: center; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Status</th>
+                  <th style="padding: 8px 12px; text-align: right; color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">Actions</th>
                 </tr>
               </thead>
               <tbody id="suspectWatchlistTableBody">
