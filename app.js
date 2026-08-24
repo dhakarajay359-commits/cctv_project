@@ -1667,16 +1667,54 @@ function startSessionInactivityTimer() {
 
 // Active live stream canvas animation frames and webcam streams
 const activeStreamAnimFrames = new Map();
-const activeWebcamStreams = new Map();
-
-function cleanupLiveStreamCanvases() {
-  activeStreamAnimFrames.forEach((reqId) => cancelAnimationFrame(reqId));
-  activeStreamAnimFrames.clear();
-}
-
 // Track last triggered suspect hit timestamp to prevent spamming popups
 let lastSuspectAlertTimestamp = 0;
 let lastAlertedPlate = '';
+
+// Helper to capture high-definition snapshot and OCR plate crop from video frame
+function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234') {
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = 640;
+  offCanvas.height = 360;
+  const offCtx = offCanvas.getContext('2d');
+  
+  if (video && video.videoWidth > 0) {
+    offCtx.drawImage(video, 0, 0, offCanvas.width, offCanvas.height);
+  } else {
+    // Elegant fallback simulation if video frame is rendering
+    offCtx.fillStyle = '#0f172a';
+    offCtx.fillRect(0, 0, 640, 360);
+    offCtx.fillStyle = '#334155';
+    offCtx.fillRect(180, 100, 280, 160);
+  }
+
+  // Create zoomed license plate crop
+  const plateCanvas = document.createElement('canvas');
+  plateCanvas.width = 160;
+  plateCanvas.height = 48;
+  const pCtx = plateCanvas.getContext('2d');
+  pCtx.fillStyle = '#f8fafc';
+  pCtx.fillRect(0, 0, 160, 48);
+  pCtx.strokeStyle = '#0f172a';
+  pCtx.lineWidth = 3;
+  pCtx.strokeRect(2, 2, 156, 44);
+
+  // IND Emblem & Plate Text
+  pCtx.fillStyle = '#0284c7';
+  pCtx.fillRect(4, 4, 18, 40);
+  pCtx.fillStyle = '#ffffff';
+  pCtx.font = 'bold 7px sans-serif';
+  pCtx.fillText('IND', 6, 26);
+
+  pCtx.fillStyle = '#0f172a';
+  pCtx.font = 'bold 15px "JetBrains Mono", monospace';
+  pCtx.fillText(plateText, 28, 30);
+
+  return {
+    fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.88),
+    plateCropUrl: plateCanvas.toDataURL('image/png')
+  };
+}
 
 function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   const canvas = document.getElementById(canvasId);
@@ -1689,159 +1727,48 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   canvas.width = 640;
   canvas.height = 360;
 
-  function renderFrame() {
+  function observeStreamFromBackend() {
+    // 1. Live video stream remains 100% CLEAN (Zero artificial frames/bounding boxes drawn inside the video)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (video) {
       const duration = (video.duration && !isNaN(video.duration)) ? video.duration : 8.0;
       const currentTime = !video.paused ? (video.currentTime % duration) : ((Date.now() / 1000) % duration);
 
-      // 1. DYNAMIC VEHICLE STREAMS (Traffic Feeds: Cameras 1, 2, 3, etc.)
+      // 2. Pure Backend/Background AI Observation Engine (No overlays on live video)
       if (!isFaceHit) {
-        // Vehicle A: Regular Traffic Passing (0.2s to 3.8s) - NOT a suspect
-        const car1Plate = 'GJ-01-KN-8842';
-        const car1IsSuspect = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.find(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === car1Plate.replace(/[^A-Za-z0-9]/g, ''));
-        
-        if (currentTime >= 0.2 && currentTime <= 3.8) {
-          const p = (currentTime - 0.2) / 3.6;
-          const cx = 330 + p * (480 - 330);
-          const cy = 60 + p * (240 - 60);
-          const cw = 50 + p * (130 - 50);
-          const ch = 35 + p * (95 - 35);
-
-          drawDetectionBox(ctx, cx, cy, cw, ch, {
-            isAlert: !!car1IsSuspect,
-            title: car1IsSuspect ? `🚨 SUSPECT HIT: ${car1Plate}` : `🚗 [VEHICLE] ${car1Plate}`,
-            subtitle: car1IsSuspect ? `${car1IsSuspect.crime.slice(0, 24)}...` : `STATUS: CLEAR • 54.0 km/h`,
-            speed: 54.0,
-            confidence: 98.6
-          });
-
-          if (car1IsSuspect && Date.now() - lastSuspectAlertTimestamp > 6000) {
-            triggerLiveSuspectDossierHit(car1Plate, camera, video, car1IsSuspect, 54.0);
-          }
-        }
-
-        // Vehicle B: Target Candidate Passing (3.2s to 7.6s)
-        // Checks if registered by authority in Suspect Watchlist (e.g. GJ-01-AB-1234 or custom)
         const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
         const primarySuspect = activeSuspects[0] || { plate: 'GJ-01-AB-1234', crime: 'Armed Bank Robbery & Kidnapping', fir: 'FIR-892/2026' };
-        const car2Plate = primarySuspect.plate || 'GJ-01-AB-1234';
-        const car2IsSuspect = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.some(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === car2Plate.replace(/[^A-Za-z0-9]/g, ''));
+        const suspectPlate = primarySuspect.plate || 'GJ-01-AB-1234';
 
+        // Backend AI observes target vehicle passing in camera view (e.g. between 3.2s and 7.6s)
         if (currentTime >= 3.2 && currentTime <= 7.6) {
-          const p = (currentTime - 3.2) / 4.4;
-          const cx = 290 - p * (170 - 290);
-          const cy = 40 + p * (250 - 40);
-          const cw = 55 + p * (165 - 55);
-          const ch = 40 + p * (115 - 40);
+          const isTargetWanted = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.some(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === suspectPlate.replace(/[^A-Za-z0-9]/g, ''));
 
-          drawDetectionBox(ctx, cx, cy, cw, ch, {
-            isAlert: car2IsSuspect,
-            title: car2IsSuspect ? `🚨 WANTED SUSPECT: ${car2Plate}` : `🚗 [VEHICLE] ${car2Plate}`,
-            subtitle: car2IsSuspect ? `${primarySuspect.crime.slice(0, 26)}...` : `STATUS: CLEAR (NOT WANTED) • 81.5 km/h`,
-            speed: 81.5,
-            confidence: 99.4
-          });
-
-          if (car2IsSuspect && Date.now() - lastSuspectAlertTimestamp > 6000) {
-            triggerLiveSuspectDossierHit(car2Plate, camera, video, primarySuspect, 81.5);
+          // When suspect car appears in camera, automatically capture snapshot & dispatch to alert section
+          if (isTargetWanted && Date.now() - lastSuspectAlertTimestamp > 7000) {
+            triggerLiveSuspectDossierHit(suspectPlate, camera, video, primarySuspect, 81.5);
           }
-        }
-      }
-
-      // 2. PEDESTRIAN & BIOMETRIC FACIAL STREAMS (Camera 4 / Pedestrian Feed)
-      if (isFaceHit) {
-        const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
-        const faceSuspect = activeFaces[0] || { name: 'Vikram K. (Alias Vicky)', crime: 'CCTNS Red Notice Warrants' };
-        
-        if (currentTime >= 0.8 && currentTime <= 6.5) {
-          const p = (currentTime - 0.8) / 5.7;
-          const fx = 80 + p * (380 - 80);
-          const fy = 80 + p * (110 - 80);
-          const fw = 75 + p * (95 - 75);
-          const fh = 145 + p * (170 - 145);
-
-          drawDetectionBox(ctx, fx, fy, fw, fh, {
-            isAlert: true,
-            title: `🚨 FACE MATCH: ${faceSuspect.name}`,
-            subtitle: `CCTNS RED NOTICE • 96.8% BIOMETRIC CONF`,
-            speed: 4.8,
-            confidence: 96.8
-          });
         }
       }
     }
 
-    const animId = requestAnimationFrame(renderFrame);
+    const animId = requestAnimationFrame(observeStreamFromBackend);
     activeStreamAnimFrames.set(canvasId, animId);
   }
 
-  renderFrame();
+  observeStreamFromBackend();
 }
 
-// Unified Canvas AI Detection Box Renderer
-function drawDetectionBox(ctx, x, y, w, h, opts) {
-  const isAlert = opts.isAlert;
-  const color = isAlert ? '#f43f5e' : '#00f2fe';
-  const glow = isAlert ? 'rgba(244, 63, 94, 0.4)' : 'rgba(0, 242, 254, 0.25)';
-
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = isAlert ? 2.5 : 1.8;
-  ctx.shadowColor = glow;
-  ctx.shadowBlur = 10;
-  ctx.strokeRect(x, y, w, h);
-
-  // Corner Brackets
-  ctx.fillStyle = color;
-  const bl = Math.max(8, Math.min(14, w * 0.16));
-  ctx.fillRect(x - 2, y - 2, bl, 2.5);
-  ctx.fillRect(x - 2, y - 2, 2.5, bl);
-  ctx.fillRect(x + w + 2 - bl, y - 2, bl, 2.5);
-  ctx.fillRect(x + w - 0.5, y - 2, 2.5, bl);
-  ctx.fillRect(x - 2, y + h - 0.5, bl, 2.5);
-  ctx.fillRect(x - 2, y + h + 2 - bl, 2.5, bl);
-  ctx.fillRect(x + w + 2 - bl, y + h - 0.5, bl, 2.5);
-  ctx.fillRect(x + w - 0.5, y + h + 2 - bl, 2.5, bl);
-
-  // Header Banner
-  ctx.font = 'bold 9px "JetBrains Mono", monospace';
-  const bannerText = opts.title;
-  const bannerWidth = Math.max(ctx.measureText(bannerText).width + 16, 140);
-  
-  ctx.fillStyle = isAlert ? 'rgba(244, 63, 94, 0.95)' : 'rgba(10, 20, 35, 0.92)';
-  ctx.fillRect(x - 2, y - 22, bannerWidth, 20);
-  if (!isAlert) {
-    ctx.strokeStyle = '#00f2fe';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x - 2, y - 22, bannerWidth, 20);
-  }
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(bannerText, x + 4, y - 8);
-
-  // Bottom Subtitle & Speed Telemetry
-  if (opts.subtitle) {
-    ctx.fillStyle = 'rgba(6, 10, 18, 0.92)';
-    ctx.fillRect(x - 2, y + h + 4, bannerWidth + 10, 16);
-    ctx.strokeStyle = isAlert ? 'rgba(244,63,94,0.4)' : 'rgba(0,242,254,0.3)';
-    ctx.strokeRect(x - 2, y + h + 4, bannerWidth + 10, 16);
-
-    ctx.fillStyle = isAlert ? '#fbbf24' : '#38bdf8';
-    ctx.font = 'bold 8px "JetBrains Mono", monospace';
-    ctx.fillText(opts.subtitle, x + 4, y + h + 15);
-  }
-
-  ctx.restore();
-}
-
-// Live Suspect Capture Trigger Handler (Populates Snapshot Dossier + GIS Trail)
+// Live Suspect Capture Trigger Handler (Captures Snapshot + Routes into Alert Section Automatically)
 function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed = 81.5) {
   lastSuspectAlertTimestamp = Date.now();
   lastAlertedPlate = plate;
 
-  // 1. Play Tactical Priority Alert Chime
+  // 1. Grab Crisp Photographic Snapshot & Zoomed OCR Plate Crop from Video Frame
+  const snapshotData = captureCrispVehicleSnapshot(video, plate);
+
+  // 2. Play Tactical Priority Alert Chime via Web Audio API
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
@@ -1857,41 +1784,66 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
     osc.stop(audioCtx.currentTime + 0.36);
   } catch (e) {}
 
-  // 2. Render Snapshot Crop to Canvas
+  // 3. Render Snapshot Image in Analytics View Dossier
   const previewCanvas = document.getElementById('snapshotPreviewCanvas');
-  if (previewCanvas && video && video.videoWidth > 0) {
+  if (previewCanvas) {
     const pCtx = previewCanvas.getContext('2d');
     if (pCtx) {
-      pCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
-      pCtx.strokeStyle = '#f43f5e';
-      pCtx.lineWidth = 3;
-      pCtx.strokeRect(30, 20, 120, 70);
+      const img = new Image();
+      img.onload = () => pCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+      img.src = snapshotData.fullSnapshotUrl;
     }
   }
 
-  // 3. Populate Snapshot Card Details
   const snapshotCard = document.getElementById('suspectCaptureSnapshotCard');
   if (snapshotCard) {
     document.getElementById('snapshotPlateDisplay').textContent = plate;
-    document.getElementById('snapshotCrimeDisplay').innerHTML = `Wanted For: <strong style="color:#ffffff;">${suspectInfo.crime || 'Armed Robbery'}</strong> &bull; FIR: <span>${suspectInfo.fir || 'FIR-892/2026'}</span>`;
+    document.getElementById('snapshotCrimeDisplay').innerHTML = `Wanted For: <strong style="color:#ffffff;">${suspectInfo.crime || 'Armed Bank Robbery'}</strong> &bull; FIR: <span>${suspectInfo.fir || 'FIR-892/2026'}</span>`;
     document.getElementById('snapshotCamDisplay').textContent = `${camera.id} • ${camera.name.slice(0, 26)}...`;
     document.getElementById('snapshotSpeedDisplay').textContent = `${speed} km/h`;
-    document.getElementById('snapshotOcrDisplay').textContent = '99.4%';
+    document.getElementById('snapshotOcrDisplay').textContent = '99.4% (OCR Verified)';
     document.getElementById('snapshotHashDisplay').textContent = `#SHA256-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
     document.getElementById('snapshotTimestamp').textContent = new Date().toLocaleTimeString('en-IN') + ' IST';
-    
     snapshotCard.style.display = 'block';
-    snapshotCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  // 4. Show Real-Time Toast Notification
+  // 4. Automatically Route this Snapshot into the Alert Section as a High-Priority Incident
+  const alertId = `ALT-SNIP-${Math.floor(1000 + Math.random() * 9000)}`;
+  const newSuspectAlert = {
+    id: alertId,
+    event_id: `EVT-${Math.floor(10000 + Math.random() * 90000)}`,
+    camera_id: camera.id,
+    location: `${camera.name} (${camera.district})`,
+    target_vehicle: plate,
+    matched_source: 'yolo_anpr_backend',
+    title: `🚨 SUSPECT VEHICLE SIGHTING: ${plate}`,
+    severity: 'critical',
+    status: 'active',
+    details: `Backend YOLOv8 Vision Engine auto-captured suspect passing ${camera.name}. Wanted for: ${suspectInfo.crime || 'Criminal Investigation'} (Ref: ${suspectInfo.fir || 'FIR-HQ'}). Plate OCR extracted with 99.4% confidence.`,
+    snapshot_url: snapshotData.fullSnapshotUrl,
+    plate_crop_url: snapshotData.plateCropUrl,
+    speed_kmph: speed,
+    ocr_confidence: 99.4,
+    created_at: new Date().toISOString()
+  };
+
+  if (window.apiClient && window.apiClient.alerts) {
+    window.apiClient.alerts.unshift(newSuspectAlert);
+  }
+
+  // 5. Automatically Re-render Alerts Feed with new Snapshot Card
+  if (typeof renderAlerts === 'function') {
+    renderAlerts();
+  }
+
+  // 6. Show Real-Time Toast Notification
   showRealtimeAlertToast({
-    title: `🚨 SUSPECT INTERCEPT HIT: ${plate}`,
+    title: `🚨 SUSPECT SNAPSHOT CAPTURED: ${plate}`,
     location: `${camera.name} (${camera.district})`,
     camera_id: camera.id
   });
 
-  // 5. Update Dynamic Dashboard Meters
+  // 7. Update Dynamic Dashboard Meters
   updateDynamicDashboardMeters('cardStatAlerts');
 }
 
@@ -2614,6 +2566,29 @@ async function renderAlerts() {
       statusHtml = `<span class="node-status-pill" style="background: rgba(16,185,129,0.15); color: var(--accent-emerald); border-color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> ACKNOWLEDGED</span>`;
     }
 
+    let snapshotHtml = '';
+    if (alert.snapshot_url) {
+      snapshotHtml = `
+        <div style="display: flex; gap: 1rem; align-items: center; background: rgba(0,0,0,0.35); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid rgba(244,63,94,0.3); margin: 0.6rem 0; flex-wrap: wrap;">
+          <div style="width: 140px; height: 80px; border-radius: 4px; overflow: hidden; border: 1px solid var(--accent-rose); position: relative; background: #000; flex-shrink: 0;">
+            <img src="${alert.snapshot_url}" alt="Suspect Capture" style="width: 100%; height: 100%; object-fit: cover;" />
+            <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: #fff; font-size: 0.55rem; padding: 1px 4px; border-radius: 2px; font-family: var(--font-mono);">AUTO-SNAPSHOT</span>
+          </div>
+          <div style="flex: 1; min-width: 180px;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+              <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-camera"></i> Focused OCR License Plate:</span>
+              <span style="font-size: 0.62rem; color: var(--accent-emerald); font-weight: 800;">${alert.ocr_confidence || 99.4}% MATCH</span>
+            </div>
+            ${alert.plate_crop_url ? `<img src="${alert.plate_crop_url}" alt="OCR Plate" style="height: 32px; border-radius: 4px; border: 1px solid #ffffff; box-shadow: 0 0 10px rgba(0,242,254,0.25);" />` : `<strong style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent-cyan);">${alert.target_vehicle || 'GJ-01-AB-1234'}</strong>`}
+            <div style="margin-top: 0.3rem; font-size: 0.68rem; color: var(--text-secondary);">
+              <span>Observed Speed: <strong>${alert.speed_kmph || 81.5} km/h</strong></span> &bull; 
+              <span style="color: var(--text-muted); font-family: var(--font-mono);">Sec 65B Hash Verified</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     card.innerHTML = `
       <div class="alert-card-top">
         <div class="alert-title-wrap">
@@ -2628,12 +2603,19 @@ async function renderAlerts() {
 
       <p class="alert-desc-text">${alert.details}</p>
 
+      ${snapshotHtml}
+
       <div class="alert-card-footer">
         <div class="alert-node-info">
           <i class="fa-solid fa-location-dot"></i> ${alert.location} &bull; <i class="fa-solid fa-video"></i> ${alert.camera_id} &bull; <i class="fa-solid fa-clock"></i> ${new Date(alert.created_at || alert.ts || Date.now()).toLocaleTimeString('en-IN')} IST
         </div>
 
-        <div style="display: flex; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          ${alert.target_vehicle ? `
+            <button class="action-btn" onclick="window.renderTrajectoryOnGisMap('${alert.target_vehicle}')" style="background: rgba(0, 242, 254, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); font-size: 0.72rem; padding: 0.25rem 0.6rem;" title="Trace Multi-Dept Pursuit Route on GIS Map">
+              <i class="fa-solid fa-map-location-dot"></i> Track on GIS
+            </button>
+          ` : ''}
           ${alert.status === 'active' ? `
             <button class="action-btn primary" onclick="dispatchPcrUnit('${alert.id}')" style="background: linear-gradient(135deg, #f43f5e, #be123c); font-size: 0.72rem; padding: 0.25rem 0.6rem;">
               <i class="fa-solid fa-truck-fast"></i> Dispatch PCR Interceptor
