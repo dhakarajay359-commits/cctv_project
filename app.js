@@ -1942,6 +1942,9 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   };
 }
 
+// Set to track armed/already intercepted suspects to completely eliminate repeated alerts
+const armedSuspectPlates = new Set();
+
 function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -1957,22 +1960,25 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
     // 1. Live video stream remains 100% CLEAN (Zero artificial frames/bounding boxes drawn inside the video)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (video) {
+    // 2. Pure Backend/Background AI Observation Engine
+    // CRITICAL: If video is PAUSED, STOPPED, or NOT actively playing, DO NOT advance time and DO NOT trigger alerts!
+    if (video && !video.paused && !video.ended && video.readyState >= 2) {
       const duration = (video.duration && !isNaN(video.duration)) ? video.duration : 8.0;
-      const currentTime = !video.paused ? (video.currentTime % duration) : ((Date.now() / 1000) % duration);
+      const currentTime = video.currentTime % duration;
 
-      // 2. Pure Backend/Background AI Observation Engine (No overlays on live video)
       if (!isFaceHit) {
         const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
         const primarySuspect = activeSuspects[0] || { plate: 'GJ-01-AB-1234', crime: 'Armed Bank Robbery & Kidnapping', fir: 'FIR-892/2026' };
         const suspectPlate = primarySuspect.plate || 'GJ-01-AB-1234';
+        const cleanPlate = suspectPlate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
         // Backend AI observes target vehicle passing in camera view (e.g. between 3.2s and 7.6s)
         if (currentTime >= 3.2 && currentTime <= 7.6) {
-          const isTargetWanted = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.some(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === suspectPlate.replace(/[^A-Za-z0-9]/g, ''));
+          const isTargetWanted = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.some(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlate);
 
-          // When suspect car appears in camera, automatically capture snapshot & dispatch to alert section
-          if (isTargetWanted && Date.now() - lastSuspectAlertTimestamp > 7000) {
+          // ONCE ARMED / INTERCEPTED, NEVER ALERT AGAIN (Eliminates repeated alert spam)
+          if (isTargetWanted && !armedSuspectPlates.has(cleanPlate)) {
+            armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
             triggerLiveSuspectDossierHit(suspectPlate, camera, video, primarySuspect, 81.5);
           }
         }
@@ -1990,6 +1996,8 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
 function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed = 81.5) {
   lastSuspectAlertTimestamp = Date.now();
   lastAlertedPlate = plate;
+  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  armedSuspectPlates.add(cleanPlate); // Prevent duplicate triggers
 
   // 1. Grab Crisp Photographic Snapshot & Zoomed OCR Plate Crop from Video Frame
   const snapshotData = captureCrispVehicleSnapshot(video, plate);
@@ -2034,7 +2042,6 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
   }
 
   // 4. ZERO-DELAY AUTOMATIC DISPATCH TO NEAREST POLICE STATION & PATROL UNITS
-  // Camera-to-jurisdiction automatic mapping
   const nearestStation = camera.district && camera.district.includes('Ahmedabad') 
     ? 'Satellite Police Station & SG-1 Highway Division'
     : `${camera.district || 'City'} Central Police Station & Highway Patrol`;
@@ -2089,6 +2096,52 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
   // 8. Update Dynamic Dashboard Meters
   updateDynamicDashboardMeters('cardStatAlerts');
 }
+
+// TOGGLE PLAY / FREEZE VIDEO CELL AT EXACT CURRENT MOMENT AND FRAME IMAGE
+window.togglePlayPauseCell = function(camId) {
+  const videoEl = document.getElementById(`video_${camId}`);
+  const cell = document.querySelector(`.wall-feed-cell[data-cam-id="${camId}"]`);
+  const btn = cell ? cell.querySelector('.btn-play-pause-cell') : null;
+  const indicator = cell ? cell.querySelector('.feed-live-indicator') : null;
+
+  if (!videoEl) return;
+
+  if (!videoEl.paused) {
+    // 1. FREEZE VIDEO AT EXACT CURRENT TIME & IMAGE
+    videoEl.pause();
+    const freezeTime = (videoEl.currentTime || 0).toFixed(1);
+    
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-play text-emerald"></i> Resume';
+      btn.title = 'Resume Live Video Playback';
+      btn.classList.remove('danger');
+    }
+    if (indicator) {
+      indicator.innerHTML = `<i class="fa-solid fa-pause" style="color: var(--accent-amber);"></i> FROZEN @ 00:0${freezeTime}s`;
+      indicator.style.background = 'rgba(245, 158, 11, 0.15)';
+      indicator.style.color = 'var(--accent-amber)';
+    }
+    showRealtimeAlertToast({
+      title: `⏸️ VIDEO FROZEN: ${camId}`,
+      location: `Frame preserved at offset 00:0${freezeTime}s`,
+      camera_id: camId
+    });
+  } else {
+    // 2. RESUME LIVE VIDEO STREAM PLAYBACK
+    videoEl.play().then(() => {
+      if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> Freeze';
+        btn.title = 'Freeze Video Stream at Current Frame';
+        btn.classList.add('danger');
+      }
+      if (indicator) {
+        indicator.innerHTML = `<span class="dot-sm" style="background: var(--accent-rose);"></span> LIVE RELAY`;
+        indicator.style.background = 'rgba(244, 63, 94, 0.12)';
+        indicator.style.color = 'var(--accent-rose)';
+      }
+    }).catch(e => console.error(e));
+  }
+};
 
 window.toggleWebcamFeed = async function(camId) {
   const cell = document.querySelector(`.wall-feed-cell[data-cam-id="${camId}"]`);
@@ -2205,6 +2258,9 @@ async function renderLiveWall() {
       <div class="wall-feed-bottom" style="z-index: 15;">
         <div class="feed-controls-group" style="z-index: 16;">
           ${isSessionActive ? `
+            <button type="button" class="feed-ctrl-btn btn-play-pause-cell danger" onclick="togglePlayPauseCell('${cam.id}')" title="Freeze Video Stream at Current Frame">
+              <i class="fa-solid fa-pause"></i> Freeze
+            </button>
             <button type="button" class="feed-ctrl-btn" onclick="toggleWebcamFeed('${cam.id}')" title="Toggle Physical WebCam Stream" style="color: var(--accent-cyan);">
               <i class="fa-solid fa-camera-rotate"></i> WebCam
             </button>
@@ -2216,9 +2272,6 @@ async function renderLiveWall() {
             </button>
             <button type="button" class="feed-ctrl-btn" onclick="openTagFeedModal('${cam.id}', '${cam.name}')" title="Tag for Investigation">
               <i class="fa-solid fa-bookmark"></i> Tag
-            </button>
-            <button type="button" class="feed-ctrl-btn danger" onclick="stopCellSession('${cam.id}')" title="Terminate Session (Free Bandwidth)">
-              <i class="fa-solid fa-stop"></i> Stop
             </button>
           ` : `
             <button type="button" class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.4); font-size: 0.7rem;">
@@ -2563,6 +2616,10 @@ window.simulateSuspectCameraHit = async function(plate) {
     alert(`Plate ${plate} is not currently registered in the Suspect Watchlist. Register it first.`);
     return;
   }
+
+  // Reset from armed set for manual operator simulation test
+  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  armedSuspectPlates.delete(cleanPlate);
 
   // 1. Navigate to Live Wall or Analytics
   const analyticsNavBtn = document.querySelector('.main-nav-btn[data-view="view-analytics"]');
