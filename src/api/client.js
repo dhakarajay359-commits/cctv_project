@@ -905,12 +905,28 @@ class NirikshanApiClient {
         priority: 'CRITICAL',
         registered_by: 'Inspector V. R. Jadeja',
         department_id: 'dept-police',
+        camera_id: 'CAM-GJ-0101',
         assigned_units: 'PCR Cheetah #04 & Falcon #09',
         active: true,
         created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
       },
       {
         id: 'WCH-002',
+        plate: 'GJ-05-CD-9988',
+        vehicle_type: 'Toyota Fortuner 4x4 (Black)',
+        crime: 'Organized Crime Extortion & Arms Act (Sec 384/386 IPC)',
+        fir: 'FIR-412/2026 (Crime Branch Surat / Ahmedabad)',
+        suspect_name: 'Dharmesh @ Montu Sindhi',
+        priority: 'CRITICAL',
+        registered_by: 'DSP Crime Branch A. K. Varma',
+        department_id: 'dept-police',
+        camera_id: 'CAM-GJ-0102',
+        assigned_units: 'Riverfront Tactical Strike Team & Interceptor 07',
+        active: true,
+        created_at: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString()
+      },
+      {
+        id: 'WCH-003',
         plate: 'MP-09-HH-5541',
         vehicle_type: 'Tata Prima Multi-Axle Carrier',
         crime: 'Inter-State PDS Grain Siphoning & Toll Evasion',
@@ -919,9 +935,25 @@ class NirikshanApiClient {
         priority: 'HIGH',
         registered_by: 'Enforcement Officer R. Mehta',
         department_id: 'dept-civil',
+        camera_id: 'CAM-GJ-0501',
         assigned_units: 'Dahod Border Patrol Squad #02',
         active: true,
         created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
+      },
+      {
+        id: 'WCH-004',
+        plate: 'GJ-03-XY-7711',
+        vehicle_type: 'Mahindra Scorpio-N (Deep Red)',
+        crime: 'Highway Gold Consignment Hijacking (Sec 395 IPC)',
+        fir: 'FIR-519/2026 (Bagodara RTO Checkpost PS)',
+        suspect_name: 'Rajendra Bhavsinh Zala',
+        priority: 'CRITICAL',
+        registered_by: 'Inspector K. S. Rathod',
+        department_id: 'dept-police',
+        camera_id: 'CAM-GJ-0201',
+        assigned_units: 'Saurashtra Highway Interceptor Flying Squad #03',
+        active: true,
+        created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString()
       }
     ];
 

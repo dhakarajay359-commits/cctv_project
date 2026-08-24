@@ -1870,18 +1870,32 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
 
       if (!isFaceHit) {
         const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
-        const primarySuspect = activeSuspects[0] || { plate: 'GJ-01-AB-1234', crime: 'Armed Bank Robbery & Kidnapping', fir: 'FIR-892/2026' };
-        const suspectPlate = primarySuspect.plate || 'GJ-01-AB-1234';
-        const cleanPlate = suspectPlate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        
+        // Dynamically assign suspect based on camera node
+        let matchedSuspect = null;
+        if (camera.id === 'CAM-GJ-0101') {
+          matchedSuspect = activeSuspects.find(s => s.plate === 'GJ-01-AB-1234') || activeSuspects[0];
+        } else if (camera.id === 'CAM-GJ-0102') {
+          matchedSuspect = activeSuspects.find(s => s.plate === 'GJ-05-CD-9988') || activeSuspects[1] || activeSuspects[0];
+        } else if (camera.id === 'CAM-GJ-0501' || camera.id === 'CAM-GJ-0502') {
+          matchedSuspect = activeSuspects.find(s => s.plate === 'MP-09-HH-5541') || activeSuspects[2] || activeSuspects[0];
+        } else if (camera.id === 'CAM-GJ-0201') {
+          matchedSuspect = activeSuspects.find(s => s.plate === 'GJ-03-XY-7711') || activeSuspects[3] || activeSuspects[0];
+        } else {
+          matchedSuspect = activeSuspects.find(s => s.camera_id === camera.id) || activeSuspects[0];
+        }
 
-        // Backend AI observes target vehicle passing in camera view (e.g. between 3.2s and 7.6s)
-        if (currentTime >= 3.2 && currentTime <= 7.6) {
-          const isTargetWanted = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.some(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === cleanPlate);
+        if (matchedSuspect) {
+          const suspectPlate = matchedSuspect.plate;
+          const cleanPlate = suspectPlate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
-          // ONCE ARMED / INTERCEPTED, NEVER ALERT AGAIN (Eliminates repeated alert spam)
-          if (isTargetWanted && !armedSuspectPlates.has(cleanPlate)) {
-            armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
-            triggerLiveSuspectDossierHit(suspectPlate, camera, video, primarySuspect, 81.5);
+          // Backend AI observes target vehicle passing in camera view (e.g. between 3.0s and 7.0s)
+          if (currentTime >= 3.0 && currentTime <= 7.0) {
+            // ONCE ARMED / INTERCEPTED, NEVER ALERT AGAIN (Eliminates repeated alert spam)
+            if (!armedSuspectPlates.has(cleanPlate)) {
+              armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
+              triggerLiveSuspectDossierHit(suspectPlate, camera, video, matchedSuspect, 82.5);
+            }
           }
         }
       }
@@ -2523,13 +2537,32 @@ window.simulateSuspectCameraHit = async function(plate) {
   const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   armedSuspectPlates.delete(cleanPlate);
 
-  // 1. Navigate to Live Wall or Analytics
-  const analyticsNavBtn = document.querySelector('.main-nav-btn[data-view="view-analytics"]');
-  if (analyticsNavBtn) analyticsNavBtn.click();
+  // Discover specific camera for this suspect
+  let targetCam = null;
+  if (suspect.camera_id) {
+    targetCam = await window.apiClient.getCameraById(suspect.camera_id);
+  }
+  if (!targetCam) {
+    if (cleanPlate.includes('05') || cleanPlate.includes('SURAT') || cleanPlate.includes('9988')) {
+      targetCam = await window.apiClient.getCameraById('CAM-GJ-0102') || window.apiClient.cameras[1];
+    } else if (cleanPlate.startsWith('MP') || cleanPlate.includes('DAHOD') || cleanPlate.includes('5541')) {
+      targetCam = await window.apiClient.getCameraById('CAM-GJ-0501') || window.apiClient.cameras[2];
+    } else if (cleanPlate.includes('03') || cleanPlate.includes('7711')) {
+      targetCam = await window.apiClient.getCameraById('CAM-GJ-0201') || window.apiClient.cameras[3];
+    } else {
+      targetCam = window.apiClient.cameras[0];
+    }
+  }
 
-  // 2. Trigger Sighting Snapshot & Audio Alarm
-  const dummyCamera = { id: 'CAM-GJ-0101', name: 'SG Highway Iskcon Crossroad Overbridge', district: 'Ahmedabad (Urban)' };
-  triggerLiveSuspectDossierHit(plate, dummyCamera, null, suspect, 84.5);
+  // 1. Switch to Dashboard GIS Map
+  const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
+  if (dashNavBtn) dashNavBtn.click();
+
+  // 2. Trigger Sighting Snapshot & Audio Alarm for this specific camera
+  triggerLiveSuspectDossierHit(plate, targetCam, null, suspect, 84.5);
+
+  // 3. Automatically draw route on GIS Map starting from this camera
+  await window.renderTrajectoryOnGisMap(plate, targetCam.id);
 };
 
 // Layer group for active dynamic GIS pursuit trajectories
