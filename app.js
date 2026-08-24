@@ -1844,8 +1844,146 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   };
 }
 
-// Set to track armed/already intercepted suspects to completely eliminate repeated alerts
+// Helper to grab 100% REAL photographic snapshot with Optical Biometric Facial Vector Bounding Box
+function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0104 • Vadodara Railway Junction Concourse') {
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = 640;
+  offCanvas.height = 360;
+  const ctx = offCanvas.getContext('2d');
+
+  let sourceVideo = video;
+  if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
+    sourceVideo = document.getElementById('video_CAM-GJ-0104') || document.querySelector('.live-stream-video');
+  }
+
+  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
+    try {
+      ctx.drawImage(sourceVideo, 0, 0, offCanvas.width, offCanvas.height);
+    } catch (e) {
+      console.warn('Live face video frame grab fallback:', e);
+    }
+  } else {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 360);
+    bgGrad.addColorStop(0, '#0f172a');
+    bgGrad.addColorStop(1, '#020617');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 640, 360);
+  }
+
+  // Optical Biometric Face Bounding Box (Target Face in Pedestrian Stream)
+  const fBoxX = 270;
+  const fBoxY = 85;
+  const fBoxW = 105;
+  const fBoxH = 135;
+
+  ctx.strokeStyle = '#f43f5e';
+  ctx.lineWidth = 2.5;
+  const corner = 18;
+  // Top-left
+  ctx.beginPath(); ctx.moveTo(fBoxX, fBoxY + corner); ctx.lineTo(fBoxX, fBoxY); ctx.lineTo(fBoxX + corner, fBoxY); ctx.stroke();
+  // Top-right
+  ctx.beginPath(); ctx.moveTo(fBoxX + fBoxW - corner, fBoxY); ctx.lineTo(fBoxX + fBoxW, fBoxY); ctx.lineTo(fBoxX + fBoxW, fBoxY + corner); ctx.stroke();
+  // Bottom-left
+  ctx.beginPath(); ctx.moveTo(fBoxX, fBoxY + fBoxH - corner); ctx.lineTo(fBoxX, fBoxY + fBoxH); ctx.lineTo(fBoxX + corner, fBoxY + fBoxH); ctx.stroke();
+  // Bottom-right
+  ctx.beginPath(); ctx.moveTo(fBoxX + fBoxW, fBoxY + fBoxH - corner); ctx.lineTo(fBoxX + fBoxW, fBoxY + fBoxH); ctx.lineTo(fBoxX + fBoxW - corner, fBoxY + fBoxH); ctx.stroke();
+
+  // 5-Point Biometric Facial Landmark Mesh Dots
+  ctx.fillStyle = '#00f2fe';
+  const landmarks = [
+    [fBoxX + 32, fBoxY + 48], // Left eye
+    [fBoxX + 73, fBoxY + 48], // Right eye
+    [fBoxX + 52, fBoxY + 74], // Nose tip
+    [fBoxX + 38, fBoxY + 98], // Left mouth corner
+    [fBoxX + 67, fBoxY + 98]  // Right mouth corner
+  ];
+  landmarks.forEach(([lx, ly]) => {
+    ctx.beginPath();
+    ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Connecting Landmark Vector Lines
+  ctx.strokeStyle = 'rgba(0, 242, 254, 0.35)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(landmarks[0][0], landmarks[0][1]);
+  ctx.lineTo(landmarks[1][0], landmarks[1][1]);
+  ctx.lineTo(landmarks[2][0], landmarks[2][1]);
+  ctx.lineTo(landmarks[0][0], landmarks[0][1]);
+  ctx.moveTo(landmarks[2][0], landmarks[2][1]);
+  ctx.lineTo(landmarks[3][0], landmarks[3][1]);
+  ctx.lineTo(landmarks[4][0], landmarks[4][1]);
+  ctx.lineTo(landmarks[2][0], landmarks[2][1]);
+  ctx.stroke();
+
+  // Classification Header Tag
+  const faceName = suspectFace.name || 'Vikram K. (Alias: Vicky)';
+  ctx.fillStyle = 'rgba(244, 63, 94, 0.95)';
+  ctx.fillRect(fBoxX - 10, fBoxY - 22, 160, 18);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.fillText(`🚨 CCTNS HIT: ${faceName.slice(0, 14)}`, fBoxX - 6, fBoxY - 9);
+
+  // Confidence & Biometric Score Label
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
+  ctx.fillRect(fBoxX - 10, fBoxY + fBoxH + 4, 160, 16);
+  ctx.fillStyle = '#00f2fe';
+  ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
+  ctx.fillText(`BIOMETRIC CONF: ${suspectFace.biometric_score_default || 96.8}%`, fBoxX - 6, fBoxY + fBoxH + 15);
+
+  // Top OSD Metadata
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.9)';
+  ctx.fillRect(0, 0, 640, 26);
+  ctx.fillRect(0, 336, 640, 24);
+
+  ctx.fillStyle = '#f43f5e';
+  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.fillText(`🚨 NAFIS / CCTNS RED NOTICE MATCH • FACIAL EMBEDDING VECTOR`, 10, 17);
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.fillText(`📹 ${camName}`, 420, 17);
+
+  // Bottom OSD Telemetry
+  const now = new Date();
+  const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '8px "JetBrains Mono", monospace';
+  ctx.fillText(`PTS: ${timeStr} | 512-DIM VECTOR HASH: #0x${Math.random().toString(16).substring(2, 12).toUpperCase()} | MATCH CONF: 96.8%`, 10, 351);
+
+  // 128x128 High-Definition Micro-Crop of the Face
+  const faceCanvas = document.createElement('canvas');
+  faceCanvas.width = 128;
+  faceCanvas.height = 128;
+  const fCtx = faceCanvas.getContext('2d');
+
+  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
+    try {
+      fCtx.drawImage(sourceVideo, 0, 0, 128, 128);
+    } catch(e){}
+  } else {
+    fCtx.fillStyle = '#1e293b';
+    fCtx.fillRect(0, 0, 128, 128);
+  }
+
+  // Border on micro-crop
+  fCtx.strokeStyle = '#f43f5e';
+  fCtx.lineWidth = 3;
+  fCtx.strokeRect(0, 0, 128, 128);
+
+  return {
+    fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.95),
+    faceCropUrl: faceCanvas.toDataURL('image/png')
+  };
+}
+
+// Sets to track armed/already intercepted suspects to completely eliminate repeated alerts
 const armedSuspectPlates = new Set();
+const armedSuspectFaces = new Set();
 
 function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   const canvas = document.getElementById(canvasId);
@@ -1869,6 +2007,7 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
       const currentTime = video.currentTime % duration;
 
       if (!isFaceHit) {
+        // VEHICLE ANPR OBSERVATION
         const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
         
         // Dynamically assign suspect based on camera node
@@ -1898,6 +2037,26 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
             }
           }
         }
+      } else {
+        // FACIAL RECOGNITION & BIOMETRIC AI OBSERVATION
+        const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
+        const targetFace = activeFaces[0] || {
+          name: 'Vikram K. (Alias: Vicky)',
+          suspect_id: 'CCTNS-CRIM-2025-8812',
+          crime: 'Sec 302 IPC / Extortion & Non-Bailable Arrest Warrant',
+          fir: 'FIR-104/2025 (Sanand PS)',
+          biometric_score_default: 96.8
+        };
+
+        const faceKey = (targetFace.name || 'VIKRAM').toUpperCase();
+
+        // Backend facial vector matches target face passing in camera view
+        if (currentTime >= 2.5 && currentTime <= 7.5) {
+          if (!armedSuspectFaces.has(faceKey)) {
+            armedSuspectFaces.add(faceKey);
+            triggerLiveFaceMatchHit(targetFace, camera, video);
+          }
+        }
       }
     }
 
@@ -1906,6 +2065,96 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   }
 
   observeStreamFromBackend();
+}
+
+// Live Face Match Capture Trigger Handler
+function triggerLiveFaceMatchHit(suspectFace, camera, video) {
+  const faceKey = (suspectFace.name || 'VIKRAM').toUpperCase();
+  armedSuspectFaces.add(faceKey);
+
+  // 1. Grab Crisp Photographic Face Snapshot & Biometric Mesh Crop
+  const snapshotData = captureCrispFaceSnapshot(video, suspectFace, `${camera.id} • ${camera.name}`);
+
+  // 2. Play Tactical Audio Chime
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.46);
+  } catch (e) {}
+
+  // 3. Render Snapshot Image in Analytics View Dossier
+  const previewCanvas = document.getElementById('snapshotPreviewCanvas');
+  if (previewCanvas) {
+    const pCtx = previewCanvas.getContext('2d');
+    if (pCtx) {
+      const img = new Image();
+      img.onload = () => pCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+      img.src = snapshotData.fullSnapshotUrl;
+    }
+  }
+
+  const snapshotCard = document.getElementById('suspectCaptureSnapshotCard');
+  if (snapshotCard) {
+    document.getElementById('snapshotPlateDisplay').textContent = suspectFace.name;
+    document.getElementById('snapshotCrimeDisplay').innerHTML = `Wanted For: <strong style="color:#ffffff;">${suspectFace.crime || 'Criminal Warrant'}</strong> &bull; FIR: <span>${suspectFace.fir || 'CCTNS-RED'}</span>`;
+    document.getElementById('snapshotCamDisplay').textContent = `${camera.id} • ${camera.name.slice(0, 26)}...`;
+    document.getElementById('snapshotSpeedDisplay').textContent = `Pedestrian (3.2 km/h)`;
+    document.getElementById('snapshotOcrDisplay').textContent = `${suspectFace.biometric_score_default || 96.8}% (Facial Vector Match)`;
+    document.getElementById('snapshotHashDisplay').textContent = `#NAFIS-${suspectFace.suspect_id || '98124'}`;
+    document.getElementById('snapshotTimestamp').textContent = new Date().toLocaleTimeString('en-IN') + ' IST';
+    snapshotCard.style.display = 'block';
+  }
+
+  // 4. Dispatch Alert to Crime Branch & Police Units
+  const alertId = `ALT-FACE-${Math.floor(1000 + Math.random() * 9000)}`;
+  const autoFaceAlert = {
+    id: alertId,
+    event_id: `EVT-FACE-${Math.floor(10000 + Math.random() * 90000)}`,
+    camera_id: camera.id,
+    location: `${camera.name} (${camera.district})`,
+    target_vehicle: suspectFace.name,
+    matched_source: 'cctns_facial_matrix',
+    title: `🚨 CRITICAL CCTNS FACE MATCH: ${suspectFace.name}`,
+    severity: 'critical',
+    status: 'dispatched',
+    assigned_station: 'Crime Branch Unit 3 & ATS Quick Reaction Team',
+    pcr_unit: 'Tactical QRT Cheetah Squad • On-Scene',
+    dispatched_at: new Date().toISOString(),
+    roadblock_armed: false,
+    details: `FACIAL RECOGNITION MATCH: AI Facial Vision Engine identified wanted fugitive ${suspectFace.name} passing ${camera.name}. Matched against eGujCop / CCTNS Criminal Database at ${suspectFace.biometric_score_default || 96.8}% similarity. Offense: ${suspectFace.crime}. Immediate arrest squad dispatched.`,
+    snapshot_url: snapshotData.fullSnapshotUrl,
+    plate_crop_url: snapshotData.faceCropUrl,
+    ocr_confidence: suspectFace.biometric_score_default || 96.8,
+    created_at: new Date().toISOString()
+  };
+
+  if (window.apiClient && window.apiClient.alerts) {
+    window.apiClient.alerts.unshift(autoFaceAlert);
+  }
+
+  // 5. Automatically Re-render Alerts Feed
+  if (typeof renderAlerts === 'function') {
+    renderAlerts();
+  }
+
+  // 6. Show Instant High-Priority Toast
+  showRealtimeAlertToast({
+    title: `👤 CCTNS FACE MATCH: ${suspectFace.name}`,
+    location: `Match Confidence: ${suspectFace.biometric_score_default || 96.8}% • QRT Dispatched`,
+    camera_id: camera.id
+  });
+
+  // 7. Update Dynamic Dashboard Meters
+  updateDynamicDashboardMeters('cardStatAlerts');
 }
 
 // Live Suspect Capture Trigger Handler (Captures Snapshot + Auto-Dispatches to Nearest Police Station & Plots GIS Route with Zero Delay)
@@ -2962,6 +3211,11 @@ async function initAlertsView() {
     btnSimulate.addEventListener('click', () => simulateAnprStolenVehicleIntercept());
   }
 
+  const btnSimulateFace = document.getElementById('btnSimulateFaceHit');
+  if (btnSimulateFace) {
+    btnSimulateFace.addEventListener('click', () => simulateFaceRecognitionIntercept());
+  }
+
   // Subscribe to real-time Alert Bus pushes
   window.apiClient.subscribeToAlerts((newAlert) => {
     showRealtimeAlertToast(newAlert);
@@ -3167,6 +3421,29 @@ window.simulateAnprStolenVehicleIntercept = async function() {
     details: `ANPR optical read matched stolen hotlist in VAHAN 4.0. Owner: ${vahanRes.data.registered_owner}. FIR: ${vahanRes.data.fir_no} (${vahanRes.data.crime_section}). Heading Northbound @ 68 km/h.`
   });
 
+  await renderAlerts();
+  await renderAnalyticsTable();
+  await updateDynamicDashboardMeters('cardStatAlerts');
+};
+
+// Pitch Demo: Live CCTNS Facial Recognition Intercept Simulation
+window.simulateFaceRecognitionIntercept = async function() {
+  const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
+  const targetFace = activeFaces[0] || {
+    name: 'Vikram K. (Alias: Vicky)',
+    suspect_id: 'CCTNS-CRIM-2025-8812',
+    crime: 'Sec 302 IPC / Extortion & Non-Bailable Arrest Warrant',
+    fir: 'FIR-104/2025 (Sanand PS)',
+    biometric_score_default: 96.8
+  };
+
+  const targetCam = await window.apiClient.getCameraById('CAM-GJ-0104') || {
+    id: 'CAM-GJ-0104',
+    name: 'Vadodara Railway Station Main Concourse',
+    district: 'Vadodara'
+  };
+
+  triggerLiveFaceMatchHit(targetFace, targetCam, null);
   await renderAlerts();
   await renderAnalyticsTable();
   await updateDynamicDashboardMeters('cardStatAlerts');

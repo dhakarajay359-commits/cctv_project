@@ -1198,9 +1198,12 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <h2><i class="fa-solid fa-bell"></i> Real-Time Alerts &amp; PCR Interceptor Dispatch</h2>
           <p>Kafka topic-partitioned alert stream delivering sub-second automated intercepts from VAHAN, eGujCop, and NAFIS vision events directly to department control rooms.</p>
         </div>
-        <div class="alert-header-actions">
+        <div class="alert-header-actions" style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
           <button class="action-btn primary" id="btnSimulateStolenHit" style="background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 0 16px rgba(244,63,94,0.4);">
-            <i class="fa-solid fa-bolt"></i> Simulate Live ANPR Stolen Vehicle Intercept
+            <i class="fa-solid fa-bolt"></i> Simulate Live ANPR Vehicle Intercept
+          </button>
+          <button class="action-btn" id="btnSimulateFaceHit" style="background: linear-gradient(135deg, #00f2fe, #0284c7); color: #04101e; font-weight: 800; box-shadow: 0 0 16px rgba(0,242,254,0.3);">
+            <i class="fa-solid fa-user-shield"></i> Simulate CCTNS Face Scan Intercept
           </button>
         </div>
       </div>
