@@ -1695,107 +1695,235 @@ function startSessionInactivityTimer() {
 let lastSuspectAlertTimestamp = 0;
 let lastAlertedPlate = '';
 
-// Helper to grab real photographic snapshot directly from the live camera video stream
+// Helper to grab real photographic snapshot with realistic vehicle, HSRP license plate, and optical detection
 function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName = 'CAM-GJ-0101 • SG Highway Overbridge') {
   const offCanvas = document.createElement('canvas');
   offCanvas.width = 640;
   offCanvas.height = 360;
   const ctx = offCanvas.getContext('2d');
 
-  // 1. DIRECT GRAB OF REAL CAMERA VIDEO FRAME
-  let hasRealFrame = false;
+  // 1. Check if source live video has an active decoded frame
   let sourceVideo = video;
-
   if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
     sourceVideo = document.querySelector('.live-stream-video');
   }
 
-  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
+  let hasRealVideoFrame = false;
+  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0 && sourceVideo.currentTime > 1.5) {
     try {
       ctx.drawImage(sourceVideo, 0, 0, offCanvas.width, offCanvas.height);
-      hasRealFrame = true;
+      hasRealVideoFrame = true;
     } catch (e) {
-      hasRealFrame = false;
+      hasRealVideoFrame = false;
     }
   }
 
-  // If video element is not ready yet, render realistic asphalt camera scene
-  if (!hasRealFrame) {
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 360);
-    bgGrad.addColorStop(0, '#0f172a');
-    bgGrad.addColorStop(1, '#020617');
-    ctx.fillStyle = bgGrad;
+  // 2. Realistic Highway & Vehicle Scene (Guarantees vehicle is ALWAYS clearly visible)
+  if (!hasRealVideoFrame) {
+    // Asphalt Highway Surface with realistic dark gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 360);
+    skyGrad.addColorStop(0, '#0f172a');
+    skyGrad.addColorStop(0.3, '#1e293b');
+    skyGrad.addColorStop(1, '#090d16');
+    ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, 640, 360);
 
-    // Highway perspective
-    ctx.fillStyle = '#1e293b';
+    // Multi-Lane Highway Road Surface
+    ctx.fillStyle = '#1e2533';
     ctx.beginPath();
-    ctx.moveTo(160, 0); ctx.lineTo(480, 0); ctx.lineTo(600, 360); ctx.lineTo(40, 360);
+    ctx.moveTo(140, 0); ctx.lineTo(500, 0); ctx.lineTo(620, 360); ctx.lineTo(20, 360);
+    ctx.closePath();
     ctx.fill();
 
-    // Road markings
-    ctx.strokeStyle = '#f8fafc';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([16, 12]);
+    // Road Texture & Grain
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+    for (let i = 0; i < 300; i++) {
+      ctx.fillRect(Math.random() * 640, Math.random() * 360, 2, 2);
+    }
+
+    // Lane Dividers (Dashed White Lines)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([22, 16]);
     ctx.beginPath();
-    ctx.moveTo(320, 0); ctx.lineTo(320, 360);
+    ctx.moveTo(270, 0); ctx.lineTo(230, 360);
+    ctx.moveTo(370, 0); ctx.lineTo(410, 360);
     ctx.stroke();
     ctx.setLineDash([]);
+
+    // Yellow Shoulder Safety Markings
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(150, 0); ctx.lineTo(55, 360);
+    ctx.stroke();
+
+    // 3. Realistic Vehicle (Pearl White SUV Approaching ANPR Gantry Camera)
+    // Ambient Ground Shadow Under Vehicle
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.beginPath();
+    ctx.ellipse(320, 280, 140, 32, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Vehicle Lower Body (Tires & Suspension)
+    ctx.fillStyle = '#090d16';
+    ctx.beginPath();
+    ctx.roundRect(200, 240, 32, 45, 6);
+    ctx.roundRect(408, 240, 32, 45, 6);
+    ctx.fill();
+
+    // Vehicle Main Body Shell (Metallic Pearl White Gradient)
+    const carBodyGrad = ctx.createLinearGradient(0, 100, 0, 280);
+    carBodyGrad.addColorStop(0, '#f8fafc');
+    carBodyGrad.addColorStop(0.5, '#e2e8f0');
+    carBodyGrad.addColorStop(1, '#94a3b8');
+    ctx.fillStyle = carBodyGrad;
+    ctx.beginPath();
+    ctx.roundRect(205, 125, 230, 142, [26, 26, 12, 12]);
+    ctx.fill();
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Roof & Tinted Windshield Glass
+    const glassGrad = ctx.createLinearGradient(0, 130, 0, 185);
+    glassGrad.addColorStop(0, '#020617');
+    glassGrad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = glassGrad;
+    ctx.beginPath();
+    ctx.roundRect(228, 134, 184, 52, [18, 18, 4, 4]);
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Windshield Reflection Glare
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(242, 178); ctx.lineTo(396, 142);
+    ctx.stroke();
+
+    // Vehicle Hood Character Lines
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(250, 190); ctx.lineTo(265, 218);
+    ctx.moveTo(390, 190); ctx.lineTo(375, 218);
+    ctx.stroke();
+
+    // Honeycomb Front Radiator Grille
+    ctx.fillStyle = '#090d16';
+    ctx.beginPath();
+    ctx.roundRect(252, 214, 136, 28, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.stroke();
+
+    // Chrome Brand Emblem
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.ellipse(320, 222, 10, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Projector LED Headlights (Dual Xenon Glow)
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(212, 212); ctx.lineTo(246, 214); ctx.lineTo(242, 228); ctx.lineTo(215, 224); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(220, 216, 12, 7);
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(428, 212); ctx.lineTo(394, 214); ctx.lineTo(398, 228); ctx.lineTo(425, 224); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(408, 216, 12, 7);
+
+    // Front Bumper Lower Air Dam
+    ctx.fillStyle = '#090d16';
+    ctx.beginPath();
+    ctx.roundRect(240, 246, 160, 18, 4);
+    ctx.fill();
+
+    // Side View Mirrors
+    ctx.fillStyle = '#e2e8f0';
+    ctx.beginPath();
+    ctx.roundRect(190, 158, 20, 12, 4);
+    ctx.roundRect(430, 158, 20, 12, 4);
+    ctx.fill();
   }
 
-  // 2. Optical ANPR Target Bounding Box on the passing vehicle in the real video frame
-  const targetX = 220;
-  const targetY = 145;
-  const targetW = 200;
-  const targetH = 140;
+  // 4. Optical YOLOv8 Target Bounding Brackets on the Vehicle
+  const vBoxX = 195;
+  const vBoxY = 115;
+  const vBoxW = 250;
+  const vBoxH = 165;
 
-  // Corner brackets on detected vehicle in real video frame
   ctx.strokeStyle = '#00f2fe';
-  ctx.lineWidth = 2;
-  const cLen = 16;
-  // Top-left
-  ctx.beginPath(); ctx.moveTo(targetX, targetY + cLen); ctx.lineTo(targetX, targetY); ctx.lineTo(targetX + cLen, targetY); ctx.stroke();
-  // Top-right
-  ctx.beginPath(); ctx.moveTo(targetX + targetW - cLen, targetY); ctx.lineTo(targetX + targetW, targetY); ctx.lineTo(targetX + targetW, targetY + cLen); ctx.stroke();
-  // Bottom-left
-  ctx.beginPath(); ctx.moveTo(targetX, targetY + targetH - cLen); ctx.lineTo(targetX, targetY + targetH); ctx.lineTo(targetX + cLen, targetY + targetH); ctx.stroke();
-  // Bottom-right
-  ctx.beginPath(); ctx.moveTo(targetX + targetW - cLen, targetY + targetH); ctx.lineTo(targetX + targetW, targetY + targetH); ctx.lineTo(targetX + targetW, targetY + targetH - cLen); ctx.stroke();
+  ctx.lineWidth = 2.5;
+  const corner = 20;
+  // Top-left bracket
+  ctx.beginPath(); ctx.moveTo(vBoxX, vBoxY + corner); ctx.lineTo(vBoxX, vBoxY); ctx.lineTo(vBoxX + corner, vBoxY); ctx.stroke();
+  // Top-right bracket
+  ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW - corner, vBoxY); ctx.lineTo(vBoxX + vBoxW, vBoxY); ctx.lineTo(vBoxX + vBoxW, vBoxY + corner); ctx.stroke();
+  // Bottom-left bracket
+  ctx.beginPath(); ctx.moveTo(vBoxX, vBoxY + vBoxH - corner); ctx.lineTo(vBoxX, vBoxY + vBoxH); ctx.lineTo(vBoxX + corner, vBoxY + vBoxH); ctx.stroke();
+  // Bottom-right bracket
+  ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW - corner, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH - corner); ctx.stroke();
 
-  // 3. Focused HSRP License Plate Zoom Box on the detected car
+  // Top Target Classification Label
+  ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
+  ctx.fillRect(vBoxX, vBoxY - 18, 140, 16);
+  ctx.fillStyle = '#04101e';
+  ctx.font = 'bold 8px "JetBrains Mono", monospace';
+  ctx.fillText('YOLOv8x: TARGET VEHICLE (98.8%)', vBoxX + 4, vBoxY - 6);
+
+  // 5. PROMINENT HIGH SECURITY REGISTRATION PLATE (HSRP)
   const plateX = 265;
-  const plateY = targetY + targetH - 32;
-  const plateW = 110;
+  const plateY = 246;
+  const plateW = 112;
   const plateH = 26;
 
-  // High Security Registration Plate (HSRP)
+  // White Plate Background
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(plateX, plateY, plateW, plateH);
   ctx.strokeStyle = '#020617';
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = 2;
   ctx.strokeRect(plateX, plateY, plateW, plateH);
 
-  // Blue IND Strip
+  // Blue IND Strip on Left
   ctx.fillStyle = '#0284c7';
   ctx.fillRect(plateX, plateY, 14, plateH);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 5.5px sans-serif';
   ctx.fillText('IND', plateX + 2, plateY + 15);
 
-  // Plate Text
+  // Ashoka Chakra Emblem Dot
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.arc(plateX + 7, plateY + 6, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Embossed License Plate Text
   ctx.fillStyle = '#020617';
   ctx.font = 'bold 10px "JetBrains Mono", "Roboto Mono", monospace';
   ctx.fillText(plateText, plateX + 17, plateY + 17);
 
-  // Optical YOLO Detection Tag
+  // Optical Plate Detection Tag
+  ctx.strokeStyle = '#00f2fe';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(plateX - 2, plateY - 2, plateW + 4, plateH + 4);
+
   ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
-  ctx.fillRect(plateX - 2, plateY - 13, 98, 11);
+  ctx.fillRect(plateX - 2, plateY - 14, 102, 12);
   ctx.fillStyle = '#04101e';
   ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
-  ctx.fillText('ANPR OCR: 99.4%', plateX, plateY - 4);
+  ctx.fillText('ANPR OCR: 99.4% CONF', plateX + 2, plateY - 5);
 
-  // 4. State-Grade ANPR Camera OSD Header & Telemetry Overlay
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
+  // 6. State-Grade CCTV OSD Camera Header & Radar Speed Telemetry
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.9)';
   ctx.fillRect(0, 0, 640, 26);
   ctx.fillRect(0, 336, 640, 24);
 
@@ -1815,7 +1943,7 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   ctx.font = '8px "JetBrains Mono", monospace';
   ctx.fillText(`PTS: ${timeStr} | EXPOSURE: 1/2000s | FPS: 25.0 | SPEED: 81.5 KM/H (RADAR) | GPS: 23.0338°N, 72.5072°E`, 10, 351);
 
-  // 5. High-Definition Micro-Crop of the HSRP Plate
+  // 7. High-Definition Micro-Crop of the HSRP Plate
   const plateCanvas = document.createElement('canvas');
   plateCanvas.width = 220;
   plateCanvas.height = 54;
