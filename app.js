@@ -1641,12 +1641,15 @@ window.openDetachedVideoWall = async function() {
     </div>
   `).join('');
 
+  const originBase = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+
   popoutWin.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
       <title>NIRIKSHAN 4K Multi-Monitor Detached Live Video Wall</title>
       <meta charset="UTF-8">
+      <base href="${originBase}">
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1668,6 +1671,13 @@ window.openDetachedVideoWall = async function() {
       <div class="grid">
         ${feedsHtml}
       </div>
+      <script>
+        window.addEventListener('DOMContentLoaded', () => {
+          document.querySelectorAll('video').forEach(v => {
+            v.play().catch(e => console.log('Autoplay play note:', e));
+          });
+        });
+      </script>
     </body>
     </html>
   `);
