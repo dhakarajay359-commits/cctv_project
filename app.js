@@ -3542,7 +3542,13 @@ async function renderAlerts() {
 window.dispatchPcrUnit = async function(alertId) {
   const updated = await window.apiClient.dispatchPcr(alertId);
   await renderAlerts();
-  alert(`PCR INTERCEPTOR DISPATCHED!\n${updated.pcr_unit} dispatched to ${updated.location}.\nETA: 3.2 Minutes.`);
+  const unitName = updated?.pcr_unit || 'Tactical PCR Interceptor Falcon-09';
+  const locName = updated?.location || 'GIFT City Fin-Tech Sector (Gandhinagar)';
+  showRealtimeAlertToast({
+    title: `🚓 PCR UNIT DISPATCHED: ${unitName}`,
+    location: `${locName} • Priority Intercept En Route`,
+    camera_id: updated?.camera_id || 'DISPATCH_HQ'
+  });
 };
 
 window.acknowledgeAlertItem = async function(alertId) {
