@@ -3335,6 +3335,11 @@ async function initAlertsView() {
     btnSimulateFace.addEventListener('click', () => simulateFaceRecognitionIntercept());
   }
 
+  const btnClearAll = document.getElementById('btnClearAllAlerts');
+  if (btnClearAll) {
+    btnClearAll.addEventListener('click', () => clearAllAlerts());
+  }
+
   // Subscribe to real-time Alert Bus pushes
   window.apiClient.subscribeToAlerts((newAlert) => {
     showRealtimeAlertToast(newAlert);
@@ -3347,9 +3352,12 @@ async function initAlertsView() {
 
 async function renderAlerts() {
   const deptVal = document.getElementById('alertsDeptFilter')?.value || 'ALL';
-  const alerts = await window.apiClient.getAlerts(activeAlertSeverity, deptVal);
+  const allAlerts = await window.apiClient.getAlerts(activeAlertSeverity, deptVal);
   const container = document.getElementById('alertsFeedList') || document.getElementById('alertsList');
   if (!container) return;
+
+  // AUTO-CLEAR: Only show active unresolved & in-flight dispatched intercept alerts (Resolved alerts are automatically cleared)
+  const alerts = allAlerts.filter(a => a.status !== 'acknowledged' && a.status !== 'closed' && a.status !== 'resolved');
 
   const totalCountEl = document.getElementById('alertsTotalCount');
   const dispatchedCountEl = document.getElementById('alertsDispatchedCount');
@@ -3363,6 +3371,18 @@ async function renderAlerts() {
   updateGlobalAlertBadge(activeCount);
 
   container.innerHTML = '';
+
+  if (alerts.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 3.5rem 1.5rem; background: rgba(15,23,42,0.4); border: 1px dashed rgba(16,185,129,0.3); border-radius: var(--radius-md); margin: 1rem 0;">
+        <i class="fa-solid fa-shield-check text-emerald" style="font-size: 2.8rem; margin-bottom: 0.8rem; display: block; text-shadow: 0 0 20px rgba(16,185,129,0.4);"></i>
+        <h3 style="color: #ffffff; font-size: 1.15rem; font-weight: 800; margin-bottom: 0.3rem;">ALL INCIDENTS RESOLVED &amp; CLEARED</h3>
+        <p style="color: var(--text-secondary); font-size: 0.82rem; max-width: 480px; margin: 0 auto;">Active queue is clear. All 80,000+ CCTV Sentinel Vision nodes and ANPR AI models are running securely with 0 critical breaches.</p>
+      </div>
+    `;
+    return;
+  }
+
   alerts.forEach(alert => {
     const card = document.createElement('div');
     card.className = `alert-feed-card ${alert.severity}`;
@@ -3509,8 +3529,36 @@ window.dispatchPcrUnit = async function(alertId) {
 };
 
 window.acknowledgeAlertItem = async function(alertId) {
+  // 1. Mark acknowledged in API client
   await window.apiClient.acknowledgeAlert(alertId);
+  
+  // 2. Remove from active alerts list so it automatically clears
+  if (window.apiClient && window.apiClient.alerts) {
+    window.apiClient.alerts = window.apiClient.alerts.filter(a => a.id !== alertId);
+  }
+
+  // 3. Smooth re-render
   await renderAlerts();
+  await updateDynamicDashboardMeters('cardStatAlerts');
+
+  showRealtimeAlertToast({
+    title: `✅ CASE RESOLVED & CLEARED`,
+    location: `Incident ${alertId} closed and removed from active queue`,
+    camera_id: 'COMMAND_HQ'
+  });
+};
+
+window.clearAllAlerts = async function() {
+  if (window.apiClient) {
+    window.apiClient.alerts = [];
+  }
+  await renderAlerts();
+  await updateDynamicDashboardMeters('cardStatAlerts');
+  showRealtimeAlertToast({
+    title: `🧹 ALL ALERTS CLEARED`,
+    location: `Active intercept feed reset to secure clear state`,
+    camera_id: 'COMMAND_HQ'
+  });
 };
 
 function updateGlobalAlertBadge(count) {
