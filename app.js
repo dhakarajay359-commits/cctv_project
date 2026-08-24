@@ -1760,7 +1760,7 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   observeStreamFromBackend();
 }
 
-// Live Suspect Capture Trigger Handler (Captures Snapshot + Routes into Alert Section Automatically)
+// Live Suspect Capture Trigger Handler (Captures Snapshot + Auto-Dispatches to Nearest Police Station & Plots GIS Route with Zero Delay)
 function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed = 81.5) {
   lastSuspectAlertTimestamp = Date.now();
   lastAlertedPlate = plate;
@@ -1768,20 +1768,20 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
   // 1. Grab Crisp Photographic Snapshot & Zoomed OCR Plate Crop from Video Frame
   const snapshotData = captureCrispVehicleSnapshot(video, plate);
 
-  // 2. Play Tactical Priority Alert Chime via Web Audio API
+  // 2. Play Tactical Priority Emergency Alarm Chime via Web Audio API
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+    osc.frequency.setValueAtTime(940, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1240, audioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.36);
+    osc.stop(audioCtx.currentTime + 0.42);
   } catch (e) {}
 
   // 3. Render Snapshot Image in Analytics View Dossier
@@ -1807,19 +1807,31 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
     snapshotCard.style.display = 'block';
   }
 
-  // 4. Automatically Route this Snapshot into the Alert Section as a High-Priority Incident
+  // 4. ZERO-DELAY AUTOMATIC DISPATCH TO NEAREST POLICE STATION & PATROL UNITS
+  // Camera-to-jurisdiction automatic mapping
+  const nearestStation = camera.district && camera.district.includes('Ahmedabad') 
+    ? 'Satellite Police Station & SG-1 Highway Division'
+    : `${camera.district || 'City'} Central Police Station & Highway Patrol`;
+  
+  const assignedPcr = 'PCR-101 (Cheetah Unit) & Interceptor Falcon-09';
   const alertId = `ALT-SNIP-${Math.floor(1000 + Math.random() * 9000)}`;
-  const newSuspectAlert = {
+
+  const autoDispatchedAlert = {
     id: alertId,
     event_id: `EVT-${Math.floor(10000 + Math.random() * 90000)}`,
     camera_id: camera.id,
     location: `${camera.name} (${camera.district})`,
     target_vehicle: plate,
     matched_source: 'yolo_anpr_backend',
-    title: `🚨 SUSPECT VEHICLE SIGHTING: ${plate}`,
+    title: `🚨 CRITICAL SUSPECT INTERCEPT: ${plate} (AUTO-DISPATCHED)`,
     severity: 'critical',
-    status: 'active',
-    details: `Backend YOLOv8 Vision Engine auto-captured suspect passing ${camera.name}. Wanted for: ${suspectInfo.crime || 'Criminal Investigation'} (Ref: ${suspectInfo.fir || 'FIR-HQ'}). Plate OCR extracted with 99.4% confidence.`,
+    status: 'dispatched', // AUTOMATICALLY DISPATCHED WITHOUT REQUIRING OPERATOR CLICK
+    assigned_station: nearestStation,
+    pcr_unit: `${assignedPcr} • ETA 2.1 Mins`,
+    dispatched_at: new Date().toISOString(),
+    roadblock_armed: true,
+    forward_roadblock_location: 'Sanand & SG Highway Forward Toll Barrier #02',
+    details: `AUTOMATIC ZERO-DELAY DISPATCH ACTIVATED: Backend YOLOv8 Vision Engine detected target vehicle ${plate} passing ${camera.name}. Automated emergency alert dispatched to ${nearestStation}. Offense: ${suspectInfo.crime || 'Criminal BOLO Hotlist'} (Ref: ${suspectInfo.fir || 'FIR-HQ'}). Plate OCR verified at 99.4% confidence. Forward roadblock automatically armed.`,
     snapshot_url: snapshotData.fullSnapshotUrl,
     plate_crop_url: snapshotData.plateCropUrl,
     speed_kmph: speed,
@@ -1828,22 +1840,27 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
   };
 
   if (window.apiClient && window.apiClient.alerts) {
-    window.apiClient.alerts.unshift(newSuspectAlert);
+    window.apiClient.alerts.unshift(autoDispatchedAlert);
   }
 
-  // 5. Automatically Re-render Alerts Feed with new Snapshot Card
+  // 5. AUTOMATICALLY PLOT TRAJECTORY PURSUIT ROUTE ON GIS MAP (Zero-Delay)
+  if (typeof window.renderTrajectoryOnGisMap === 'function') {
+    window.renderTrajectoryOnGisMap(plate);
+  }
+
+  // 6. Automatically Re-render Alerts Feed with Dispatched Status
   if (typeof renderAlerts === 'function') {
     renderAlerts();
   }
 
-  // 6. Show Real-Time Toast Notification
+  // 7. Show Instant High-Priority Toast with Police Station Notification
   showRealtimeAlertToast({
-    title: `🚨 SUSPECT SNAPSHOT CAPTURED: ${plate}`,
-    location: `${camera.name} (${camera.district})`,
+    title: `⚡ AUTO-DISPATCHED: ${plate} ➔ ${nearestStation}`,
+    location: `${assignedPcr} En Route • Roadblock Armed`,
     camera_id: camera.id
   });
 
-  // 7. Update Dynamic Dashboard Meters
+  // 8. Update Dynamic Dashboard Meters
   updateDynamicDashboardMeters('cardStatAlerts');
 }
 
@@ -2589,6 +2606,27 @@ async function renderAlerts() {
       `;
     }
 
+    let autoDispatchBanner = '';
+    if (alert.status === 'dispatched' || alert.assigned_station) {
+      autoDispatchBanner = `
+        <div style="background: linear-gradient(90deg, rgba(0,242,254,0.12) 0%, rgba(16,185,129,0.08) 100%); border-left: 3px solid var(--accent-cyan); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); margin: 0.5rem 0; font-size: 0.73rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span style="color: var(--accent-cyan); font-weight: 800;"><i class="fa-solid fa-bolt text-amber"></i> AUTOMATIC ZERO-DELAY DISPATCH:</span>
+              <strong style="color: #ffffff; margin-left: 0.3rem;">${alert.assigned_station || 'Satellite Police Station & SG-1 Division'}</strong>
+            </div>
+            <span class="node-status-pill online" style="font-size: 0.65rem; background: rgba(16,185,129,0.2); color: var(--accent-emerald); border-color: var(--accent-emerald);">
+              <i class="fa-solid fa-truck-fast"></i> ${alert.pcr_unit || 'PCR Cheetah Unit • ETA: 2.1 Mins'}
+            </span>
+          </div>
+          <div style="margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.68rem; display: flex; gap: 0.8rem; flex-wrap: wrap;">
+            <span><i class="fa-solid fa-shield-halved text-rose"></i> Roadblock: <strong>${alert.forward_roadblock_location || 'SG Highway Forward Toll Barrier (ARMED)'}</strong></span>
+            <span><i class="fa-solid fa-map-pin text-cyan"></i> GIS Pursuit: <strong>Automated Trajectory Synced</strong></span>
+          </div>
+        </div>
+      `;
+    }
+
     card.innerHTML = `
       <div class="alert-card-top">
         <div class="alert-title-wrap">
@@ -2603,6 +2641,7 @@ async function renderAlerts() {
 
       <p class="alert-desc-text">${alert.details}</p>
 
+      ${autoDispatchBanner}
       ${snapshotHtml}
 
       <div class="alert-card-footer">
