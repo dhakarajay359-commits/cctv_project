@@ -968,6 +968,7 @@ class NirikshanApiClient {
         fir: 'FIR 104/2025 (Sanand PS)',
         priority: 'CRITICAL',
         biometric_score_default: 96.8,
+        camera_id: 'CAM-GJ-0302',
         active: true
       },
       {

@@ -1870,10 +1870,82 @@ function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0104 •
     ctx.fillRect(0, 0, 640, 360);
   }
 
-  // Optical Biometric Face Bounding Box (Target Face in Pedestrian Stream)
+  // 2. Realistic Suspect Person (Vikram K.) in the Hallway / Concourse
+  // Suspect Shoulders & Torso (Dark Tactical Jacket)
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.roundRect(220, 195, 205, 165, [30, 30, 0, 0]);
+  ctx.fill();
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Dark Collar & Inner Shirt
+  ctx.fillStyle = '#1e293b';
+  ctx.beginPath();
+  ctx.moveTo(270, 195);
+  ctx.lineTo(375, 195);
+  ctx.lineTo(340, 235);
+  ctx.lineTo(305, 235);
+  ctx.closePath();
+  ctx.fill();
+
+  // Neck
+  ctx.fillStyle = '#d4a373';
+  ctx.beginPath();
+  ctx.roundRect(298, 175, 50, 35, 6);
+  ctx.fill();
+
+  // Head & Face Silhouette
+  ctx.fillStyle = '#e0a96d';
+  ctx.beginPath();
+  ctx.roundRect(280, 92, 86, 108, [36, 36, 26, 26]);
+  ctx.fill();
+
+  // Dark Hair & Beard Shadow
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.roundRect(276, 82, 94, 38, [22, 22, 6, 6]);
+  ctx.fill();
+
+  // Stubble / Beard Silhouette
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+  ctx.beginPath();
+  ctx.roundRect(284, 155, 78, 42, [0, 0, 24, 24]);
+  ctx.fill();
+
+  // Eyebrows
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(296, 126, 20, 4);
+  ctx.fillRect(330, 126, 20, 4);
+
+  // Eyes (Focused Forward)
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath(); ctx.arc(306, 136, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(340, 136, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(307, 135, 1.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(341, 135, 1.2, 0, Math.PI * 2); ctx.fill();
+
+  // Nose Bridge & Tip
+  ctx.strokeStyle = 'rgba(120, 80, 50, 0.6)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(323, 132);
+  ctx.lineTo(321, 154);
+  ctx.lineTo(327, 155);
+  ctx.stroke();
+
+  // Mouth
+  ctx.fillStyle = '#9c4141';
+  ctx.beginPath();
+  ctx.roundRect(310, 170, 26, 4, 2);
+  ctx.fill();
+
+  // 3. Optical Biometric Face Bounding Box (Target Face in Pedestrian Stream)
   const fBoxX = 270;
-  const fBoxY = 85;
-  const fBoxW = 105;
+  const fBoxY = 82;
+  const fBoxW = 106;
   const fBoxH = 135;
 
   ctx.strokeStyle = '#f43f5e';
@@ -2153,7 +2225,12 @@ function triggerLiveFaceMatchHit(suspectFace, camera, video) {
     camera_id: camera.id
   });
 
-  // 7. Update Dynamic Dashboard Meters
+  // 7. ZERO-DELAY GEOLOCATION PINNING ON GIS MAP
+  if (typeof window.renderFaceMatchOnGisMap === 'function') {
+    window.renderFaceMatchOnGisMap(suspectFace, camera);
+  }
+
+  // 8. Update Dynamic Dashboard Meters
   updateDynamicDashboardMeters('cardStatAlerts');
 }
 
@@ -2983,6 +3060,106 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', 
   });
 };
 
+// Render CCTNS Face Match Geolocation on GIS Map
+window.renderFaceMatchOnGisMap = async function(suspectFace, camera) {
+  // 1. Switch to Dashboard GIS Map View
+  const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
+  if (dashNavBtn && !dashNavBtn.classList.contains('active')) {
+    dashNavBtn.click();
+  }
+
+  if (!leafletMapInstance) return;
+  setTimeout(() => leafletMapInstance.invalidateSize(), 120);
+
+  // 2. Clear existing pursuit layers
+  if (window.trajectoryMapLayers) {
+    window.trajectoryMapLayers.forEach(l => {
+      try { leafletMapInstance.removeLayer(l); } catch(e){}
+    });
+  }
+  window.trajectoryMapLayers = [];
+
+  const camLat = camera.lat || 23.1610;
+  const camLng = camera.lng || 72.6840;
+  const camName = camera.name || 'GIFT City Fin-Tech Tower 1 Concourse';
+  const districtName = camera.district || 'Gandhinagar (Capital Zone)';
+  const faceName = suspectFace.name || 'Vikram K. (Alias: Vicky)';
+
+  // 3. Draw Tactical Geofence Police Cordon Circle (800m Radius)
+  const cordonCircle = L.circle([camLat, camLng], {
+    color: '#f43f5e',
+    fillColor: '#f43f5e',
+    fillOpacity: 0.22,
+    weight: 2.5,
+    dashArray: '8, 8',
+    radius: 800
+  }).addTo(leafletMapInstance);
+  window.trajectoryMapLayers.push(cordonCircle);
+
+  // 4. Place Pulsating Fugitive Geolocation Marker Pin
+  const fugitiveIcon = L.divIcon({
+    className: 'fugitive-gis-pin',
+    html: `
+      <div style="
+        background: #f43f5e;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 3px solid #ffffff;
+        box-shadow: 0 0 25px #f43f5e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 16px;
+      "><i class="fa-solid fa-user-secret"></i></div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+
+  const fugitiveMarker = L.marker([camLat, camLng], { icon: fugitiveIcon }).addTo(leafletMapInstance);
+  fugitiveMarker.bindPopup(`
+    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 260px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <strong style="color: #f43f5e; font-size: 13px;"><i class="fa-solid fa-user-secret"></i> CCTNS WANTED FUGITIVE</strong>
+        <span style="font-size: 10px; background: rgba(244,63,94,0.2); color:#f43f5e; padding: 2px 5px; border-radius: 3px; font-weight:800;">RED NOTICE</span>
+      </div>
+      <h3 style="color:#ffffff; font-size: 14px; margin: 2px 0;">${faceName}</h3>
+      <div style="margin: 4px 0; padding: 6px; background: rgba(2,6,23,0.7); border-radius: 4px; font-size: 11px;">
+        <span style="color: #00f2fe;"><i class="fa-solid fa-location-dot"></i> Area: <strong>${camName}</strong></span><br/>
+        <span style="color: #fbbf24;"><i class="fa-solid fa-city"></i> Zone: <strong>${districtName}</strong></span><br/>
+        <span style="color: #94a3b8;"><i class="fa-solid fa-compass"></i> GPS: <strong>${camLat.toFixed(4)}°N, ${camLng.toFixed(4)}°E</strong></span><br/>
+        <span style="color: #f43f5e;"><i class="fa-solid fa-gavel"></i> Warrant: <strong>${suspectFace.crime || 'Sec 302 IPC / Extortion'}</strong></span>
+      </div>
+      <div style="margin-top: 6px; display:flex; gap: 4px;">
+        <button onclick="dispatchPcrUnit('ALT-FACE-99')" style="
+          flex: 1;
+          background: linear-gradient(135deg, #f43f5e, #e11d48);
+          color: #ffffff;
+          border: none;
+          padding: 6px 8px;
+          border-radius: 4px;
+          font-weight: 700;
+          cursor: pointer;
+          font-size: 11px;
+        "><i class="fa-solid fa-shield-halved"></i> Seal Perimeter</button>
+      </div>
+    </div>
+  `).openPopup();
+  window.trajectoryMapLayers.push(fugitiveMarker);
+
+  // 5. Smoothly Fly and Zoom into GIFT City / Geolocation Area
+  leafletMapInstance.setView([camLat, camLng], 15, { animate: true });
+
+  // 6. Floating Real-time Toast
+  showRealtimeAlertToast({
+    title: `📍 FUGITIVE GEOLOCATED: ${faceName}`,
+    location: `${camName} (${districtName}) • Geofence Armed`,
+    camera_id: camera.id
+  });
+};
+
 function initTrajectoryPursuitLab() {
   const btnTrace = document.getElementById('btnTraceTrajectory');
   const inputPlate = document.getElementById('trajectoryPlateInput');
@@ -3434,14 +3611,21 @@ window.simulateFaceRecognitionIntercept = async function() {
     suspect_id: 'CCTNS-CRIM-2025-8812',
     crime: 'Sec 302 IPC / Extortion & Non-Bailable Arrest Warrant',
     fir: 'FIR-104/2025 (Sanand PS)',
-    biometric_score_default: 96.8
+    biometric_score_default: 96.8,
+    camera_id: 'CAM-GJ-0302'
   };
 
-  const targetCam = await window.apiClient.getCameraById('CAM-GJ-0104') || {
-    id: 'CAM-GJ-0104',
-    name: 'Vadodara Railway Station Main Concourse',
-    district: 'Vadodara'
+  const targetCam = await window.apiClient.getCameraById('CAM-GJ-0302') || {
+    id: 'CAM-GJ-0302',
+    name: 'GIFT City Fin-Tech Tower 1 Concourse',
+    district: 'Gandhinagar (Capital)',
+    lat: 23.1610,
+    lng: 72.6840
   };
+
+  // Reset from armed set for manual operator simulation test
+  const faceKey = (targetFace.name || 'VIKRAM').toUpperCase();
+  armedSuspectFaces.delete(faceKey);
 
   triggerLiveFaceMatchHit(targetFace, targetCam, null);
   await renderAlerts();
