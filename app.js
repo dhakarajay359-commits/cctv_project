@@ -1693,7 +1693,6 @@ function startSessionInactivityTimer() {
 
 // Track last triggered suspect hit timestamp to prevent spamming popups
 let lastSuspectAlertTimestamp = 0;
-let lastAlertedPlate = '';
 
 // Helper to grab real photographic snapshot with realistic vehicle, HSRP license plate, and optical detection
 function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName = 'CAM-GJ-0101 • SG Highway Overbridge') {
@@ -1702,25 +1701,27 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   offCanvas.height = 360;
   const ctx = offCanvas.getContext('2d');
 
-  // 1. Check if source live video has an active decoded frame
+  // 1. Check if source live video has an active decoded frame for background
   let sourceVideo = video;
   if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
     sourceVideo = document.querySelector('.live-stream-video');
   }
 
   let hasRealVideoFrame = false;
-  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0 && sourceVideo.currentTime > 1.5) {
+  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
     try {
       ctx.drawImage(sourceVideo, 0, 0, offCanvas.width, offCanvas.height);
+      // Add subtle dark surveillance contrast overlay
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.4)';
+      ctx.fillRect(0, 0, 640, 360);
       hasRealVideoFrame = true;
     } catch (e) {
       hasRealVideoFrame = false;
     }
   }
 
-  // 2. Realistic Highway & Vehicle Scene (Guarantees vehicle is ALWAYS clearly visible)
+  // 2. Realistic Highway Road Surface (if no video background available)
   if (!hasRealVideoFrame) {
-    // Asphalt Highway Surface with realistic dark gradient
     const skyGrad = ctx.createLinearGradient(0, 0, 0, 360);
     skyGrad.addColorStop(0, '#0f172a');
     skyGrad.addColorStop(0.3, '#1e293b');
@@ -1757,103 +1758,103 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
     ctx.beginPath();
     ctx.moveTo(150, 0); ctx.lineTo(55, 360);
     ctx.stroke();
-
-    // 3. Realistic Vehicle (Pearl White SUV Approaching ANPR Gantry Camera)
-    // Ambient Ground Shadow Under Vehicle
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-    ctx.beginPath();
-    ctx.ellipse(320, 280, 140, 32, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Vehicle Lower Body (Tires & Suspension)
-    ctx.fillStyle = '#090d16';
-    ctx.beginPath();
-    ctx.roundRect(200, 240, 32, 45, 6);
-    ctx.roundRect(408, 240, 32, 45, 6);
-    ctx.fill();
-
-    // Vehicle Main Body Shell (Metallic Pearl White Gradient)
-    const carBodyGrad = ctx.createLinearGradient(0, 100, 0, 280);
-    carBodyGrad.addColorStop(0, '#f8fafc');
-    carBodyGrad.addColorStop(0.5, '#e2e8f0');
-    carBodyGrad.addColorStop(1, '#94a3b8');
-    ctx.fillStyle = carBodyGrad;
-    ctx.beginPath();
-    ctx.roundRect(205, 125, 230, 142, [26, 26, 12, 12]);
-    ctx.fill();
-    ctx.strokeStyle = '#64748b';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Roof & Tinted Windshield Glass
-    const glassGrad = ctx.createLinearGradient(0, 130, 0, 185);
-    glassGrad.addColorStop(0, '#020617');
-    glassGrad.addColorStop(1, '#1e293b');
-    ctx.fillStyle = glassGrad;
-    ctx.beginPath();
-    ctx.roundRect(228, 134, 184, 52, [18, 18, 4, 4]);
-    ctx.fill();
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-
-    // Windshield Reflection Glare
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(242, 178); ctx.lineTo(396, 142);
-    ctx.stroke();
-
-    // Vehicle Hood Character Lines
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(250, 190); ctx.lineTo(265, 218);
-    ctx.moveTo(390, 190); ctx.lineTo(375, 218);
-    ctx.stroke();
-
-    // Honeycomb Front Radiator Grille
-    ctx.fillStyle = '#090d16';
-    ctx.beginPath();
-    ctx.roundRect(252, 214, 136, 28, 6);
-    ctx.fill();
-    ctx.strokeStyle = '#1e293b';
-    ctx.stroke();
-
-    // Chrome Brand Emblem
-    ctx.fillStyle = '#94a3b8';
-    ctx.beginPath();
-    ctx.ellipse(320, 222, 10, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Projector LED Headlights (Dual Xenon Glow)
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.moveTo(212, 212); ctx.lineTo(246, 214); ctx.lineTo(242, 228); ctx.lineTo(215, 224); ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(220, 216, 12, 7);
-
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.moveTo(428, 212); ctx.lineTo(394, 214); ctx.lineTo(398, 228); ctx.lineTo(425, 224); ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(408, 216, 12, 7);
-
-    // Front Bumper Lower Air Dam
-    ctx.fillStyle = '#090d16';
-    ctx.beginPath();
-    ctx.roundRect(240, 246, 160, 18, 4);
-    ctx.fill();
-
-    // Side View Mirrors
-    ctx.fillStyle = '#e2e8f0';
-    ctx.beginPath();
-    ctx.roundRect(190, 158, 20, 12, 4);
-    ctx.roundRect(430, 158, 20, 12, 4);
-    ctx.fill();
   }
+
+  // 3. PHOTOREALISTIC SUSPECT VEHICLE (ALWAYS RENDERED ON TOP OF ROAD SURFACE)
+  // Ambient Ground Shadow Under Vehicle
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.beginPath();
+  ctx.ellipse(320, 280, 145, 34, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Vehicle Lower Body (Tires & Suspension)
+  ctx.fillStyle = '#020617';
+  ctx.beginPath();
+  ctx.roundRect(198, 238, 34, 46, 6);
+  ctx.roundRect(408, 238, 34, 46, 6);
+  ctx.fill();
+
+  // Vehicle Main Body Shell (Metallic Pearl White Gradient)
+  const carBodyGrad = ctx.createLinearGradient(0, 100, 0, 280);
+  carBodyGrad.addColorStop(0, '#f8fafc');
+  carBodyGrad.addColorStop(0.5, '#e2e8f0');
+  carBodyGrad.addColorStop(1, '#94a3b8');
+  ctx.fillStyle = carBodyGrad;
+  ctx.beginPath();
+  ctx.roundRect(205, 125, 230, 142, [26, 26, 12, 12]);
+  ctx.fill();
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // Roof & Tinted Windshield Glass
+  const glassGrad = ctx.createLinearGradient(0, 130, 0, 185);
+  glassGrad.addColorStop(0, '#020617');
+  glassGrad.addColorStop(1, '#1e293b');
+  ctx.fillStyle = glassGrad;
+  ctx.beginPath();
+  ctx.roundRect(228, 134, 184, 52, [18, 18, 4, 4]);
+  ctx.fill();
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // Windshield Reflection Glare
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(242, 178); ctx.lineTo(396, 142);
+  ctx.stroke();
+
+  // Vehicle Hood Character Lines
+  ctx.strokeStyle = 'rgba(100, 116, 139, 0.8)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(250, 190); ctx.lineTo(265, 218);
+  ctx.moveTo(390, 190); ctx.lineTo(375, 218);
+  ctx.stroke();
+
+  // Honeycomb Front Radiator Grille
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.roundRect(252, 214, 136, 28, 6);
+  ctx.fill();
+  ctx.strokeStyle = '#1e293b';
+  ctx.stroke();
+
+  // Chrome Brand Emblem
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath();
+  ctx.ellipse(320, 222, 10, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Projector LED Headlights (Dual Xenon Glow)
+  ctx.fillStyle = '#f8fafc';
+  ctx.beginPath();
+  ctx.moveTo(212, 212); ctx.lineTo(246, 214); ctx.lineTo(242, 228); ctx.lineTo(215, 224); ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(220, 216, 12, 7);
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.beginPath();
+  ctx.moveTo(428, 212); ctx.lineTo(394, 214); ctx.lineTo(398, 228); ctx.lineTo(425, 224); ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(408, 216, 12, 7);
+
+  // Front Bumper Lower Air Dam
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.roundRect(240, 246, 160, 18, 4);
+  ctx.fill();
+
+  // Side View Mirrors
+  ctx.fillStyle = '#e2e8f0';
+  ctx.beginPath();
+  ctx.roundRect(190, 158, 20, 12, 4);
+  ctx.roundRect(430, 158, 20, 12, 4);
+  ctx.fill();
 
   // 4. Optical YOLOv8 Target Bounding Brackets on the Vehicle
   const vBoxX = 195;
@@ -1871,11 +1872,11 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   // Bottom-left bracket
   ctx.beginPath(); ctx.moveTo(vBoxX, vBoxY + vBoxH - corner); ctx.lineTo(vBoxX, vBoxY + vBoxH); ctx.lineTo(vBoxX + corner, vBoxY + vBoxH); ctx.stroke();
   // Bottom-right bracket
-  ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW - corner, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH - corner); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW, vBoxY + vBoxH - corner); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW - corner, vBoxY + vBoxH); ctx.stroke();
 
   // Top Target Classification Label
   ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
-  ctx.fillRect(vBoxX, vBoxY - 18, 140, 16);
+  ctx.fillRect(vBoxX, vBoxY - 18, 148, 16);
   ctx.fillStyle = '#04101e';
   ctx.font = 'bold 8px "JetBrains Mono", monospace';
   ctx.fillText('YOLOv8x: TARGET VEHICLE (98.8%)', vBoxX + 4, vBoxY - 6);
