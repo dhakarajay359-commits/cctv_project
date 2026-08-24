@@ -1701,10 +1701,15 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   offCanvas.height = 360;
   const ctx = offCanvas.getContext('2d');
 
-  // 1. DIRECT PURE GRAB OF REAL CAMERA LIVE VIDEO FRAME
+  // 1. DIRECT PURE GRAB OF REAL CAMERA LIVE VIDEO FRAME WHEN VEHICLE IS FULLY IN FRAME
   let sourceVideo = video;
   if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
-    sourceVideo = document.getElementById('video_CAM-GJ-0101') || document.querySelector('.live-stream-video');
+    sourceVideo = document.getElementById('video_CAM-GJ-0101') || document.getElementById('video_CAM-GJ-0102') || document.querySelector('.live-stream-video');
+  }
+
+  // Ensure full-frame capture: If video is at start (empty road), seek to 4.2s where vehicle is fully centered
+  if (sourceVideo && (sourceVideo.currentTime < 3.2 || sourceVideo.currentTime > 7.2)) {
+    try { sourceVideo.currentTime = 4.2; } catch(e){}
   }
 
   if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
@@ -1854,6 +1859,11 @@ function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 •
   let sourceVideo = video;
   if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
     sourceVideo = document.getElementById('video_CAM-GJ-0302') || document.getElementById('video_CAM-GJ-0104') || document.querySelector('.live-stream-video');
+  }
+
+  // Ensure full-frame capture: If video is at start (empty corridor), seek to 4.2s where suspect is fully in frame
+  if (sourceVideo && (sourceVideo.currentTime < 3.2 || sourceVideo.currentTime > 7.2)) {
+    try { sourceVideo.currentTime = 4.2; } catch(e){}
   }
 
   // 1. Grab 100% PURE REAL CAMERA FRAME FROM RECORDING (Zero canvas artifice / No drawn avatar)
@@ -2032,8 +2042,8 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
           const suspectPlate = matchedSuspect.plate;
           const cleanPlate = suspectPlate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
-          // Backend AI observes target vehicle passing in camera view (e.g. between 3.0s and 7.0s)
-          if (currentTime >= 3.0 && currentTime <= 7.0) {
+          // Backend AI observes target vehicle when it is FULLY in camera frame (between 3.8s and 6.2s)
+          if (currentTime >= 3.8 && currentTime <= 6.2) {
             // ONCE ARMED / INTERCEPTED, NEVER ALERT AGAIN (Eliminates repeated alert spam)
             if (!armedSuspectPlates.has(cleanPlate)) {
               armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
@@ -2054,8 +2064,8 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
 
         const faceKey = (targetFace.name || 'VIKRAM').toUpperCase();
 
-        // Backend facial vector matches target face passing in camera view
-        if (currentTime >= 2.5 && currentTime <= 7.5) {
+        // Backend facial vector matches target suspect when FULLY in camera frame (between 3.8s and 6.2s)
+        if (currentTime >= 3.8 && currentTime <= 6.2) {
           if (!armedSuspectFaces.has(faceKey)) {
             armedSuspectFaces.add(faceKey);
             triggerLiveFaceMatchHit(targetFace, camera, video);
@@ -3542,13 +3552,22 @@ window.simulateAnprStolenVehicleIntercept = async function() {
   const anprRes = await window.apiClient.runAnprInference('sample-ahmedabad', 'CAM-GJ-0101');
   const vahanRes = await window.apiClient.lookupVahan('GJ-01-AB-1234');
 
+  const vVid = document.getElementById('video_CAM-GJ-0101');
+  if (vVid) { try { vVid.currentTime = 4.2; } catch(e){} }
+  const snapshotData = captureCrispVehicleSnapshot(vVid, 'GJ-01-AB-1234', 'CAM-GJ-0101 • SG Highway Overbridge');
+
   const alertObj = window.apiClient.publishAlertToBus({
     title: `HIGH-SPEED STOLEN HIT: GJ-01-AB-1234 (${vahanRes.data.vehicle_make_model})`,
     severity: 'critical',
     camera_id: 'CAM-GJ-0101',
     location: 'SG Highway Pakwan Crossroad Overbridge',
+    target_vehicle: 'GJ-01-AB-1234',
+    snapshot_url: snapshotData.fullSnapshotUrl,
+    plate_crop_url: snapshotData.plateCropUrl,
+    ocr_confidence: 99.4,
+    speed_kmph: 81.5,
     target_department: 'dept-police',
-    details: `ANPR optical read matched stolen hotlist in VAHAN 4.0. Owner: ${vahanRes.data.registered_owner}. FIR: ${vahanRes.data.fir_no} (${vahanRes.data.crime_section}). Heading Northbound @ 68 km/h.`
+    details: `ANPR optical read matched stolen hotlist in VAHAN 4.0. Owner: ${vahanRes.data.registered_owner}. FIR: ${vahanRes.data.fir_no} (${vahanRes.data.crime_section}). Heading Northbound @ 81.5 km/h.`
   });
 
   await renderAlerts();
