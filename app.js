@@ -1554,9 +1554,15 @@ async function initLiveWallView() {
   if (btnStopAll) {
     btnStopAll.addEventListener('click', async () => {
       const active = await window.apiClient.getActiveStreamingSessions();
-      for (const sess of active.sessions) {
-        await window.apiClient.stopStreamingSession(sess.session_id);
+      if (active.sessions && active.sessions.length > 0) {
+        for (const sess of active.sessions) {
+          await window.apiClient.stopStreamingSession(sess.camera_id || sess.session_id);
+        }
       }
+      cleanupLiveStreamCanvases();
+      document.querySelectorAll('.live-stream-video').forEach(v => {
+        try { v.pause(); v.src = ''; } catch(e){}
+      });
       await renderLiveWall();
       alert('All WAN stream sessions terminated. Bandwidth released.');
     });
@@ -1567,6 +1573,12 @@ async function initLiveWallView() {
 
   // Start Session Inactivity Countdown
   startSessionInactivityTimer();
+
+  // Start initial streams ONLY ON FIRST LOAD of the Live Wall
+  const initialCams = await window.apiClient.getCameras();
+  for (let i = 0; i < Math.min(2, initialCams.length); i++) {
+    await window.apiClient.startStreamingSession(initialCams[i].id);
+  }
 
   await renderLiveWall();
 }
@@ -2120,11 +2132,6 @@ async function renderLiveWall() {
   if (liveWallGridMode === '4x4') maxSlots = 16;
 
   const displayCams = cameras.slice(0, maxSlots);
-  
-  // Ensure sessions started for initial display cameras
-  for (let i = 0; i < Math.min(2, displayCams.length); i++) {
-    await window.apiClient.startStreamingSession(displayCams[i].id);
-  }
 
   const sessionData = await window.apiClient.getActiveStreamingSessions();
   if (activeCountEl) activeCountEl.textContent = `${sessionData.active_sessions_count} Active Streams`;
@@ -2235,7 +2242,14 @@ window.startCellSession = async function(camId) {
 
 // Stop Stream Session from Grid Cell
 window.stopCellSession = async function(camId) {
+  // 1. Pause and release video element
+  const videoEl = document.getElementById(`video_${camId}`);
+  if (videoEl) {
+    try { videoEl.pause(); videoEl.src = ''; } catch(e){}
+  }
+  // 2. Stop camera stream session
   await window.apiClient.stopStreamingSession(camId);
+  // 3. Re-render live wall to idle state
   await renderLiveWall();
 };
 
