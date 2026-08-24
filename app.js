@@ -645,7 +645,7 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234') 
   // Numbered Sighting Pins
   traj.sightings.forEach(s => {
     const pinHtml = `
-      <div class="trajectory-step-pin" style="background: ${s.department_color}; box-shadow: 0 0 14px ${s.department_color};">
+      <div class="trajectory-step-pin" style="background: ${s.department_color}; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">
         ${s.step}
       </div>
     `;
@@ -985,11 +985,11 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
 
       const markerHtml = `<div style="
         background: ${color};
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
         border: 2px solid #ffffff;
-        box-shadow: 0 0 10px ${color};
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       "></div>`;
 
       const customIcon = L.divIcon({
@@ -2861,27 +2861,17 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', 
 
   const latLngs = traj.sightings.map(s => [s.lat, s.lng]);
 
-  // 4. Draw Outer Glowing Pursuit Corridor Polyline
-  const glowPolyline = L.polyline(latLngs, {
-    color: '#00f2fe',
-    weight: 8,
-    opacity: 0.35,
-    lineCap: 'round',
-    lineJoin: 'round'
-  }).addTo(leafletMapInstance);
-  window.trajectoryMapLayers.push(glowPolyline);
-
-  // 5. Draw Animated Core Pursuit Path
+  // 4. Draw Pursuit Path
   const corePolyline = L.polyline(latLngs, {
     color: '#f43f5e',
     weight: 3.5,
-    opacity: 0.95,
+    opacity: 0.9,
     dashArray: '10, 14',
     lineCap: 'round'
   }).addTo(leafletMapInstance);
   window.trajectoryMapLayers.push(corePolyline);
 
-  // 6. Place Dynamic Sequential Sighting Markers
+  // 5. Place Dynamic Sequential Sighting Markers
   traj.sightings.forEach((s, idx) => {
     const isOrigin = idx === 0;
     const isLatest = idx === traj.sightings.length - 1;
@@ -2896,7 +2886,7 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', 
           height: ${isOrigin || isLatest ? '28px' : '22px'};
           border-radius: 50%;
           border: 2px solid #ffffff;
-          box-shadow: 0 0 16px ${pinColor};
+          box-shadow: 0 2px 5px rgba(0,0,0,0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -2952,7 +2942,7 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', 
           height: 32px;
           border-radius: 8px;
           border: 2px solid #ffffff;
-          box-shadow: 0 0 20px #f43f5e;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -3038,7 +3028,7 @@ window.renderFaceMatchOnGisMap = async function(suspectFace, camera) {
   }).addTo(leafletMapInstance);
   window.trajectoryMapLayers.push(cordonCircle);
 
-  // 4. Place Pulsating Fugitive Geolocation Marker Pin
+  // 4. Place Fugitive Geolocation Marker Pin
   const fugitiveIcon = L.divIcon({
     className: 'fugitive-gis-pin',
     html: `
@@ -3048,7 +3038,7 @@ window.renderFaceMatchOnGisMap = async function(suspectFace, camera) {
         height: 36px;
         border-radius: 50%;
         border: 3px solid #ffffff;
-        box-shadow: 0 0 25px #f43f5e;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         display: flex;
         align-items: center;
         justify-content: center;
