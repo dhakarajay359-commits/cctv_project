@@ -1607,6 +1607,13 @@ window.openDetachedVideoWall = async function() {
   const cameras = await window.apiClient.getCameras();
   const activeFeeds = cameras.slice(0, 4);
 
+  const sampleVideos = [
+    'assets/videos/highway-traffic.mp4',
+    'assets/videos/highway-traffic.mp4',
+    'assets/videos/highway-traffic.mp4',
+    'assets/videos/cctv-pedestrians.mp4'
+  ];
+
   const popoutWin = window.open('', 'NirikshanDetachedVideoWall', 'width=1440,height=840,menubar=no,toolbar=no,location=no,status=no');
   if (!popoutWin) {
     alert('Pop-up was blocked by browser. Please allow popups for localhost to use Multi-Monitor mode.');
@@ -1614,22 +1621,21 @@ window.openDetachedVideoWall = async function() {
   }
 
   const feedsHtml = activeFeeds.map((cam, idx) => `
-    <div style="background: #0d121c; border: 1px solid rgba(0, 242, 254, 0.25); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
-      <div style="padding: 8px 12px; background: rgba(10, 14, 23, 0.95); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
-        <strong style="color: #00f2fe; font-size: 12px; font-family: monospace;">${cam.id} • ${cam.name}</strong>
-        <span style="color: #10b981; font-size: 11px; font-weight: 700;">● LIVE WEBRTC RELAY</span>
+    <div style="background: #0d121c; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; position: relative;">
+      <div style="padding: 8px 12px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+        <strong style="color: #38bdf8; font-size: 12px; font-family: monospace;">${cam.id} • ${cam.name}</strong>
+        <span style="color: #10b981; font-size: 11px; font-weight: 700;">● LIVE STREAM</span>
       </div>
-      <div style="flex: 1; min-height: 280px; background: radial-gradient(circle at center, #131d2e 0%, #06090e 100%); display: flex; align-items: center; justify-content: center; position: relative;">
-        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.65); padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #f8fafc; font-family: monospace;">
+      <div style="flex: 1; min-height: 280px; position: relative; background: #020617; overflow: hidden;">
+        <video src="${sampleVideos[idx] || sampleVideos[0]}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
+        <div style="position: absolute; top: 10px; left: 10px; background: rgba(15,23,42,0.85); padding: 3px 7px; border-radius: 4px; font-size: 10px; color: #f8fafc; font-family: monospace; z-index: 5;">
           ${cam.vendor} • ${cam.resolution}
         </div>
-        <div style="position: absolute; top: 10px; right: 10px; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: monospace;">
-          25 FPS • WAN &lt; 2.4 Mbps
+        <div style="position: absolute; top: 10px; right: 10px; background: rgba(217, 119, 6, 0.2); border: 1px solid rgba(217, 119, 6, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: monospace; z-index: 5;">
+          25 FPS • 2.4 Mbps
         </div>
-        <div style="text-align: center; color: rgba(255,255,255,0.4);">
-          <div style="font-size: 32px; margin-bottom: 6px; color: #00f2fe;"><i class="fa-solid fa-video"></i> 📹</div>
-          <div style="font-size: 13px; font-weight: 600; color: #94a3b8;">Active WebRTC Stream Relay Channel #${idx+1}</div>
-          <div style="font-size: 11px; font-family: monospace; color: #64748b; margin-top: 4px;">Lat: ${cam.lat} • Lng: ${cam.lng}</div>
+        <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.75); padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #38bdf8; font-family: monospace; z-index: 5;">
+          NODE #${cam.id} | GPS: ${cam.lat.toFixed(4)}°N, ${cam.lng.toFixed(4)}°E
         </div>
       </div>
     </div>
@@ -1644,19 +1650,19 @@ window.openDetachedVideoWall = async function() {
       <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #070a0f; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { height: 52px; padding: 0 18px; background: #0d121c; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
+        body { background: #0b0f19; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { height: 52px; padding: 0 18px; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
         .grid { flex: 1; padding: 12px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; }
       </style>
     </head>
     <body>
       <header>
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="background: #00f2fe; color: #04101e; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 11px;">4K MULTI-MONITOR</span>
+          <span style="background: #2563eb; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 11px;">4K MULTI-MONITOR</span>
           <strong style="font-size: 13px; letter-spacing: 0.04em;">NIRIKSHAN DETACHED LIVE VIDEO WALL</strong>
         </div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #00f2fe; background: rgba(0,242,254,0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(0,242,254,0.3);">
-          BANDWIDTH: 4.8 Mbps PEAK • ON-DEMAND RELAY
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">
+          BANDWIDTH: 4.8 Mbps PEAK • LIVE RELAY
         </div>
       </header>
       <div class="grid">
