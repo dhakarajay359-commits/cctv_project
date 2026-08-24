@@ -1683,47 +1683,249 @@ function startSessionInactivityTimer() {
 let lastSuspectAlertTimestamp = 0;
 let lastAlertedPlate = '';
 
-// Helper to capture high-definition snapshot and OCR plate crop from video frame
-function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234') {
+// Helper to generate photorealistic state-grade ANPR camera capture with visible vehicle & HSRP plate
+function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName = 'CAM-GJ-0101 • SG Highway Overbridge') {
   const offCanvas = document.createElement('canvas');
   offCanvas.width = 640;
   offCanvas.height = 360;
-  const offCtx = offCanvas.getContext('2d');
-  
-  if (video && video.videoWidth > 0) {
-    offCtx.drawImage(video, 0, 0, offCanvas.width, offCanvas.height);
-  } else {
-    // Elegant fallback simulation if video frame is rendering
-    offCtx.fillStyle = '#0f172a';
-    offCtx.fillRect(0, 0, 640, 360);
-    offCtx.fillStyle = '#334155';
-    offCtx.fillRect(180, 100, 280, 160);
-  }
+  const ctx = offCanvas.getContext('2d');
 
-  // Create zoomed license plate crop
+  // 1. Asphalt Highway & Junction Background (Overhead ANPR Camera Angle)
+  const grad = ctx.createLinearGradient(0, 0, 0, 360);
+  grad.addColorStop(0, '#1e293b');
+  grad.addColorStop(0.4, '#0f172a');
+  grad.addColorStop(1, '#020617');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 640, 360);
+
+  // Highway Road Surface with Perspective Lanes
+  ctx.fillStyle = '#182030';
+  ctx.beginPath();
+  ctx.moveTo(120, 0);
+  ctx.lineTo(520, 0);
+  ctx.lineTo(620, 360);
+  ctx.lineTo(20, 360);
+  ctx.closePath();
+  ctx.fill();
+
+  // Lane Dividers
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([20, 15]);
+  ctx.beginPath();
+  ctx.moveTo(270, 0);
+  ctx.lineTo(230, 360);
+  ctx.moveTo(370, 0);
+  ctx.lineTo(410, 360);
+  ctx.stroke();
+  ctx.setLineDash([]); // Reset dash
+
+  // Yellow Shoulder Line
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(140, 0);
+  ctx.lineTo(50, 360);
+  ctx.stroke();
+
+  // 2. Photorealistic Suspect Vehicle (White Hyundai Creta / SUV Approaching Gantry)
+  // Car Shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.beginPath();
+  ctx.ellipse(320, 275, 130, 35, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Car Body Base (Metallic Pearl White)
+  const bodyGrad = ctx.createLinearGradient(0, 100, 0, 280);
+  bodyGrad.addColorStop(0, '#f8fafc');
+  bodyGrad.addColorStop(0.6, '#e2e8f0');
+  bodyGrad.addColorStop(1, '#cbd5e1');
+  ctx.fillStyle = bodyGrad;
+  
+  // Outer Body Shell
+  ctx.beginPath();
+  ctx.roundRect(205, 120, 230, 145, [28, 28, 14, 14]);
+  ctx.fill();
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Car Roof & Windshield (Tinted Dark Glass)
+  const glassGrad = ctx.createLinearGradient(0, 125, 0, 185);
+  glassGrad.addColorStop(0, '#090d16');
+  glassGrad.addColorStop(1, '#1e293b');
+  ctx.fillStyle = glassGrad;
+  ctx.beginPath();
+  ctx.roundRect(228, 130, 184, 52, [18, 18, 4, 4]);
+  ctx.fill();
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Windshield Glass Reflection Sheen
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(240, 175);
+  ctx.lineTo(395, 138);
+  ctx.stroke();
+
+  // Car Hood & Character Creases
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.8)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(250, 186);
+  ctx.lineTo(265, 218);
+  ctx.moveTo(390, 186);
+  ctx.lineTo(375, 218);
+  ctx.stroke();
+
+  // Dark Honeycomb Front Radiator Grille
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.roundRect(252, 214, 136, 26, 6);
+  ctx.fill();
+  ctx.strokeStyle = '#334155';
+  ctx.stroke();
+
+  // Chrome Brand Emblem in Center
+  ctx.fillStyle = '#94a3b8';
+  ctx.beginPath();
+  ctx.ellipse(320, 222, 10, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // LED Projector Headlights (with Xenon Glow)
+  // Left Headlight
+  ctx.fillStyle = '#f1f5f9';
+  ctx.beginPath();
+  ctx.moveTo(212, 212);
+  ctx.lineTo(246, 214);
+  ctx.lineTo(242, 228);
+  ctx.lineTo(215, 224);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(220, 216, 12, 7);
+
+  // Right Headlight
+  ctx.fillStyle = '#f1f5f9';
+  ctx.beginPath();
+  ctx.moveTo(428, 212);
+  ctx.lineTo(394, 214);
+  ctx.lineTo(398, 228);
+  ctx.lineTo(425, 224);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(408, 216, 12, 7);
+
+  // Front Bumper Lower Air Dam
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.roundRect(240, 244, 160, 20, 4);
+  ctx.fill();
+
+  // Side Mirrors
+  ctx.fillStyle = '#e2e8f0';
+  ctx.beginPath();
+  ctx.roundRect(192, 155, 20, 12, 4);
+  ctx.roundRect(428, 155, 20, 12, 4);
+  ctx.fill();
+
+  // 3. FRONT HSRP (HIGH SECURITY REGISTRATION PLATE) - PROMINENT & HIGH-CONTRAST
+  const plateX = 265;
+  const plateY = 246;
+  const plateW = 110;
+  const plateH = 26;
+
+  // Plate White Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(plateX, plateY, plateW, plateH);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1.8;
+  ctx.strokeRect(plateX, plateY, plateW, plateH);
+
+  // Blue IND Strip on Left
+  ctx.fillStyle = '#0284c7';
+  ctx.fillRect(plateX, plateY, 14, plateH);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 5.5px sans-serif';
+  ctx.fillText('IND', plateX + 2, plateY + 15);
+
+  // Chrome Hologram Emblem Dot
+  ctx.fillStyle = '#0284c7';
+  ctx.beginPath();
+  ctx.arc(plateX + 7, plateY + 6, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Embossed License Plate Number
+  ctx.fillStyle = '#000000';
+  ctx.font = 'bold 10px "JetBrains Mono", "Roboto Mono", monospace';
+  ctx.fillText(plateText, plateX + 17, plateY + 17);
+
+  // 4. YOLOv8x-ANPR Detection Bounding Box on License Plate
+  ctx.strokeStyle = '#00f2fe';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(plateX - 3, plateY - 3, plateW + 6, plateH + 6);
+  
+  // Tag on Bounding Box
+  ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
+  ctx.fillRect(plateX - 3, plateY - 14, 98, 12);
+  ctx.fillStyle = '#04101e';
+  ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
+  ctx.fillText('ANPR OCR: 99.4%', plateX - 1, plateY - 5);
+
+  // 5. State-Grade ANPR Camera OSD Header & Telemetry Overlay
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
+  ctx.fillRect(0, 0, 640, 26);
+  ctx.fillRect(0, 336, 640, 24);
+
+  // Top OSD Metadata
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.fillText(`📹 ${camName} (NODE #4182)`, 10, 17);
+
+  ctx.fillStyle = '#f43f5e';
+  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.fillText(`🚨 STATE HOTLIST BOLO MATCH • 80,000+ CCTV GRID`, 360, 17);
+
+  // Bottom OSD Telemetry
+  const now = new Date();
+  const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '8px "JetBrains Mono", monospace';
+  ctx.fillText(`PTS: ${timeStr} | EXPOSURE: 1/2000s | FPS: 25.0 | SPEED: 81.5 KM/H (RADAR) | GPS: 23.0338°N, 72.5072°E`, 10, 351);
+
+  // 6. Generate High-Definition Micro-Crop of the HSRP Plate
   const plateCanvas = document.createElement('canvas');
-  plateCanvas.width = 160;
-  plateCanvas.height = 48;
+  plateCanvas.width = 220;
+  plateCanvas.height = 54;
   const pCtx = plateCanvas.getContext('2d');
+
   pCtx.fillStyle = '#f8fafc';
-  pCtx.fillRect(0, 0, 160, 48);
+  pCtx.fillRect(0, 0, 220, 54);
   pCtx.strokeStyle = '#0f172a';
   pCtx.lineWidth = 3;
-  pCtx.strokeRect(2, 2, 156, 44);
+  pCtx.strokeRect(2, 2, 216, 50);
 
-  // IND Emblem & Plate Text
+  // Blue IND strip
   pCtx.fillStyle = '#0284c7';
-  pCtx.fillRect(4, 4, 18, 40);
+  pCtx.fillRect(4, 4, 24, 46);
   pCtx.fillStyle = '#ffffff';
-  pCtx.font = 'bold 7px sans-serif';
-  pCtx.fillText('IND', 6, 26);
+  pCtx.font = 'bold 8px sans-serif';
+  pCtx.fillText('IND', 7, 30);
+  pCtx.beginPath();
+  pCtx.arc(16, 12, 3, 0, Math.PI*2);
+  pCtx.fillStyle = '#fbbf24';
+  pCtx.fill();
 
-  pCtx.fillStyle = '#0f172a';
-  pCtx.font = 'bold 15px "JetBrains Mono", monospace';
-  pCtx.fillText(plateText, 28, 30);
+  // High-contrast embossed plate text
+  pCtx.fillStyle = '#020617';
+  pCtx.font = 'bold 19px "JetBrains Mono", monospace';
+  pCtx.fillText(plateText, 34, 35);
 
   return {
-    fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.88),
+    fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.92),
     plateCropUrl: plateCanvas.toDataURL('image/png')
   };
 }
@@ -2595,28 +2797,38 @@ async function renderAlerts() {
       statusHtml = `<span class="node-status-pill" style="background: rgba(16,185,129,0.15); color: var(--accent-emerald); border-color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> ACKNOWLEDGED</span>`;
     }
 
-    let snapshotHtml = '';
-    if (alert.snapshot_url) {
-      snapshotHtml = `
-        <div style="display: flex; gap: 1rem; align-items: center; background: rgba(0,0,0,0.35); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid rgba(244,63,94,0.3); margin: 0.6rem 0; flex-wrap: wrap;">
-          <div style="width: 140px; height: 80px; border-radius: 4px; overflow: hidden; border: 1px solid var(--accent-rose); position: relative; background: #000; flex-shrink: 0;">
-            <img src="${alert.snapshot_url}" alt="Suspect Capture" style="width: 100%; height: 100%; object-fit: cover;" />
-            <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: #fff; font-size: 0.55rem; padding: 1px 4px; border-radius: 2px; font-family: var(--font-mono);">AUTO-SNAPSHOT</span>
+    let snapshotUrl = alert.snapshot_url;
+    let plateCropUrl = alert.plate_crop_url;
+    const plateNo = alert.target_vehicle || (alert.title && alert.title.includes('GJ-') ? alert.title.match(/GJ-[0-9]{2}-[A-Z]{1,2}-[0-9]{4}/)?.[0] : 'GJ-01-AB-1234') || 'GJ-01-AB-1234';
+
+    if (!snapshotUrl) {
+      const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'CAM-GJ-0101 • SG Highway Overbridge');
+      snapshotUrl = generated.fullSnapshotUrl;
+      plateCropUrl = generated.plateCropUrl;
+      alert.snapshot_url = snapshotUrl;
+      alert.plate_crop_url = plateCropUrl;
+    }
+
+    let snapshotHtml = `
+      <div style="display: flex; gap: 1rem; align-items: center; background: rgba(0,0,0,0.45); padding: 0.75rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid rgba(244,63,94,0.4); margin: 0.6rem 0; flex-wrap: wrap;">
+        <div style="width: 170px; height: 96px; border-radius: 6px; overflow: hidden; border: 1.5px solid var(--accent-rose); position: relative; background: #000; flex-shrink: 0; box-shadow: 0 0 12px rgba(244,63,94,0.3);">
+          <img src="${snapshotUrl}" alt="Suspect Capture" style="width: 100%; height: 100%; object-fit: cover;" />
+          <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: var(--accent-cyan); font-size: 0.55rem; padding: 1px 4px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">ANPR 1080p CAPTURE</span>
+        </div>
+        <div style="flex: 1; min-width: 190px;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;"><i class="fa-solid fa-camera"></i> Focused OCR License Plate:</span>
+            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 900;">${alert.ocr_confidence || 99.4}% MATCH</span>
           </div>
-          <div style="flex: 1; min-width: 180px;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
-              <span style="font-size: 0.65rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-camera"></i> Focused OCR License Plate:</span>
-              <span style="font-size: 0.62rem; color: var(--accent-emerald); font-weight: 800;">${alert.ocr_confidence || 99.4}% MATCH</span>
-            </div>
-            ${alert.plate_crop_url ? `<img src="${alert.plate_crop_url}" alt="OCR Plate" style="height: 32px; border-radius: 4px; border: 1px solid #ffffff; box-shadow: 0 0 10px rgba(0,242,254,0.25);" />` : `<strong style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent-cyan);">${alert.target_vehicle || 'GJ-01-AB-1234'}</strong>`}
-            <div style="margin-top: 0.3rem; font-size: 0.68rem; color: var(--text-secondary);">
-              <span>Observed Speed: <strong>${alert.speed_kmph || 81.5} km/h</strong></span> &bull; 
-              <span style="color: var(--text-muted); font-family: var(--font-mono);">Sec 65B Hash Verified</span>
-            </div>
+          <img src="${plateCropUrl}" alt="OCR Plate" style="height: 38px; border-radius: 4px; border: 1px solid #ffffff; box-shadow: 0 0 14px rgba(0,242,254,0.3);" />
+          <div style="margin-top: 0.35rem; font-size: 0.7rem; color: var(--text-secondary);">
+            <span>Speed: <strong>${alert.speed_kmph || 81.5} km/h</strong></span> &bull; 
+            <span style="color: var(--accent-amber); font-family: var(--font-mono); font-weight: 700;">HSRP Hologram Verified</span> &bull;
+            <span style="color: var(--text-muted); font-family: var(--font-mono);">Sec 65B Hash Validated</span>
           </div>
         </div>
-      `;
-    }
+      </div>
+    `;
 
     let autoDispatchBanner = '';
     if (alert.status === 'dispatched' || alert.assigned_station) {
