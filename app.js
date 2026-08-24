@@ -1980,7 +1980,7 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
 
   // 5. AUTOMATICALLY PLOT TRAJECTORY PURSUIT ROUTE ON GIS MAP (Zero-Delay)
   if (typeof window.renderTrajectoryOnGisMap === 'function') {
-    window.renderTrajectoryOnGisMap(plate);
+    window.renderTrajectoryOnGisMap(plate, camera.id);
   }
 
   // 6. Automatically Re-render Alerts Feed with Dispatched Status
@@ -2530,9 +2530,175 @@ window.simulateSuspectCameraHit = async function(plate) {
   // 2. Trigger Sighting Snapshot & Audio Alarm
   const dummyCamera = { id: 'CAM-GJ-0101', name: 'SG Highway Iskcon Crossroad Overbridge', district: 'Ahmedabad (Urban)' };
   triggerLiveSuspectDossierHit(plate, dummyCamera, null, suspect, 84.5);
+};
 
-  // 3. Automatically draw route on GIS Map
-  await renderTrajectoryOnGisMap(plate);
+// Layer group for active dynamic GIS pursuit trajectories
+window.trajectoryMapLayers = [];
+
+window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', originCameraId = null) {
+  // 1. Fetch completely dynamic multi-hop trajectory based on actual capture camera
+  const traj = await window.apiClient.reconstructVehicleTrajectory(plateNumber, originCameraId);
+  if (!traj || !traj.sightings || traj.sightings.length === 0) return;
+
+  // 2. Switch to Dashboard GIS Map View
+  const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
+  if (dashNavBtn && !dashNavBtn.classList.contains('active')) {
+    dashNavBtn.click();
+  }
+
+  // Ensure map is rendered and sized
+  if (!leafletMapInstance) return;
+  setTimeout(() => leafletMapInstance.invalidateSize(), 120);
+
+  // 3. Clear previous pursuit trajectory layers
+  if (window.trajectoryMapLayers) {
+    window.trajectoryMapLayers.forEach(l => {
+      try { leafletMapInstance.removeLayer(l); } catch(e){}
+    });
+  }
+  window.trajectoryMapLayers = [];
+
+  const latLngs = traj.sightings.map(s => [s.lat, s.lng]);
+
+  // 4. Draw Outer Glowing Pursuit Corridor Polyline
+  const glowPolyline = L.polyline(latLngs, {
+    color: '#00f2fe',
+    weight: 8,
+    opacity: 0.35,
+    lineCap: 'round',
+    lineJoin: 'round'
+  }).addTo(leafletMapInstance);
+  window.trajectoryMapLayers.push(glowPolyline);
+
+  // 5. Draw Animated Core Pursuit Path
+  const corePolyline = L.polyline(latLngs, {
+    color: '#f43f5e',
+    weight: 3.5,
+    opacity: 0.95,
+    dashArray: '10, 14',
+    lineCap: 'round'
+  }).addTo(leafletMapInstance);
+  window.trajectoryMapLayers.push(corePolyline);
+
+  // 6. Place Dynamic Sequential Sighting Markers
+  traj.sightings.forEach((s, idx) => {
+    const isOrigin = idx === 0;
+    const isLatest = idx === traj.sightings.length - 1;
+    const pinColor = isOrigin ? '#00f2fe' : (isLatest ? '#f43f5e' : '#f59e0b');
+
+    const markerIcon = L.divIcon({
+      className: 'dynamic-pursuit-pin',
+      html: `
+        <div style="
+          background: ${pinColor};
+          width: ${isOrigin || isLatest ? '28px' : '22px'};
+          height: ${isOrigin || isLatest ? '28px' : '22px'};
+          border-radius: 50%;
+          border: 2px solid #ffffff;
+          box-shadow: 0 0 16px ${pinColor};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #04101e;
+          font-size: ${isOrigin || isLatest ? '12px' : '10px'};
+          font-weight: 900;
+          font-family: 'JetBrains Mono', monospace;
+        ">${s.step}</div>
+      `,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    const marker = L.marker([s.lat, s.lng], { icon: markerIcon }).addTo(leafletMapInstance);
+    marker.bindPopup(`
+      <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 220px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <strong style="color: ${pinColor}; font-size: 13px;">HOP #${s.step}: ${s.camera_id}</strong>
+          <span style="font-size: 10px; background: rgba(255,255,255,0.1); padding: 1px 4px; border-radius: 3px;">${s.time_display}</span>
+        </div>
+        <strong>${s.camera_name}</strong><br/>
+        <span style="color: #94a3b8; font-size: 11px;">${s.district} &bull; ${s.department_name}</span>
+        <div style="margin-top: 6px; padding: 6px; background: rgba(0,0,0,0.5); border-radius: 4px; font-size: 11px;">
+          <span style="color: #00f2fe;">Target: <strong>${traj.plate}</strong></span><br/>
+          <span style="color: #fbbf24;">Radar Speed: <strong>${s.speed_kmph} km/h</strong></span><br/>
+          <span style="color: #10b981;">ANPR OCR: <strong>${s.ocr_confidence}%</strong></span>
+        </div>
+      </div>
+    `);
+    window.trajectoryMapLayers.push(marker);
+  });
+
+  // 7. Place Predictive Forward Roadblock Interception Marker
+  const pred = traj.predictive_trajectory;
+  if (pred && pred.next_predicted_lat && pred.next_predicted_lng) {
+    const lastCoord = latLngs[latLngs.length - 1];
+    const predCoord = [pred.next_predicted_lat, pred.next_predicted_lng];
+
+    const predLine = L.polyline([lastCoord, predCoord], {
+      color: '#fbbf24',
+      weight: 2.5,
+      dashArray: '5, 8',
+      opacity: 0.8
+    }).addTo(leafletMapInstance);
+    window.trajectoryMapLayers.push(predLine);
+
+    const roadblockIcon = L.divIcon({
+      className: 'roadblock-pred-pin',
+      html: `
+        <div style="
+          background: #f43f5e;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          border: 2px solid #ffffff;
+          box-shadow: 0 0 20px #f43f5e;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          font-size: 14px;
+        "><i class="fa-solid fa-shield-halved"></i></div>
+      `,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+
+    const predMarker = L.marker(predCoord, { icon: roadblockIcon }).addTo(leafletMapInstance);
+    predMarker.bindPopup(`
+      <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 230px;">
+        <strong style="color: #f43f5e; font-size: 13px;"><i class="fa-solid fa-shield-halved"></i> FORWARD ROADBLOCK INTERCEPT</strong><br/>
+        <strong>${pred.next_predicted_location}</strong><br/>
+        <span style="color: #fbbf24; font-size: 11px;">ETA: ~${pred.current_eta_minutes} Mins (${pred.estimated_arrival_time})</span><br/>
+        <div style="margin: 6px 0; padding: 6px; background: rgba(244,63,94,0.15); border-radius: 4px; font-size: 11px;">
+          <span>Strategy: <em>${pred.suggested_interception_strategy}</em></span><br/>
+          <span>Squad: <strong>${pred.assigned_pcr_interceptor}</strong></span>
+        </div>
+        <button onclick="triggerTacticalRoadblockDispatch('${traj.plate}', '${pred.next_predicted_location}')" style="
+          width: 100%;
+          background: linear-gradient(135deg, #f43f5e, #e11d48);
+          color: #ffffff;
+          border: none;
+          padding: 5px 8px;
+          border-radius: 4px;
+          font-weight: 700;
+          cursor: pointer;
+        "><i class="fa-solid fa-bolt"></i> Deploy Hydraulic Barrier & Spikes</button>
+      </div>
+    `);
+    window.trajectoryMapLayers.push(predMarker);
+  }
+
+  // 8. Dynamically Zoom and Center Map on the Actual Pursuit Route
+  const allPoints = [...latLngs];
+  if (pred && pred.next_predicted_lat) allPoints.push([pred.next_predicted_lat, pred.next_predicted_lng]);
+  leafletMapInstance.fitBounds(allPoints, { padding: [80, 80], maxZoom: 15 });
+
+  // 9. Floating Toast Notification
+  showRealtimeAlertToast({
+    title: `🗺️ DYNAMIC PURSUIT TRAJECTORY: ${traj.plate}`,
+    location: `${traj.sightings.length} Nodes Connected • Distance: ${traj.total_distance_km} km`,
+    camera_id: traj.sightings[0]?.camera_id || 'GIS_ROUTING'
+  });
 };
 
 function initTrajectoryPursuitLab() {

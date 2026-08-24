@@ -1798,281 +1798,132 @@ class NirikshanApiClient {
   // MULTI-DEPARTMENT CROSS-JURISDICTION TRAJECTORY RECONSTRUCTION &
   // PREDICTIVE INTERCEPTION ENGINE (CROSS-DEPT VEHICLE PURSUIT)
   // =========================================================================
-  async reconstructVehicleTrajectory(plateNumber = 'GJ-01-AB-1234') {
-    this.logAudit('CROSS_DEPT_TRAJECTORY_RECONSTRUCTION', `Plate: ${plateNumber}`);
+  async reconstructVehicleTrajectory(plateNumber = 'GJ-01-AB-1234', originCameraId = null) {
+    this.logAudit('CROSS_DEPT_TRAJECTORY_RECONSTRUCTION', `Plate: ${plateNumber} (Origin: ${originCameraId || 'Auto-Detected'})`);
     const cleanPlate = (plateNumber || '').replace(/\s+/g, '').toUpperCase();
+    const plateFormatted = cleanPlate.length > 3 ? cleanPlate : 'GJ-01-AB-1234';
 
-    // Multi-department sighting timeline dataset simulating cross-jurisdiction transit
-    const sightingTrails = {
-      'GJ-01-AB-1234': {
-        plate: 'GJ-01-AB-1234',
-        vehicle_model: 'Hyundai Creta 1.5 SX (White)',
-        stolen_fir: 'FIR-2026-GJ-01-8841 (Satellite PS)',
-        status: 'ACTIVE_HOT_PURSUIT',
-        total_distance_km: 74.2,
-        average_speed_kmph: 81.5,
-        current_heading: 'North-West (325° Towards Mehsana / Rajasthan Border)',
-        sightings: [
-          {
-            step: 1,
-            camera_id: 'CAM-GJ-0101',
-            camera_name: 'Pakwan Crossroad Overbridge',
-            district: 'Ahmedabad (Urban)',
-            department_id: 'dept-police',
-            department_name: 'Gujarat State Police (Home Dept)',
-            department_badge: 'Police Urban Grid',
-            department_color: '#f43f5e',
-            lat: 23.0305,
-            lng: 72.5076,
-            timestamp: new Date(Date.now() - 48 * 60 * 1000).toISOString(),
-            time_display: '17:48 IST',
-            speed_kmph: 62.0,
-            direction: 'Entering SG Highway Northbound',
-            ocr_confidence: 99.2,
-            snapshot_type: 'Incident Point of Origin (Theft Reported)'
-          },
-          {
-            step: 2,
-            camera_id: 'CAM-GJ-0103',
-            camera_name: 'Sanand Circle Outer Ring Road Junction',
-            district: 'Ahmedabad (Urban)',
-            department_id: 'dept-amc',
-            department_name: 'Ahmedabad Municipal Corp (AMC Smart City)',
-            department_badge: 'AMC Municipal Traffic Grid',
-            department_color: '#00f2fe',
-            lat: 23.0089,
-            lng: 72.4812,
-            timestamp: new Date(Date.now() - 34 * 60 * 1000).toISOString(),
-            time_display: '18:02 IST',
-            speed_kmph: 78.4,
-            direction: 'Exiting City Limits via SP Ring Road',
-            ocr_confidence: 98.6,
-            snapshot_type: 'Cross-Jurisdiction Handoff (Police -> AMC)'
-          },
-          {
-            step: 3,
-            camera_id: 'CAM-GJ-0601',
-            camera_name: 'Iscon Mega Plaza Commercial Bypass Access',
-            district: 'Ahmedabad Rural Corridor',
-            department_id: 'dept-private',
-            department_name: 'Private Commercial Partner (DPDP Consent CSR-001)',
-            department_badge: 'Citizen Partner Opt-In',
-            department_color: '#c084fc',
-            lat: 23.0450,
-            lng: 72.4350,
-            timestamp: new Date(Date.now() - 21 * 60 * 1000).toISOString(),
-            time_display: '18:15 IST',
-            speed_kmph: 86.2,
-            direction: 'Speeding on National Highway 147',
-            ocr_confidence: 97.4,
-            snapshot_type: 'Private Camera Handoff (Citizen Feeds Opt-In)'
-          },
-          {
-            step: 4,
-            camera_id: 'CAM-GJ-0202',
-            camera_name: 'Viramgam-Mandal RTO High-Speed Weighbridge',
-            district: 'Ahmedabad Border Zone',
-            department_id: 'dept-rto',
-            department_name: 'Road Transport Office (RTO & Highway Patrol)',
-            department_badge: 'RTO Highway Transit Grid',
-            department_color: '#f59e0b',
-            lat: 23.1200,
-            lng: 72.3100,
-            timestamp: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
-            time_display: '18:30 IST',
-            speed_kmph: 94.8,
-            direction: 'High-Speed Transit Toll Bypass',
-            ocr_confidence: 99.4,
-            snapshot_type: 'RTO Weighbridge Automated ANPR Hit'
-          }
-        ],
-        predictive_trajectory: {
-          confidence_score: 96.2,
-          projected_speed_kmph: 92.0,
-          current_eta_minutes: 14,
-          estimated_arrival_time: new Date(Date.now() + 14 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-          next_predicted_camera_id: 'CAM-GJ-0402',
-          next_predicted_location: 'Forest Dept Sanctuary North Inter-State Corridor',
-          next_predicted_district: 'Mehsana / Forest Sanctuary Perimeter',
-          next_predicted_dept: 'State Forest & Wildlife Department',
-          next_predicted_lat: 23.2800,
-          next_predicted_lng: 72.1900,
-          suggested_interception_strategy: 'Forward Geo-Fenced Highway Roadblock at Toll Gate #03 & Forest Barrier',
-          assigned_pcr_interceptor: 'Inter-State Border Flying Squad #11'
-        }
-      },
-      'MP-09-HH-5541': {
-        plate: 'MP-09-HH-5541',
-        vehicle_model: 'Tata Prima Multi-Axle Carrier (40 Ton)',
-        stolen_fir: 'Overweight Carrier & E-Challan Evader',
-        status: 'ACTIVE_HOT_PURSUIT',
-        total_distance_km: 42.8,
-        average_speed_kmph: 54.0,
-        current_heading: 'Eastbound (88° Towards MP Border)',
-        sightings: [
-          {
-            step: 1,
-            camera_id: 'CAM-GJ-0502',
-            camera_name: 'Dahod APMC Grain Market Toll',
-            district: 'Dahod (Tribal Border)',
-            department_id: 'dept-civil',
-            department_name: 'Civil Supplies & Food Dept',
-            department_badge: 'Civil Supplies Grid',
-            department_color: '#10b981',
-            lat: 22.8350,
-            lng: 74.2500,
-            timestamp: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
-            time_display: '18:00 IST',
-            speed_kmph: 48.0,
-            direction: 'Departing PDS Godown Area',
-            ocr_confidence: 98.1,
-            snapshot_type: 'PDS Godown Departure'
-          },
-          {
-            step: 2,
-            camera_id: 'CAM-GJ-0501',
-            camera_name: 'Dahod Inter-State Border Weighbridge',
-            district: 'Dahod (Tribal Border)',
-            department_id: 'dept-rto',
-            department_name: 'Road Transport Office (RTO)',
-            department_badge: 'RTO Border Checkpost',
-            department_color: '#f59e0b',
-            lat: 22.8410,
-            lng: 74.2620,
-            timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-            time_display: '18:25 IST',
-            speed_kmph: 58.5,
-            direction: 'Approaching Gujarat-MP Border Crossing',
-            ocr_confidence: 99.1,
-            snapshot_type: 'Overweight Transit Trigger'
-          }
-        ],
-        predictive_trajectory: {
-          confidence_score: 98.4,
-          projected_speed_kmph: 56.0,
-          current_eta_minutes: 8,
-          estimated_arrival_time: new Date(Date.now() + 8 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-          next_predicted_camera_id: 'CAM-GJ-0503',
-          next_predicted_location: 'Interstate Border Barrier Gate #01',
-          next_predicted_district: 'Dahod MP Border',
-          next_predicted_dept: 'Police & RTO Joint Checkpost',
-          next_predicted_lat: 22.8520,
-          next_predicted_lng: 74.2850,
-          suggested_interception_strategy: 'Automated Hydraulic Barrier Closure at State Border Checkpost',
-          assigned_pcr_interceptor: 'Dahod Border Patrol #04'
-        }
+    // 1. Locate the Capture Camera or select dynamically based on plate RTO prefix or origin ID
+    let originCam = null;
+    if (originCameraId) {
+      originCam = await this.getCameraById(originCameraId);
+    }
+    
+    // Check if plate has an active alert with a camera location
+    if (!originCam && this.alerts) {
+      const matchingAlert = this.alerts.find(a => a.target_vehicle === plateFormatted || (a.details && a.details.includes(plateFormatted)));
+      if (matchingAlert && matchingAlert.camera_id) {
+        originCam = await this.getCameraById(matchingAlert.camera_id);
       }
-    };
-
-    // 1. Static presets for key scenario demos
-    if (sightingTrails[cleanPlate]) {
-      return sightingTrails[cleanPlate];
     }
 
-    // 2. Dynamic multi-department trajectory generator for ANY custom vehicle plate entered
-    const plateFormatted = cleanPlate.length > 4 ? cleanPlate : (cleanPlate || 'GJ-01-TR-9901');
-    const now = Date.now();
+    // Default to first camera or district matching camera
+    if (!originCam) {
+      originCam = this.cameras[0] || {
+        id: 'CAM-GJ-0101',
+        name: 'SG Highway Pakwan Crossroad Overbridge',
+        district: 'Ahmedabad (Urban)',
+        department_id: 'dept-police',
+        lat: 23.0305,
+        lng: 72.5076,
+        direction: 'Northbound SG Corridor'
+      };
+    }
+
+    // 2. Discover geographically adjacent cameras in the network to form a realistic dynamic route
+    const allCams = this.cameras.filter(c => c.id !== originCam.id && c.lat && c.lng);
     
-    // Determine vehicle type and suspicion tag dynamically
-    const isOutState = !plateFormatted.startsWith('GJ');
-    const vehicleType = isOutState ? 'Commercial Transit Transport' : 'Passenger Vehicle / SUV';
+    // Sort other cameras by distance from the origin camera
+    allCams.sort((a, b) => {
+      const distA = Math.hypot(a.lat - originCam.lat, a.lng - originCam.lng);
+      const distB = Math.hypot(b.lat - originCam.lat, b.lng - originCam.lng);
+      return distA - distB;
+    });
+
+    // Select 3 to 4 sequential corridor cameras
+    const routeNodes = [originCam, ...allCams.slice(0, 3)];
+    const now = Date.now();
+
+    const deptBadges = {
+      'dept-police': { name: 'Gujarat State Police (Home Dept)', badge: 'Police Urban Grid', color: '#f43f5e' },
+      'dept-amc': { name: 'Ahmedabad Municipal Corp (AMC Smart City)', badge: 'AMC Municipal Traffic Grid', color: '#00f2fe' },
+      'dept-rto': { name: 'Road Transport Office (RTO & Highway Patrol)', badge: 'RTO Highway Transit Grid', color: '#f59e0b' },
+      'dept-civil': { name: 'Civil Supplies & Food Dept', badge: 'Civil Supplies Grid', color: '#10b981' },
+      'dept-forest': { name: 'State Forest & Wildlife Dept', badge: 'Sanctuary Border Grid', color: '#84cc16' },
+      'dept-private': { name: 'Private Commercial Partner (DPDP Opt-In)', badge: 'Citizen Feeds Opt-In', color: '#c084fc' }
+    };
+
+    let totalDistKm = 0;
+    const sightings = routeNodes.map((cam, idx) => {
+      const minutesAgo = Math.round((routeNodes.length - 1 - idx) * 12 + 2);
+      const timestamp = new Date(now - minutesAgo * 60 * 1000).toISOString();
+      const speed = Math.round(65 + Math.random() * 25);
+      
+      if (idx > 0) {
+        const prev = routeNodes[idx - 1];
+        const hopDist = Math.hypot((cam.lat - prev.lat) * 111, (cam.lng - prev.lng) * 111 * Math.cos(cam.lat * Math.PI / 180));
+        totalDistKm += hopDist;
+      }
+
+      const dInfo = deptBadges[cam.department_id] || deptBadges['dept-police'];
+
+      return {
+        step: idx + 1,
+        camera_id: cam.id,
+        camera_name: cam.name,
+        district: cam.district || 'Gujarat Transit Corridor',
+        department_id: cam.department_id || 'dept-police',
+        department_name: dInfo.name,
+        department_badge: dInfo.badge,
+        department_color: dInfo.color,
+        lat: cam.lat,
+        lng: cam.lng,
+        timestamp: timestamp,
+        time_display: new Date(now - minutesAgo * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
+        speed_kmph: speed,
+        direction: cam.direction || 'Forward Transit Corridor',
+        ocr_confidence: (98.2 + (idx % 2) * 1.2).toFixed(1),
+        snapshot_type: idx === 0 ? 'Live Optical Capture & Initial Intercept' : `Cross-Jurisdiction Sighting (Hop #${idx + 1})`
+      };
+    });
+
+    if (totalDistKm === 0) totalDistKm = 18.5;
+
+    // 3. Compute Forward Predictive Roadblock Interception Coordinate
+    const lastNode = routeNodes[routeNodes.length - 1];
+    const prevNode = routeNodes[routeNodes.length - 2] || originCam;
+    const deltaLat = (lastNode.lat - prevNode.lat) || 0.05;
+    const deltaLng = (lastNode.lng - prevNode.lng) || 0.05;
+
+    const nextPredictedLat = lastNode.lat + deltaLat * 0.8;
+    const nextPredictedLng = lastNode.lng + deltaLng * 0.8;
+    const etaMinutes = Math.round((totalDistKm / 82.0) * 15) + 4;
+    const arrivalTime = new Date(now + etaMinutes * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST';
+
     const firNo = `FIR-2026-${plateFormatted.substring(0, 5)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     return {
       plate: plateFormatted,
-      vehicle_model: `${vehicleType} (${plateFormatted})`,
-      stolen_fir: `${firNo} (Cross-Dept Alert Issued)`,
+      vehicle_model: `Suspect Motor Vehicle (${plateFormatted})`,
+      stolen_fir: `${firNo} • Section 379/411 IPC`,
       status: 'ACTIVE_HOT_PURSUIT',
-      total_distance_km: 68.4,
-      average_speed_kmph: 79.2,
-      current_heading: 'North-West (330° National Highway Transit Corridor)',
-      sightings: [
-        {
-          step: 1,
-          camera_id: 'CAM-GJ-0101',
-          camera_name: 'Pakwan Crossroad Overbridge',
-          district: 'Ahmedabad (Urban)',
-          department_id: 'dept-police',
-          department_name: 'Gujarat State Police (Home Dept)',
-          department_badge: 'Police Urban Grid',
-          department_color: '#f43f5e',
-          lat: 23.0305,
-          lng: 72.5076,
-          timestamp: new Date(now - 45 * 60 * 1000).toISOString(),
-          time_display: new Date(now - 45 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-          speed_kmph: 61.5,
-          direction: 'Entering Urban Arterial Road',
-          ocr_confidence: 99.1,
-          snapshot_type: 'Police Surveillance ANPR Initial Trigger'
-        },
-        {
-          step: 2,
-          camera_id: 'CAM-GJ-0103',
-          camera_name: 'Sanand Circle Outer Ring Road Junction',
-          district: 'Ahmedabad (Urban)',
-          department_id: 'dept-amc',
-          department_name: 'Ahmedabad Municipal Corp (AMC Smart City)',
-          department_badge: 'AMC Municipal Traffic Grid',
-          department_color: '#00f2fe',
-          lat: 23.0089,
-          lng: 72.4812,
-          timestamp: new Date(now - 31 * 60 * 1000).toISOString(),
-          time_display: new Date(now - 31 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-          speed_kmph: 76.8,
-          direction: 'Exiting City Limits via SP Ring Road',
-          ocr_confidence: 98.4,
-          snapshot_type: 'Cross-Jurisdiction Handoff (Police -> AMC)'
-        },
-        {
-          step: 3,
-          camera_id: 'CAM-GJ-0601',
-          camera_name: 'Commercial Bypass Access Toll Gateway',
-          district: 'Ahmedabad Rural Corridor',
-          department_id: 'dept-private',
-          department_name: 'Private Commercial Partner (DPDP Consent CSR-001)',
-          department_badge: 'Citizen Partner Opt-In',
-          department_color: '#c084fc',
-          lat: 23.0450,
-          lng: 72.4350,
-          timestamp: new Date(now - 18 * 60 * 1000).toISOString(),
-          time_display: new Date(now - 18 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-          speed_kmph: 84.6,
-          direction: 'High-Speed Transit on National Highway 147',
-          ocr_confidence: 97.9,
-          snapshot_type: 'Private Camera Handoff (Citizen Feeds Opt-In)'
-        },
-        {
-          step: 4,
-          camera_id: 'CAM-GJ-0202',
-          camera_name: 'Viramgam-Mandal RTO High-Speed Weighbridge',
-          district: 'Ahmedabad Border Zone',
-          department_id: 'dept-rto',
-          department_name: 'Road Transport Office (RTO & Highway Patrol)',
-          department_badge: 'RTO Highway Transit Grid',
-          department_color: '#f59e0b',
-          lat: 23.1200,
-          lng: 72.3100,
-          timestamp: new Date(now - 5 * 60 * 1000).toISOString(),
-          time_display: new Date(now - 5 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-          speed_kmph: 93.4,
-          direction: 'High-Speed Transit Toll Bypass',
-          ocr_confidence: 99.3,
-          snapshot_type: 'RTO Weighbridge Automated ANPR Hit'
-        }
-      ],
+      total_distance_km: totalDistKm.toFixed(1),
+      average_speed_kmph: 81.5,
+      current_heading: `${originCam.direction || 'Northbound'} (Towards Forward Highway Toll)`,
+      sightings: sightings,
       predictive_trajectory: {
-        confidence_score: 95.8,
-        projected_speed_kmph: 91.0,
-        current_eta_minutes: 13,
-        estimated_arrival_time: new Date(now + 13 * 60 * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ' IST',
-        next_predicted_camera_id: 'CAM-GJ-0402',
-        next_predicted_location: 'Forest Dept Sanctuary North Inter-State Corridor',
-        next_predicted_district: 'Mehsana / Forest Sanctuary Perimeter',
-        next_predicted_dept: 'State Forest & Wildlife Department',
-        next_predicted_lat: 23.2800,
-        next_predicted_lng: 72.1900,
-        suggested_interception_strategy: `Forward Roadblock & Hydraulic Barrier Closure for Target ${plateFormatted}`,
-        assigned_pcr_interceptor: 'Inter-State Border Flying Squad #11'
+        confidence_score: 96.8,
+        projected_speed_kmph: 84.0,
+        current_eta_minutes: etaMinutes,
+        estimated_arrival_time: arrivalTime,
+        next_predicted_camera_id: `CAM-PRED-${Math.floor(1000 + Math.random() * 9000)}`,
+        next_predicted_location: `Forward Toll Barrier & Highway Roadblock #${Math.floor(1 + Math.random() * 9)}`,
+        next_predicted_district: `${lastNode.district || 'Highway'} Forward Perimeter`,
+        next_predicted_dept: 'State Highway Patrol & RTO Flying Squad',
+        next_predicted_lat: nextPredictedLat,
+        next_predicted_lng: nextPredictedLng,
+        suggested_interception_strategy: 'Automated Hydraulic Spike Strip Armed & Forward Toll Barrier Closure',
+        assigned_pcr_interceptor: 'PCR-101 (Cheetah Unit) & Interceptor Falcon-09'
       }
     };
   }
