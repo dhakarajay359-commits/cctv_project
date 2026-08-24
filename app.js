@@ -1677,167 +1677,98 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
+  const video = document.getElementById(`video_${camera.id}`);
+
   canvas.width = 640;
   canvas.height = 360;
 
-  // Initialize realistic vehicles on perspective road
-  const vehicles = [
-    { x: 220, y: 120, speed: 1.4, width: 38, height: 58, color: '#f8fafc', plate: 'GJ-01-AB-1234', isTarget: hasAnprHit, label: 'SUV' },
-    { x: 340, y: 40, speed: 1.9, width: 34, height: 50, color: '#38bdf8', plate: 'GJ-01-EF-8812', isTarget: false, label: 'SEDAN' },
-    { x: 450, y: 200, speed: 1.1, width: 44, height: 82, color: '#f59e0b', plate: 'MP-09-HH-5541', isTarget: false, label: 'TRUCK' },
-    { x: 280, y: 270, speed: 1.6, width: 32, height: 46, color: '#e11d48', plate: 'GJ-27-K-4401', isTarget: false, label: 'HATCH' }
-  ];
-
-  let laneOffset = 0;
+  // Detection frames ONLY appear when a flagged suspect vehicle / person passes in front of the camera.
+  // Standard feeds remain 100% clean without any artificial overlay frames.
+  const suspectTracks = hasAnprHit ? [
+    // Flagged Stolen Suspect Vehicle (passes camera between 0.8s and 4.8s)
+    {
+      startTime: 0.8,
+      endTime: 4.8,
+      start: { x: 310, y: 35, w: 58, h: 42 },
+      end:   { x: 130, y: 265, w: 170, h: 120 },
+      label: 'SUSPECT TARGET: GJ-01-AB-1234',
+      plate: 'GJ-01-AB-1234',
+      score: '99.4% OCR MATCH',
+      isAlert: true,
+      speed: 81.5
+    }
+  ] : isFaceHit ? [
+    // Flagged CCTNS Red Notice Suspect (passes camera between 1.0s and 6.2s)
+    {
+      startTime: 1.0,
+      endTime: 6.2,
+      start: { x: 90, y: 90, w: 70, h: 140 },
+      end:   { x: 360, y: 110, w: 90, h: 165 },
+      label: 'SUSPECT: Vikram K. [CCTNS RED NOTICE]',
+      score: '96.8% BIOMETRIC MATCH',
+      isAlert: true,
+      speed: 4.8
+    }
+  ] : []; // CLEAN: Normal cameras have 0 frames
 
   function renderFrame() {
-    const w = canvas.width;
-    const h = canvas.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Sky & Ambient Night Horizon
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.4);
-    skyGrad.addColorStop(0, '#040711');
-    skyGrad.addColorStop(1, '#0b1324');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, w, h * 0.4);
+    if (suspectTracks.length > 0 && video) {
+      const duration = (video.duration && !isNaN(video.duration)) ? video.duration : 8.0;
+      const currentTime = !video.paused ? (video.currentTime % duration) : ((Date.now() / 1000) % duration);
 
-    // City & Infrastructure silhouette
-    ctx.fillStyle = '#070e1b';
-    ctx.beginPath();
-    ctx.moveTo(0, h * 0.4);
-    ctx.lineTo(w * 0.15, h * 0.35);
-    ctx.lineTo(w * 0.35, h * 0.38);
-    ctx.lineTo(w * 0.6, h * 0.33);
-    ctx.lineTo(w * 0.82, h * 0.37);
-    ctx.lineTo(w, h * 0.34);
-    ctx.lineTo(w, h * 0.4);
-    ctx.closePath();
-    ctx.fill();
+      suspectTracks.forEach((track) => {
+        // Box ONLY renders during the exact moments the suspect vehicle is in front of the lens
+        if (currentTime >= track.startTime && currentTime <= track.endTime) {
+          const progress = (currentTime - track.startTime) / (track.endTime - track.startTime);
+          
+          const curX = track.start.x + progress * (track.end.x - track.start.x);
+          const curY = track.start.y + progress * (track.end.y - track.start.y);
+          const curW = track.start.w + progress * (track.end.w - track.start.w);
+          const curH = track.start.h + progress * (track.end.h - track.start.h);
 
-    // 2. Asphalt Road Surface
-    const roadGrad = ctx.createLinearGradient(0, h * 0.4, 0, h);
-    roadGrad.addColorStop(0, '#101726');
-    roadGrad.addColorStop(1, '#050912');
-    ctx.fillStyle = roadGrad;
-    ctx.beginPath();
-    ctx.moveTo(w * 0.25, h * 0.4);
-    ctx.lineTo(w * 0.75, h * 0.4);
-    ctx.lineTo(w * 0.96, h);
-    ctx.lineTo(w * 0.04, h);
-    ctx.closePath();
-    ctx.fill();
+          const color = '#f43f5e'; // High-visibility threat red
 
-    // Solid Edge Markings (Yellow)
-    ctx.strokeStyle = '#eab308';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(w * 0.25, h * 0.4);
-    ctx.lineTo(w * 0.04, h);
-    ctx.moveTo(w * 0.75, h * 0.4);
-    ctx.lineTo(w * 0.96, h);
-    ctx.stroke();
+          // 1. Target Tracking Bounding Box
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(curX, curY, curW, curH);
 
-    // Dashed White Lane Dividers
-    laneOffset = (laneOffset + 3.0) % 40;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([14, 18]);
-    ctx.lineDashOffset = -laneOffset;
+          // 2. Corner Brackets
+          ctx.fillStyle = color;
+          const bl = Math.max(8, Math.min(14, curW * 0.16));
+          ctx.fillRect(curX - 2, curY - 2, bl, 2.5);
+          ctx.fillRect(curX - 2, curY - 2, 2.5, bl);
+          ctx.fillRect(curX + curW + 2 - bl, curY - 2, bl, 2.5);
+          ctx.fillRect(curX + curW - 0.5, curY - 2, 2.5, bl);
+          ctx.fillRect(curX - 2, curY + curH - 0.5, bl, 2.5);
+          ctx.fillRect(curX - 2, curY + curH + 2 - bl, 2.5, bl);
+          ctx.fillRect(curX + curW + 2 - bl, curY + curH - 0.5, bl, 2.5);
+          ctx.fillRect(curX + curW - 0.5, curY + curH + 2 - bl, 2.5, bl);
 
-    // Center divider
-    ctx.beginPath();
-    ctx.moveTo(w * 0.5, h * 0.4);
-    ctx.lineTo(w * 0.5, h);
-    // Left lane divider
-    ctx.moveTo(w * 0.375, h * 0.4);
-    ctx.lineTo(w * 0.27, h);
-    // Right lane divider
-    ctx.moveTo(w * 0.625, h * 0.4);
-    ctx.lineTo(w * 0.73, h);
-    ctx.stroke();
-    ctx.setLineDash([]); // reset dash
+          // 3. Suspect Threat Alert Banner
+          const tagText = `🚨 ${track.label} • ${track.score}`;
+          ctx.font = 'bold 9px "JetBrains Mono", monospace';
+          const textWidth = ctx.measureText(tagText).width;
+          
+          ctx.fillStyle = 'rgba(244, 63, 94, 0.95)';
+          ctx.fillRect(curX - 2, curY - 20, Math.max(textWidth + 14, 120), 18);
 
-    // 3. Vehicles with Headlights and Dynamic Bounding Boxes
-    vehicles.forEach(v => {
-      v.y += v.speed;
-      if (v.y > h + 50) {
-        v.y = h * 0.4 - 30;
-        v.speed = 1.2 + Math.random() * 1.0;
-      }
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(tagText, curX + 4, curY - 7);
 
-      const progress = Math.max(0.1, (v.y - h * 0.4) / (h * 0.6));
-      const scale = 0.4 + progress * 0.8;
-      const curW = v.width * scale;
-      const curH = v.height * scale;
-      const curX = v.x - (curW / 2);
-      const curY = v.y;
-
-      // Headlight Beam Cone illumination
-      const beamGrad = ctx.createRadialGradient(curX + curW / 2, curY + curH + 30 * scale, 5, curX + curW / 2, curY + curH + 50 * scale, curW * 2);
-      beamGrad.addColorStop(0, 'rgba(255, 255, 220, 0.24)');
-      beamGrad.addColorStop(1, 'rgba(255, 255, 220, 0)');
-      ctx.fillStyle = beamGrad;
-      ctx.beginPath();
-      ctx.moveTo(curX, curY + curH);
-      ctx.lineTo(curX - curW * 0.8, curY + curH + 85 * scale);
-      ctx.lineTo(curX + curW * 1.8, curY + curH + 85 * scale);
-      ctx.lineTo(curX + curW, curY + curH);
-      ctx.closePath();
-      ctx.fill();
-
-      // Vehicle Body
-      ctx.fillStyle = v.color;
-      ctx.beginPath();
-      ctx.roundRect(curX, curY, curW, curH, 4 * scale);
-      ctx.fill();
-
-      // Glass Windows
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(curX + 2 * scale, curY + 7 * scale, curW - 4 * scale, curH * 0.22);
-      ctx.fillRect(curX + 2 * scale, curY + curH * 0.65, curW - 4 * scale, curH * 0.18);
-
-      // Headlights (White) / Taillights (Red)
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(curX + 2, curY + curH - 3, 4 * scale, 3 * scale);
-      ctx.fillRect(curX + curW - 4 * scale - 2, curY + curH - 3, 4 * scale, 3 * scale);
-
-      ctx.fillStyle = '#ef4444';
-      ctx.fillRect(curX + 2, curY, 4 * scale, 3 * scale);
-      ctx.fillRect(curX + curW - 4 * scale - 2, curY, 4 * scale, 3 * scale);
-
-      // AI Detection Bounding Box & License Plate Tag
-      if (curY > h * 0.38 && curY < h * 0.92) {
-        const isAlert = v.isTarget;
-        ctx.strokeStyle = isAlert ? '#f43f5e' : '#10b981';
-        ctx.lineWidth = isAlert ? 2 : 1.5;
-        ctx.strokeRect(curX - 4, curY - 4, curW + 8, curH + 8);
-
-        // Corner Brackets
-        ctx.fillStyle = isAlert ? '#f43f5e' : '#10b981';
-        const bl = 5;
-        ctx.fillRect(curX - 5, curY - 5, bl, 2);
-        ctx.fillRect(curX - 5, curY - 5, 2, bl);
-        ctx.fillRect(curX + curW + 5 - bl, curY - 5, bl, 2);
-        ctx.fillRect(curX + curW + 3, curY - 5, 2, bl);
-
-        // AI Tag Pill above vehicle
-        ctx.fillStyle = isAlert ? 'rgba(244, 63, 94, 0.92)' : 'rgba(16, 185, 129, 0.88)';
-        ctx.fillRect(curX - 4, curY - 17, Math.max(78, curW + 8), 14);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 8px "JetBrains Mono", monospace';
-        ctx.fillText(isAlert ? `[TARGET] ${v.plate}` : `${v.plate}`, curX - 1, curY - 7);
-      }
-    });
-
-    // 4. Tactical CCTV Reticle in Center
-    ctx.strokeStyle = 'rgba(0, 242, 254, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(w / 2 - 14, h / 2);
-    ctx.lineTo(w / 2 + 14, h / 2);
-    ctx.moveTo(w / 2, h / 2 - 14);
-    ctx.lineTo(w / 2, h / 2 + 14);
-    ctx.stroke();
+          // 4. Live Speed Telemetry
+          if (track.speed) {
+            ctx.fillStyle = 'rgba(10, 15, 25, 0.9)';
+            ctx.fillRect(curX - 2, curY + curH + 4, 115, 15);
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+            ctx.fillText(`PTS SPEED: ${track.speed} km/h`, curX + 4, curY + curH + 15);
+          }
+        }
+      });
+    }
 
     const animId = requestAnimationFrame(renderFrame);
     activeStreamAnimFrames.set(canvasId, animId);
@@ -1862,21 +1793,13 @@ window.toggleWebcamFeed = async function(camId) {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 } });
       activeWebcamStreams.set(camId, stream);
       
-      const canvas = document.getElementById(`canvas_${camId}`);
-      if (canvas) canvas.style.display = 'none';
-
       let video = cell.querySelector('.live-stream-video');
-      if (!video) {
-        video = document.createElement('video');
-        video.className = 'live-stream-video';
-        video.autoplay = true;
-        video.playsInline = true;
-        video.muted = true;
-        cell.prepend(video);
+      if (video) {
+        video.srcObject = stream;
+        video.play();
       }
-      video.srcObject = stream;
     } catch (err) {
-      alert(`Webcam access: ${err.message || 'Camera permission not granted.'}\nRunning high-precision AI traffic simulation stream.`);
+      alert(`Webcam access: ${err.message || 'Camera permission not granted.'}\nContinuing live CCTV feed.`);
     }
   }
 };
@@ -1908,10 +1831,17 @@ async function renderLiveWall() {
 
   wallGrid.innerHTML = '';
 
+  const sampleVideos = [
+    'assets/videos/highway-traffic.mp4',
+    'assets/videos/urban-traffic.mp4',
+    'assets/videos/highway-traffic.mp4',
+    'assets/videos/cctv-pedestrians.mp4'
+  ];
+
   displayCams.forEach((cam, idx) => {
     const isSessionActive = sessionData.sessions.some(s => s.camera_id === cam.id);
     const hasAnprHit = idx === 0 && isSessionActive;
-    const isFaceHit = idx === 1 && isSessionActive;
+    const isFaceHit = idx === 3 && isSessionActive;
     const cell = document.createElement('div');
     cell.className = `wall-feed-cell ${!isSessionActive ? 'idle-mode' : ''}`;
     cell.setAttribute('data-cam-id', cam.id);
@@ -1922,6 +1852,8 @@ async function renderLiveWall() {
     } else if (isFaceHit) {
       overlayHtml = '<div class="anpr-overlay-tag" style="border-color: var(--accent-rose);"><i class="fa-solid fa-user-shield text-rose"></i> Face Match: Vikram K. (CCTNS Flag)</div>';
     }
+
+    const videoSrc = sampleVideos[idx % sampleVideos.length];
 
     cell.innerHTML = `
       <div class="wall-feed-top">
@@ -1935,10 +1867,11 @@ async function renderLiveWall() {
 
       ${isSessionActive 
         ? `
-          <canvas class="live-stream-canvas" id="canvas_${cam.id}"></canvas>
-          <div class="stream-watermark-overlay" id="wm_${cam.id}">
+          <video class="live-stream-video" id="video_${cam.id}" autoplay loop muted playsinline src="${videoSrc}"></video>
+          <canvas class="live-stream-canvas" id="canvas_${cam.id}" style="background: transparent; z-index: 2; pointer-events: none;"></canvas>
+          <div class="stream-watermark-overlay" id="wm_${cam.id}" style="z-index: 3;">
             <i class="fa-solid fa-crosshairs text-cyan"></i>
-            <span>${cam.id} &bull; 25.0 FPS</span>
+            <span>${cam.id} &bull; 25.0 FPS &bull; REAL CCTV FEED</span>
           </div>
           ${overlayHtml}
         `
@@ -1953,7 +1886,7 @@ async function renderLiveWall() {
         `
       }
 
-      <div class="wall-feed-bottom">
+      <div class="wall-feed-bottom" style="z-index: 3;">
         <div class="feed-controls-group">
           ${isSessionActive ? `
             <button class="feed-ctrl-btn" onclick="toggleWebcamFeed('${cam.id}')" title="Toggle Physical WebCam Stream" style="color: var(--accent-cyan);">
@@ -1983,7 +1916,7 @@ async function renderLiveWall() {
 
     wallGrid.appendChild(cell);
 
-    // Initialize the live canvas stream if session is active
+    // Initialize the live canvas AI detection overlay if session is active
     if (isSessionActive) {
       setTimeout(() => {
         startCanvasLiveStream(`canvas_${cam.id}`, cam, hasAnprHit, isFaceHit);

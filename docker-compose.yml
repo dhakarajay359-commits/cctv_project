@@ -68,13 +68,21 @@ services:
     restart: unless-stopped
     ports:
       - "8004:8004"
+    volumes:
+      - ./services/analytics_engine:/app/services/analytics_engine
+    working_dir: /app
     environment:
       - SERVICE_NAME=analytics-engine
       - PORT=8004
-      - MODEL_WEIGHTS=yolov8n-plate-recognition.pt
+      - MODEL_WEIGHTS=yolov8n.pt
       - INFERENCE_DEVICE=cpu
+      - KAFKA_BOOTSTRAP_SERVERS=alert-bus-kafka:9092
+      - KAFKA_DETECTION_TOPIC=gujarat.vision.inferences
     command: >
-      sh -c "python -c 'import http.server; print(\"YOLOv8 & ANPR Vision Engine Ready on 8004\"); http.server.test(port=8004)'"
+      sh -c "pip install -r services/analytics_engine/requirements.txt &&
+             python -m uvicorn services.analytics_engine.main:app --host 0.0.0.0 --port 8004"
+    depends_on:
+      - alert-bus-kafka
     networks:
       - nirikshan-mesh
 
