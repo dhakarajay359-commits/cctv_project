@@ -6,6 +6,20 @@
 let leafletMapInstance = null;
 let leafletMarkers = [];
 
+// Active live stream canvas animation frames and webcam streams (Global scope)
+window.activeStreamAnimFrames = new Map();
+window.activeWebcamStreams = new Map();
+
+window.cleanupLiveStreamCanvases = function() {
+  if (window.activeStreamAnimFrames) {
+    window.activeStreamAnimFrames.forEach((reqId) => cancelAnimationFrame(reqId));
+    window.activeStreamAnimFrames.clear();
+  }
+};
+function cleanupLiveStreamCanvases() {
+  window.cleanupLiveStreamCanvases();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initPersonaSwitcher();
@@ -1663,15 +1677,6 @@ function startSessionInactivityTimer() {
       }
     }
   }, 1000);
-}
-
-// Active live stream canvas animation frames and webcam streams
-const activeStreamAnimFrames = new Map();
-const activeWebcamStreams = new Map();
-
-function cleanupLiveStreamCanvases() {
-  activeStreamAnimFrames.forEach((reqId) => cancelAnimationFrame(reqId));
-  activeStreamAnimFrames.clear();
 }
 
 // Track last triggered suspect hit timestamp to prevent spamming popups
