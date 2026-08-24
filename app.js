@@ -1762,11 +1762,11 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW, vBoxY + vBoxH - corner); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW - corner, vBoxY + vBoxH); ctx.stroke();
 
   // Target Classification Label
-  ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
-  ctx.fillRect(vBoxX, vBoxY - 18, 155, 16);
+  ctx.fillStyle = 'rgba(14, 165, 233, 0.95)';
+  ctx.fillRect(vBoxX, vBoxY - 18, 160, 16);
   ctx.fillStyle = '#04101e';
   ctx.font = 'bold 8px "JetBrains Mono", monospace';
-  ctx.fillText('YOLOv8x: TARGET VEHICLE (98.8%)', vBoxX + 4, vBoxY - 6);
+  ctx.fillText('ANPR CAMERA: TARGET MATCH (98.8%)', vBoxX + 4, vBoxY - 6);
 
   // 3. PROMINENT HIGH SECURITY REGISTRATION PLATE (HSRP)
   const plateX = 265;
@@ -2264,7 +2264,7 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
     dispatched_at: new Date().toISOString(),
     roadblock_armed: true,
     forward_roadblock_location: 'Sanand & SG Highway Forward Toll Barrier #02',
-    details: `AUTOMATIC ZERO-DELAY DISPATCH ACTIVATED: Backend YOLOv8 Vision Engine detected target vehicle ${plate} passing ${camera.name}. Automated emergency alert dispatched to ${nearestStation}. Offense: ${suspectInfo.crime || 'Criminal BOLO Hotlist'} (Ref: ${suspectInfo.fir || 'FIR-HQ'}). Plate OCR verified at 99.4% confidence. Forward roadblock automatically armed.`,
+    details: `AUTOMATIC ZERO-DELAY DISPATCH: Automated ANPR camera surveillance detected target vehicle ${plate} passing ${camera.name}. Emergency alert transmitted to ${nearestStation}. Offense: ${suspectInfo.crime || 'Criminal BOLO Hotlist'} (Ref: ${suspectInfo.fir || 'FIR-HQ'}). Plate OCR verified at 99.4% confidence. Forward roadblock armed.`,
     snapshot_url: snapshotData.fullSnapshotUrl,
     plate_crop_url: snapshotData.plateCropUrl,
     speed_kmph: speed,
@@ -2616,7 +2616,7 @@ async function initAnalyticsView() {
       if (liveOutput) {
         liveOutput.style.display = 'block';
         document.getElementById('anprOutPlate').textContent = res.anpr_result.plate_number;
-        document.getElementById('anprOutConf').textContent = `OCR Confidence: ${res.anpr_result.confidence}% \u2022 YOLOv8 Model`;
+        document.getElementById('anprOutConf').textContent = `OCR Confidence: ${res.anpr_result.confidence}% \u2022 Optical ANPR`;
         document.getElementById('anprOutVehicle').textContent = res.event.payload_json.vehicle;
         document.getElementById('anprOutSpeed').textContent = `Est. Speed: ${res.event.payload_json.speed_kmph} km/h \u2022 Heading North`;
         
