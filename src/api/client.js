@@ -892,6 +892,64 @@ class NirikshanApiClient {
       { id: 'AUD-989', user: 'Sub-Insp. S. Patel', role: 'Operator', action: 'ALERT_DISPATCH', target: 'ALT-1002 (eGujCop)', timestamp: new Date(Date.now() - 1000 * 60 * 11).toISOString(), ip: '10.24.110.50' },
       { id: 'AUD-988', user: 'RTO Officer Mehta', role: 'Admin', action: 'CAMERA_ONBOARD', target: 'CAM-GJ-0202', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), ip: '10.28.14.88' }
     ];
+
+    // 7. ACTIVE STATE SUSPECT & INTERCEPTION WATCHLIST (AUTHORITY REGISTERED)
+    this.suspectWatchlist = [
+      {
+        id: 'WCH-001',
+        plate: 'GJ-01-AB-1234',
+        vehicle_type: 'Hyundai Creta 1.5 (White)',
+        crime: 'Armed Bank Robbery & Kidnapping (Sec 392/364 IPC)',
+        fir: 'FIR-892/2026 (Satellite PS)',
+        suspect_name: 'Vikram Ramsinh Solanki',
+        priority: 'CRITICAL',
+        registered_by: 'Inspector V. R. Jadeja',
+        department_id: 'dept-police',
+        assigned_units: 'PCR Cheetah #04 & Falcon #09',
+        active: true,
+        created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
+      },
+      {
+        id: 'WCH-002',
+        plate: 'MP-09-HH-5541',
+        vehicle_type: 'Tata Prima Multi-Axle Carrier',
+        crime: 'Inter-State PDS Grain Siphoning & Toll Evasion',
+        fir: 'FIR-104/2026 (Civil Supplies Vigilance)',
+        suspect_name: 'Pravin Khimji Patel',
+        priority: 'HIGH',
+        registered_by: 'Enforcement Officer R. Mehta',
+        department_id: 'dept-civil',
+        assigned_units: 'Dahod Border Patrol Squad #02',
+        active: true,
+        created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
+      }
+    ];
+
+    // 8. CCTNS/NAFIS BIOMETRIC FACIAL WATCHLIST
+    this.facialWatchlist = [
+      {
+        id: 'FCW-001',
+        suspect_id: 'CCTNS-CRIM-2025-8812',
+        name: 'Vikram K. (Alias: Vicky)',
+        alias: 'Vicky Sanand',
+        crime: 'Sec 302 IPC / Extortion & Armed Robbery',
+        fir: 'FIR 104/2025 (Sanand PS)',
+        priority: 'CRITICAL',
+        biometric_score_default: 96.8,
+        active: true
+      },
+      {
+        id: 'FCW-002',
+        suspect_id: 'NAFIS-MIS-2026-441',
+        name: 'Aryan M.',
+        alias: 'Missing Child Alert',
+        crime: 'Operation Muskaan (Missing Child Hotlist)',
+        fir: 'MIS-22/2026 (Vadodara Central)',
+        priority: 'HIGH',
+        biometric_score_default: 95.4,
+        active: true
+      }
+    ];
   }
 
   // --- USER AUTH & RBAC SCOPING ---
@@ -1625,6 +1683,115 @@ class NirikshanApiClient {
     }
 
     return { error: 'Unknown database connector' };
+  }
+
+  // =========================================================================
+  // STATE SUSPECT & INTERCEPTION WATCHLIST MANAGEMENT (AUTHORITY ENGINE)
+  // =========================================================================
+  async getSuspectWatchlist() {
+    return this.suspectWatchlist.filter(w => w.active);
+  }
+
+  async isPlateSuspect(plateNumber) {
+    if (!plateNumber) return null;
+    const clean = plateNumber.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return this.suspectWatchlist.find(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === clean) || null;
+  }
+
+  async addSuspectVehicle(payload) {
+    const cleanPlate = (payload.plate || '').trim().toUpperCase();
+    if (!cleanPlate) throw new Error('Vehicle Registration Plate Number is required.');
+
+    // Check if already in watchlist
+    const existing = await this.isPlateSuspect(cleanPlate);
+    if (existing) {
+      existing.crime = payload.crime || existing.crime;
+      existing.fir = payload.fir || existing.fir;
+      existing.suspect_name = payload.suspect_name || existing.suspect_name;
+      existing.priority = payload.priority || existing.priority;
+      existing.active = true;
+      this.logAudit('SUSPECT_WATCHLIST_UPDATED', `Target: ${cleanPlate} (${existing.crime})`);
+      return { status: 'updated', record: existing };
+    }
+
+    const newRecord = {
+      id: `WCH-${Math.floor(100 + Math.random() * 900)}`,
+      plate: cleanPlate,
+      vehicle_type: payload.vehicle_type || 'Suspect Motor Vehicle',
+      crime: payload.crime || 'Unlawful Interstate Transit & Police Bolo Warrant',
+      fir: payload.fir || `FIR-${Math.floor(100 + Math.random() * 900)}/2026-HQ`,
+      suspect_name: payload.suspect_name || 'Unidentified Suspect Driver',
+      priority: payload.priority || 'CRITICAL',
+      registered_by: this.activeUser.name || 'State Command Authority',
+      department_id: this.activeUser.department_id || 'dept-police',
+      assigned_units: payload.assigned_units || 'Nearest Tactical PCR Interceptor',
+      active: true,
+      created_at: new Date().toISOString()
+    };
+
+    this.suspectWatchlist.unshift(newRecord);
+    this.logAudit('SUSPECT_VEHICLE_REGISTERED', `Target: ${cleanPlate} | Offense: ${newRecord.crime}`);
+
+    // Automatically generate Critical Hot-Pursuit Alert on Kafka Event Bus
+    const alertId = `ALT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newAlert = {
+      id: alertId,
+      event_id: `EVT-WCH-${Math.floor(1000 + Math.random() * 9000)}`,
+      camera_id: 'BROADCAST_ALL_GRID',
+      matched_source: 'vahan_crime_hotlist',
+      title: `🚨 RED NOTICE REGISTERED: ${cleanPlate}`,
+      severity: newRecord.priority === 'CRITICAL' ? 'critical' : 'high',
+      status: 'active',
+      routed_to: newRecord.assigned_units,
+      details: `${newRecord.crime} (Ref: ${newRecord.fir}). Registered by ${newRecord.registered_by}. All AI vision nodes armed for instant intercept.`,
+      ts: new Date().toISOString()
+    };
+    this.alerts.unshift(newAlert);
+
+    return { status: 'created', record: newRecord, alert: newAlert };
+  }
+
+  async removeSuspectVehicle(plateNumber) {
+    const clean = (plateNumber || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const idx = this.suspectWatchlist.findIndex(w => w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === clean);
+    if (idx !== -1) {
+      const removed = this.suspectWatchlist[idx];
+      this.suspectWatchlist.splice(idx, 1);
+      this.logAudit('SUSPECT_WATCHLIST_REMOVED', `Target Plate: ${plateNumber}`);
+      return { status: 'removed', record: removed };
+    }
+    return { status: 'not_found' };
+  }
+
+  async getFacialWatchlist() {
+    return this.facialWatchlist.filter(f => f.active);
+  }
+
+  async addSuspectFace(payload) {
+    const newFace = {
+      id: `FCW-${Math.floor(100 + Math.random() * 900)}`,
+      suspect_id: payload.suspect_id || `CCTNS-CRIM-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: payload.name || 'Unidentified Wanted Individual',
+      alias: payload.alias || 'Wanted',
+      crime: payload.crime || 'Criminal Investigation Wanted Warrant',
+      fir: payload.fir || `FIR-${Math.floor(100 + Math.random() * 900)}/2026`,
+      priority: payload.priority || 'CRITICAL',
+      biometric_score_default: 96.2,
+      active: true
+    };
+    this.facialWatchlist.unshift(newFace);
+    this.logAudit('FACIAL_WATCHLIST_REGISTERED', `Suspect: ${newFace.name} | FIR: ${newFace.fir}`);
+    return newFace;
+  }
+
+  async removeSuspectFace(id) {
+    const idx = this.facialWatchlist.findIndex(f => f.id === id || f.suspect_id === id);
+    if (idx !== -1) {
+      const rem = this.facialWatchlist.splice(idx, 1)[0];
+      this.logAudit('FACIAL_WATCHLIST_REMOVED', rem.name);
+      return rem;
+    }
+    return null;
   }
 
   // =========================================================================

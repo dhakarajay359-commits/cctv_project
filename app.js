@@ -214,6 +214,9 @@ async function refreshAllData() {
   await renderRegistryTable();
   await renderLiveWall();
   await renderAnalyticsTable();
+  if (typeof renderSuspectWatchlistTable === 'function') {
+    await renderSuspectWatchlistTable();
+  }
   await renderAlerts();
   await renderAdminView();
   await updateDynamicDashboardMeters();
@@ -1671,6 +1674,10 @@ function cleanupLiveStreamCanvases() {
   activeStreamAnimFrames.clear();
 }
 
+// Track last triggered suspect hit timestamp to prevent spamming popups
+let lastSuspectAlertTimestamp = 0;
+let lastAlertedPlate = '';
+
 function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -1682,92 +1689,88 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   canvas.width = 640;
   canvas.height = 360;
 
-  // Detection frames ONLY appear when a flagged suspect vehicle / person passes in front of the camera.
-  // Standard feeds remain 100% clean without any artificial overlay frames.
-  const suspectTracks = hasAnprHit ? [
-    // Flagged Stolen Suspect Vehicle (passes camera between 0.8s and 4.8s)
-    {
-      startTime: 0.8,
-      endTime: 4.8,
-      start: { x: 310, y: 35, w: 58, h: 42 },
-      end:   { x: 130, y: 265, w: 170, h: 120 },
-      label: 'SUSPECT TARGET: GJ-01-AB-1234',
-      plate: 'GJ-01-AB-1234',
-      score: '99.4% OCR MATCH',
-      isAlert: true,
-      speed: 81.5
-    }
-  ] : isFaceHit ? [
-    // Flagged CCTNS Red Notice Suspect (passes camera between 1.0s and 6.2s)
-    {
-      startTime: 1.0,
-      endTime: 6.2,
-      start: { x: 90, y: 90, w: 70, h: 140 },
-      end:   { x: 360, y: 110, w: 90, h: 165 },
-      label: 'SUSPECT: Vikram K. [CCTNS RED NOTICE]',
-      score: '96.8% BIOMETRIC MATCH',
-      isAlert: true,
-      speed: 4.8
-    }
-  ] : []; // CLEAN: Normal cameras have 0 frames
-
   function renderFrame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (suspectTracks.length > 0 && video) {
+    if (video) {
       const duration = (video.duration && !isNaN(video.duration)) ? video.duration : 8.0;
       const currentTime = !video.paused ? (video.currentTime % duration) : ((Date.now() / 1000) % duration);
 
-      suspectTracks.forEach((track) => {
-        // Box ONLY renders during the exact moments the suspect vehicle is in front of the lens
-        if (currentTime >= track.startTime && currentTime <= track.endTime) {
-          const progress = (currentTime - track.startTime) / (track.endTime - track.startTime);
-          
-          const curX = track.start.x + progress * (track.end.x - track.start.x);
-          const curY = track.start.y + progress * (track.end.y - track.start.y);
-          const curW = track.start.w + progress * (track.end.w - track.start.w);
-          const curH = track.start.h + progress * (track.end.h - track.start.h);
+      // 1. DYNAMIC VEHICLE STREAMS (Traffic Feeds: Cameras 1, 2, 3, etc.)
+      if (!isFaceHit) {
+        // Vehicle A: Regular Traffic Passing (0.2s to 3.8s) - NOT a suspect
+        const car1Plate = 'GJ-01-KN-8842';
+        const car1IsSuspect = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.find(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === car1Plate.replace(/[^A-Za-z0-9]/g, ''));
+        
+        if (currentTime >= 0.2 && currentTime <= 3.8) {
+          const p = (currentTime - 0.2) / 3.6;
+          const cx = 330 + p * (480 - 330);
+          const cy = 60 + p * (240 - 60);
+          const cw = 50 + p * (130 - 50);
+          const ch = 35 + p * (95 - 35);
 
-          const color = '#f43f5e'; // High-visibility threat red
+          drawDetectionBox(ctx, cx, cy, cw, ch, {
+            isAlert: !!car1IsSuspect,
+            title: car1IsSuspect ? `🚨 SUSPECT HIT: ${car1Plate}` : `🚗 [VEHICLE] ${car1Plate}`,
+            subtitle: car1IsSuspect ? `${car1IsSuspect.crime.slice(0, 24)}...` : `STATUS: CLEAR • 54.0 km/h`,
+            speed: 54.0,
+            confidence: 98.6
+          });
 
-          // 1. Target Tracking Bounding Box
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 2.5;
-          ctx.strokeRect(curX, curY, curW, curH);
-
-          // 2. Corner Brackets
-          ctx.fillStyle = color;
-          const bl = Math.max(8, Math.min(14, curW * 0.16));
-          ctx.fillRect(curX - 2, curY - 2, bl, 2.5);
-          ctx.fillRect(curX - 2, curY - 2, 2.5, bl);
-          ctx.fillRect(curX + curW + 2 - bl, curY - 2, bl, 2.5);
-          ctx.fillRect(curX + curW - 0.5, curY - 2, 2.5, bl);
-          ctx.fillRect(curX - 2, curY + curH - 0.5, bl, 2.5);
-          ctx.fillRect(curX - 2, curY + curH + 2 - bl, 2.5, bl);
-          ctx.fillRect(curX + curW + 2 - bl, curY + curH - 0.5, bl, 2.5);
-          ctx.fillRect(curX + curW - 0.5, curY + curH + 2 - bl, 2.5, bl);
-
-          // 3. Suspect Threat Alert Banner
-          const tagText = `🚨 ${track.label} • ${track.score}`;
-          ctx.font = 'bold 9px "JetBrains Mono", monospace';
-          const textWidth = ctx.measureText(tagText).width;
-          
-          ctx.fillStyle = 'rgba(244, 63, 94, 0.95)';
-          ctx.fillRect(curX - 2, curY - 20, Math.max(textWidth + 14, 120), 18);
-
-          ctx.fillStyle = '#ffffff';
-          ctx.fillText(tagText, curX + 4, curY - 7);
-
-          // 4. Live Speed Telemetry
-          if (track.speed) {
-            ctx.fillStyle = 'rgba(10, 15, 25, 0.9)';
-            ctx.fillRect(curX - 2, curY + curH + 4, 115, 15);
-            ctx.fillStyle = '#fbbf24';
-            ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
-            ctx.fillText(`PTS SPEED: ${track.speed} km/h`, curX + 4, curY + curH + 15);
+          if (car1IsSuspect && Date.now() - lastSuspectAlertTimestamp > 6000) {
+            triggerLiveSuspectDossierHit(car1Plate, camera, video, car1IsSuspect, 54.0);
           }
         }
-      });
+
+        // Vehicle B: Target Candidate Passing (3.2s to 7.6s)
+        // Checks if registered by authority in Suspect Watchlist (e.g. GJ-01-AB-1234 or custom)
+        const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
+        const primarySuspect = activeSuspects[0] || { plate: 'GJ-01-AB-1234', crime: 'Armed Bank Robbery & Kidnapping', fir: 'FIR-892/2026' };
+        const car2Plate = primarySuspect.plate || 'GJ-01-AB-1234';
+        const car2IsSuspect = window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.some(w => w.active && w.plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === car2Plate.replace(/[^A-Za-z0-9]/g, ''));
+
+        if (currentTime >= 3.2 && currentTime <= 7.6) {
+          const p = (currentTime - 3.2) / 4.4;
+          const cx = 290 - p * (170 - 290);
+          const cy = 40 + p * (250 - 40);
+          const cw = 55 + p * (165 - 55);
+          const ch = 40 + p * (115 - 40);
+
+          drawDetectionBox(ctx, cx, cy, cw, ch, {
+            isAlert: car2IsSuspect,
+            title: car2IsSuspect ? `🚨 WANTED SUSPECT: ${car2Plate}` : `🚗 [VEHICLE] ${car2Plate}`,
+            subtitle: car2IsSuspect ? `${primarySuspect.crime.slice(0, 26)}...` : `STATUS: CLEAR (NOT WANTED) • 81.5 km/h`,
+            speed: 81.5,
+            confidence: 99.4
+          });
+
+          if (car2IsSuspect && Date.now() - lastSuspectAlertTimestamp > 6000) {
+            triggerLiveSuspectDossierHit(car2Plate, camera, video, primarySuspect, 81.5);
+          }
+        }
+      }
+
+      // 2. PEDESTRIAN & BIOMETRIC FACIAL STREAMS (Camera 4 / Pedestrian Feed)
+      if (isFaceHit) {
+        const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
+        const faceSuspect = activeFaces[0] || { name: 'Vikram K. (Alias Vicky)', crime: 'CCTNS Red Notice Warrants' };
+        
+        if (currentTime >= 0.8 && currentTime <= 6.5) {
+          const p = (currentTime - 0.8) / 5.7;
+          const fx = 80 + p * (380 - 80);
+          const fy = 80 + p * (110 - 80);
+          const fw = 75 + p * (95 - 75);
+          const fh = 145 + p * (170 - 145);
+
+          drawDetectionBox(ctx, fx, fy, fw, fh, {
+            isAlert: true,
+            title: `🚨 FACE MATCH: ${faceSuspect.name}`,
+            subtitle: `CCTNS RED NOTICE • 96.8% BIOMETRIC CONF`,
+            speed: 4.8,
+            confidence: 96.8
+          });
+        }
+      }
     }
 
     const animId = requestAnimationFrame(renderFrame);
@@ -1775,6 +1778,121 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
   }
 
   renderFrame();
+}
+
+// Unified Canvas AI Detection Box Renderer
+function drawDetectionBox(ctx, x, y, w, h, opts) {
+  const isAlert = opts.isAlert;
+  const color = isAlert ? '#f43f5e' : '#00f2fe';
+  const glow = isAlert ? 'rgba(244, 63, 94, 0.4)' : 'rgba(0, 242, 254, 0.25)';
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = isAlert ? 2.5 : 1.8;
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 10;
+  ctx.strokeRect(x, y, w, h);
+
+  // Corner Brackets
+  ctx.fillStyle = color;
+  const bl = Math.max(8, Math.min(14, w * 0.16));
+  ctx.fillRect(x - 2, y - 2, bl, 2.5);
+  ctx.fillRect(x - 2, y - 2, 2.5, bl);
+  ctx.fillRect(x + w + 2 - bl, y - 2, bl, 2.5);
+  ctx.fillRect(x + w - 0.5, y - 2, 2.5, bl);
+  ctx.fillRect(x - 2, y + h - 0.5, bl, 2.5);
+  ctx.fillRect(x - 2, y + h + 2 - bl, 2.5, bl);
+  ctx.fillRect(x + w + 2 - bl, y + h - 0.5, bl, 2.5);
+  ctx.fillRect(x + w - 0.5, y + h + 2 - bl, 2.5, bl);
+
+  // Header Banner
+  ctx.font = 'bold 9px "JetBrains Mono", monospace';
+  const bannerText = opts.title;
+  const bannerWidth = Math.max(ctx.measureText(bannerText).width + 16, 140);
+  
+  ctx.fillStyle = isAlert ? 'rgba(244, 63, 94, 0.95)' : 'rgba(10, 20, 35, 0.92)';
+  ctx.fillRect(x - 2, y - 22, bannerWidth, 20);
+  if (!isAlert) {
+    ctx.strokeStyle = '#00f2fe';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 2, y - 22, bannerWidth, 20);
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(bannerText, x + 4, y - 8);
+
+  // Bottom Subtitle & Speed Telemetry
+  if (opts.subtitle) {
+    ctx.fillStyle = 'rgba(6, 10, 18, 0.92)';
+    ctx.fillRect(x - 2, y + h + 4, bannerWidth + 10, 16);
+    ctx.strokeStyle = isAlert ? 'rgba(244,63,94,0.4)' : 'rgba(0,242,254,0.3)';
+    ctx.strokeRect(x - 2, y + h + 4, bannerWidth + 10, 16);
+
+    ctx.fillStyle = isAlert ? '#fbbf24' : '#38bdf8';
+    ctx.font = 'bold 8px "JetBrains Mono", monospace';
+    ctx.fillText(opts.subtitle, x + 4, y + h + 15);
+  }
+
+  ctx.restore();
+}
+
+// Live Suspect Capture Trigger Handler (Populates Snapshot Dossier + GIS Trail)
+function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed = 81.5) {
+  lastSuspectAlertTimestamp = Date.now();
+  lastAlertedPlate = plate;
+
+  // 1. Play Tactical Priority Alert Chime
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.36);
+  } catch (e) {}
+
+  // 2. Render Snapshot Crop to Canvas
+  const previewCanvas = document.getElementById('snapshotPreviewCanvas');
+  if (previewCanvas && video && video.videoWidth > 0) {
+    const pCtx = previewCanvas.getContext('2d');
+    if (pCtx) {
+      pCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+      pCtx.strokeStyle = '#f43f5e';
+      pCtx.lineWidth = 3;
+      pCtx.strokeRect(30, 20, 120, 70);
+    }
+  }
+
+  // 3. Populate Snapshot Card Details
+  const snapshotCard = document.getElementById('suspectCaptureSnapshotCard');
+  if (snapshotCard) {
+    document.getElementById('snapshotPlateDisplay').textContent = plate;
+    document.getElementById('snapshotCrimeDisplay').innerHTML = `Wanted For: <strong style="color:#ffffff;">${suspectInfo.crime || 'Armed Robbery'}</strong> &bull; FIR: <span>${suspectInfo.fir || 'FIR-892/2026'}</span>`;
+    document.getElementById('snapshotCamDisplay').textContent = `${camera.id} • ${camera.name.slice(0, 26)}...`;
+    document.getElementById('snapshotSpeedDisplay').textContent = `${speed} km/h`;
+    document.getElementById('snapshotOcrDisplay').textContent = '99.4%';
+    document.getElementById('snapshotHashDisplay').textContent = `#SHA256-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
+    document.getElementById('snapshotTimestamp').textContent = new Date().toLocaleTimeString('en-IN') + ' IST';
+    
+    snapshotCard.style.display = 'block';
+    snapshotCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // 4. Show Real-Time Toast Notification
+  showRealtimeAlertToast({
+    title: `🚨 SUSPECT INTERCEPT HIT: ${plate}`,
+    location: `${camera.name} (${camera.district})`,
+    camera_id: camera.id
+  });
+
+  // 5. Update Dynamic Dashboard Meters
+  updateDynamicDashboardMeters('cardStatAlerts');
 }
 
 window.toggleWebcamFeed = async function(camId) {
@@ -2031,6 +2149,9 @@ async function initAnalyticsView() {
     });
   }
 
+  // Authority Suspect Registration & Crime Flagging Hub
+  await initSuspectRegistrationHub();
+
   // Cross-Department Trajectory Reconstruction Lab
   initTrajectoryPursuitLab();
 
@@ -2039,6 +2160,190 @@ async function initAnalyticsView() {
 
   await renderAnalyticsTable();
 }
+
+// =========================================================================
+// AUTHORITY SUSPECT REGISTRATION & INTERCEPTION WATCHLIST CONTROLLER
+// =========================================================================
+async function initSuspectRegistrationHub() {
+  const form = document.getElementById('suspectRegistrationForm');
+  const btnDrawGis = document.getElementById('btnSnapshotDrawGisRoute');
+  const btnArmRoadblock = document.getElementById('btnSnapshotArmRoadblock');
+  const btnDismiss = document.getElementById('btnDismissSnapshot');
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const plate = document.getElementById('regSuspectPlate').value.trim().toUpperCase();
+      const crime = document.getElementById('regSuspectCrime').value.trim();
+      const fir = document.getElementById('regSuspectFir').value.trim() || `FIR-${Math.floor(100 + Math.random()*900)}/2026`;
+      const suspectName = document.getElementById('regSuspectName').value.trim() || 'Unidentified Suspect Driver';
+      const priority = document.getElementById('regSuspectPriority').value;
+
+      if (!plate || !crime) {
+        alert('Please provide both the Vehicle Number Plate and the Crime Offense Category.');
+        return;
+      }
+
+      await window.apiClient.addSuspectVehicle({
+        plate: plate,
+        crime: crime,
+        fir: fir,
+        suspect_name: suspectName,
+        priority: priority
+      });
+
+      form.reset();
+      await renderSuspectWatchlistTable();
+      await renderAlerts();
+      await updateDynamicDashboardMeters('cardStatAlerts');
+
+      showRealtimeAlertToast({
+        title: `🚨 RED NOTICE ARMED: Target ${plate}`,
+        location: `Statewide 80,000+ CCTV Grid Synced`,
+        camera_id: 'HOTLIST_REGISTRATION'
+      });
+
+      alert(`SUSPECT TARGET REGISTERED TO STATE GRID!\n\nTarget Plate: ${plate}\nCrime: ${crime}\nFIR Ref: ${fir}\nPriority: ${priority}\n\nThe AI Detection engine is now monitoring all camera streams. Sighting of this vehicle will trigger instant high-definition snapshot capture and GIS route tracking.`);
+    });
+  }
+
+  if (btnDrawGis) {
+    btnDrawGis.addEventListener('click', () => {
+      const plate = document.getElementById('snapshotPlateDisplay')?.textContent || 'GJ-01-AB-1234';
+      renderTrajectoryOnGisMap(plate);
+    });
+  }
+
+  if (btnArmRoadblock) {
+    btnArmRoadblock.addEventListener('click', async () => {
+      const plate = document.getElementById('snapshotPlateDisplay')?.textContent || 'GJ-01-AB-1234';
+      const loc = document.getElementById('snapshotCamDisplay')?.textContent || 'SG Highway Pakwan Junction';
+      await triggerTacticalRoadblockDispatch(plate, loc);
+    });
+  }
+
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', () => {
+      const card = document.getElementById('suspectCaptureSnapshotCard');
+      if (card) card.style.display = 'none';
+    });
+  }
+
+  await renderSuspectWatchlistTable();
+}
+
+async function renderSuspectWatchlistTable() {
+  const tbody = document.getElementById('suspectWatchlistTableBody');
+  const countBadge = document.getElementById('activeSuspectCountBadge');
+  if (!tbody || !window.apiClient) return;
+
+  const watchlist = await window.apiClient.getSuspectWatchlist();
+  if (countBadge) {
+    countBadge.textContent = `${watchlist.length} Active Targets Armed`;
+  }
+
+  tbody.innerHTML = '';
+  if (watchlist.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 1.2rem; color: var(--text-muted);">
+          No active suspects in registry. Regular vehicle traffic passes without triggering alerts.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  watchlist.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+    const priorityBadge = item.priority === 'CRITICAL'
+      ? `<span class="node-status-pill online" style="background: rgba(244,63,94,0.2); color: var(--accent-rose); border-color: var(--accent-rose); font-size: 0.65rem; font-weight: 800;">CRITICAL RED</span>`
+      : `<span class="node-status-pill offline" style="background: rgba(245,158,11,0.2); color: var(--accent-amber); border-color: var(--accent-amber); font-size: 0.65rem;">HIGH BOLO</span>`;
+
+    tr.innerHTML = `
+      <td style="padding: 8px 10px;">
+        <strong style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.82rem;">${item.plate}</strong><br/>
+        <span style="font-size: 0.68rem; color: var(--text-muted);">${item.vehicle_type || 'Vehicle'}</span>
+      </td>
+      <td style="padding: 8px 10px;">
+        <strong style="color: #ffffff;">${item.crime}</strong><br/>
+        <span style="font-size: 0.68rem; color: var(--text-muted);">${item.registered_by || 'State Police'}</span>
+      </td>
+      <td style="padding: 8px 10px;">
+        <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary);">${item.fir}</span>
+      </td>
+      <td style="padding: 8px 10px;">
+        <span style="color: #f8fafc; font-weight: 600;">${item.suspect_name}</span>
+      </td>
+      <td style="padding: 8px 10px; text-align: center;">
+        ${priorityBadge}
+      </td>
+      <td style="padding: 8px 10px; text-align: center;">
+        <span class="node-status-pill online" style="font-size: 0.62rem;"><span class="dot-sm" style="background: var(--accent-emerald);"></span> Armed</span>
+      </td>
+      <td style="padding: 8px 10px; text-align: right;">
+        <div style="display: flex; gap: 0.3rem; justify-content: flex-end;">
+          <button class="action-btn primary" onclick="window.renderTrajectoryOnGisMap('${item.plate}')" style="padding: 0.2rem 0.45rem; font-size: 0.68rem; background: linear-gradient(135deg, #00f2fe, #0284c7); color: #04101e; font-weight: 800;" title="Draw Multi-Dept Pursuit Route on GIS Map">
+            <i class="fa-solid fa-map-location-dot"></i> Map Route
+          </button>
+          <button class="action-btn" onclick="window.simulateSuspectCameraHit('${item.plate}')" style="padding: 0.2rem 0.45rem; font-size: 0.68rem; background: rgba(244,63,94,0.15); border-color: var(--accent-rose); color: var(--accent-rose);" title="Simulate Immediate CCTV Camera Sighting">
+            <i class="fa-solid fa-video"></i> Sighting
+          </button>
+          <button class="action-btn" onclick="window.removeSuspectTarget('${item.plate}')" style="padding: 0.2rem 0.45rem; font-size: 0.68rem; color: var(--text-muted);" title="Remove from Watchlist">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.populateSuspectPreset = function(plate, crime, fir, name, priority) {
+  const plateEl = document.getElementById('regSuspectPlate');
+  const crimeEl = document.getElementById('regSuspectCrime');
+  const firEl = document.getElementById('regSuspectFir');
+  const nameEl = document.getElementById('regSuspectName');
+  const prioEl = document.getElementById('regSuspectPriority');
+
+  if (plateEl) plateEl.value = plate;
+  if (crimeEl) crimeEl.value = crime;
+  if (firEl) firEl.value = fir;
+  if (nameEl) nameEl.value = name;
+  if (prioEl) prioEl.value = priority;
+
+  const form = document.getElementById('suspectRegistrationForm');
+  if (form) {
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+};
+
+window.removeSuspectTarget = async function(plate) {
+  await window.apiClient.removeSuspectVehicle(plate);
+  await renderSuspectWatchlistTable();
+  await updateDynamicDashboardMeters('cardStatAlerts');
+};
+
+window.simulateSuspectCameraHit = async function(plate) {
+  const suspect = await window.apiClient.isPlateSuspect(plate);
+  if (!suspect) {
+    alert(`Plate ${plate} is not currently registered in the Suspect Watchlist. Register it first.`);
+    return;
+  }
+
+  // 1. Navigate to Live Wall or Analytics
+  const analyticsNavBtn = document.querySelector('.main-nav-btn[data-view="view-analytics"]');
+  if (analyticsNavBtn) analyticsNavBtn.click();
+
+  // 2. Trigger Sighting Snapshot & Audio Alarm
+  const dummyCamera = { id: 'CAM-GJ-0101', name: 'SG Highway Iskcon Crossroad Overbridge', district: 'Ahmedabad (Urban)' };
+  triggerLiveSuspectDossierHit(plate, dummyCamera, null, suspect, 84.5);
+
+  // 3. Automatically draw route on GIS Map
+  await renderTrajectoryOnGisMap(plate);
+};
 
 function initTrajectoryPursuitLab() {
   const btnTrace = document.getElementById('btnTraceTrajectory');

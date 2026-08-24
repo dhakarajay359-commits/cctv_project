@@ -857,6 +857,155 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
       </div>
 
       <!-- ========================================================================= -->
+      <!-- AUTHORITY SUSPECT REGISTRATION & ACTIVE INTERCEPTION WATCHLIST HUB -->
+      <!-- ========================================================================= -->
+      <div class="anpr-lab-card" style="margin-top: 1rem; border-color: rgba(244,63,94,0.5); background: linear-gradient(180deg, rgba(244,63,94,0.08) 0%, rgba(13,20,36,0.95) 100%);">
+        <div class="anpr-lab-header">
+          <div class="anpr-lab-title">
+            <i class="fa-solid fa-shield-virus text-rose" style="font-size: 1.5rem;"></i>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="node-status-pill online" style="background: rgba(244,63,94,0.2); color: var(--accent-rose); border-color: var(--accent-rose); font-size: 0.68rem; font-weight: 800;">
+                  <span class="dot-sm" style="background: var(--accent-rose);"></span> LAW ENFORCEMENT &amp; CRIME HOTLIST
+                </span>
+                <span class="kafka-badge"><i class="fa-solid fa-bolt"></i> Real-Time AI Interception Armed</span>
+              </div>
+              <h3 style="margin-top: 0.2rem;">State Police Authority &bull; Suspect Vehicle Registration &amp; Crime Flagging Hub</h3>
+              <p>Register suspect vehicles with specific crime details. The AI detection engine continuously monitors live CCTV feeds without alerting on regular traffic, and <strong>instantly triggers a red alert, captures a forensic snapshot, and plots the GIS pursuit route</strong> the moment a registered suspect passes a camera.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Registration Form Grid -->
+        <form id="suspectRegistrationForm" style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 160px; gap: 0.75rem; align-items: end; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-car-side"></i> Vehicle Plate No:*</label>
+            <input type="text" id="regSuspectPlate" class="custom-input" placeholder="e.g. GJ-01-AB-1234" required style="font-family: var(--font-mono); font-weight: 800; text-transform: uppercase;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.72rem; color: var(--accent-rose); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-handcuffs"></i> Crime Offense Category:*</label>
+            <input type="text" id="regSuspectCrime" class="custom-input" placeholder="e.g. Armed Bank Robbery / Kidnapping" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-file-invoice"></i> FIR Reference &amp; Station:</label>
+            <input type="text" id="regSuspectFir" class="custom-input" placeholder="e.g. FIR-892/2026 (Satellite PS)">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-user-ninja"></i> Suspect Name / Alias:</label>
+            <input type="text" id="regSuspectName" class="custom-input" placeholder="e.g. Vikram Ramsinh Solanki">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.72rem; color: var(--accent-amber); font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-triangle-exclamation"></i> Threat Priority:</label>
+            <select id="regSuspectPriority" class="custom-select">
+              <option value="CRITICAL">CRITICAL (Red Notice)</option>
+              <option value="HIGH">HIGH (Arrest Warrant)</option>
+              <option value="MEDIUM">MEDIUM (BOLO Tracking)</option>
+            </select>
+          </div>
+          <button type="submit" class="action-btn primary" id="btnRegisterSuspect" style="height: 38px; background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 0 16px rgba(244,63,94,0.4); font-weight: 800; font-size: 0.78rem;">
+            <i class="fa-solid fa-plus-circle"></i> Register Suspect
+          </button>
+        </form>
+
+        <!-- Quick 1-Click Suspect Presets Bar -->
+        <div class="quick-samples-bar" style="margin-top: 0.8rem; margin-bottom: 0.8rem;">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;"><i class="fa-solid fa-bolt text-amber"></i> Quick Authority Test Presets:</span>
+          <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('GJ-01-AB-1234', 'Armed Bank Robbery & Kidnapping (Sec 392/364 IPC)', 'FIR-892/2026 (Satellite PS)', 'Vikram Ramsinh Solanki', 'CRITICAL');">
+            🚨 GJ-01-AB-1234 (Armed Robbery &bull; White Creta)
+          </button>
+          <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('MP-09-HH-5541', 'Inter-State PDS Grain Siphoning & Toll Evasion', 'FIR-104/2026 (Civil Supplies)', 'Pravin Khimji Patel', 'HIGH');">
+            ⚠️ MP-09-HH-5541 (PDS Smuggling &bull; Tata Truck)
+          </button>
+          <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('GJ-27-EA-5500', 'Extortion & Non-Bailable Hit-and-Run Warrant', 'FIR-312/2026 (Crime Branch)', 'Sanjay K. Barot', 'CRITICAL');">
+            🚨 GJ-27-EA-5500 (Hit &amp; Run Warrant)
+          </button>
+        </div>
+
+        <!-- Active Suspect Watchlist Table -->
+        <div style="margin-top: 0.8rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <h4 style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.05em;">
+              <i class="fa-solid fa-list-check text-cyan"></i> Active State Hotlist Targets Armed on AI Grid:
+            </h4>
+            <span id="activeSuspectCountBadge" style="font-size: 0.72rem; color: var(--accent-rose); font-family: var(--font-mono); font-weight: 800;">
+              2 Active Targets
+            </span>
+          </div>
+          <div style="overflow-x: auto; background: rgba(10, 14, 23, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+            <table class="compact-table" style="width: 100%; font-size: 0.75rem;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border-color);">
+                  <th style="padding: 6px 10px; text-align: left;">Plate Number</th>
+                  <th style="padding: 6px 10px; text-align: left;">Crime Category &amp; Offense</th>
+                  <th style="padding: 6px 10px; text-align: left;">FIR Reference</th>
+                  <th style="padding: 6px 10px; text-align: left;">Suspect Driver</th>
+                  <th style="padding: 6px 10px; text-align: center;">Priority</th>
+                  <th style="padding: 6px 10px; text-align: center;">AI State</th>
+                  <th style="padding: 6px 10px; text-align: right;">Instant Tactical Actions</th>
+                </tr>
+              </thead>
+              <tbody id="suspectWatchlistTableBody">
+                <!-- Dynamically Rendered by app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- LIVE SUSPECT CAPTURE FORENSIC SNAPSHOT DOSSIER (TRIGGERED ON HIT) -->
+        <div id="suspectCaptureSnapshotCard" style="display: none; margin-top: 1.2rem; background: linear-gradient(135deg, rgba(244,63,94,0.15) 0%, rgba(13,20,36,0.95) 100%); border: 2px solid var(--accent-rose); border-radius: var(--radius-md); padding: 1.2rem; box-shadow: 0 0 30px rgba(244,63,94,0.3);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap;">
+              <!-- Simulated High-Definition Snapshot Crop -->
+              <div style="position: relative; width: 180px; height: 110px; background: #060a12; border: 2px solid var(--accent-rose); border-radius: var(--radius-sm); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <canvas id="snapshotPreviewCanvas" width="180" height="110" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
+                <div style="position: absolute; top: 4px; left: 4px; background: rgba(244,63,94,0.9); color: #fff; font-size: 0.6rem; font-weight: 800; padding: 2px 4px; border-radius: 2px; font-family: var(--font-mono);">
+                  SNAPSHOT CROP
+                </div>
+                <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.8); color: var(--accent-cyan); font-size: 0.58rem; padding: 2px 4px; border-radius: 2px; font-family: var(--font-mono);">
+                  25.0 FPS &bull; 1080p
+                </div>
+              </div>
+
+              <!-- Suspect Incident Metadata -->
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                  <span class="node-status-pill online" style="background: var(--accent-rose); color: #fff; font-weight: 900; font-size: 0.72rem; padding: 0.15rem 0.5rem;">
+                    🚨 LIVE INTERCEPTION MATCH
+                  </span>
+                  <span style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);" id="snapshotTimestamp">Just Now</span>
+                </div>
+                <h3 style="font-size: 1.2rem; color: #ffffff; margin-top: 0.2rem;">
+                  Target Vehicle: <span id="snapshotPlateDisplay" style="color: var(--accent-cyan); font-family: var(--font-mono); font-weight: 900;">GJ-01-AB-1234</span>
+                </h3>
+                <p id="snapshotCrimeDisplay" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                  Wanted For: <strong style="color: #ffffff;">Armed Bank Robbery &amp; Kidnapping</strong> &bull; FIR: <span id="snapshotFirDisplay">FIR-892/2026</span>
+                </p>
+                <div style="display: flex; gap: 0.8rem; margin-top: 0.4rem; font-size: 0.75rem; flex-wrap: wrap;">
+                  <span style="color: var(--accent-emerald);"><i class="fa-solid fa-video"></i> Node: <strong id="snapshotCamDisplay">CAM-GJ-0101 &bull; SG Highway</strong></span>
+                  <span style="color: var(--accent-amber);"><i class="fa-solid fa-gauge-high"></i> Speed: <strong id="snapshotSpeedDisplay">81.5 km/h</strong></span>
+                  <span style="color: #c084fc;"><i class="fa-solid fa-fingerprint"></i> OCR Confidence: <strong id="snapshotOcrDisplay">99.4%</strong></span>
+                  <span style="color: var(--text-muted); font-family: var(--font-mono);">Sec 65B Hash: <strong id="snapshotHashDisplay">#SHA256-8F29BC</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Instant Dispatch & GIS Actions -->
+            <div style="display: flex; flex-direction: column; gap: 0.4rem; min-width: 200px;">
+              <button type="button" class="action-btn primary" id="btnSnapshotDrawGisRoute" style="background: linear-gradient(135deg, #00f2fe, #0284c7); color: #04101e; font-weight: 900; font-size: 0.8rem; padding: 0.45rem 0.8rem;">
+                <i class="fa-solid fa-map-location-dot"></i> Draw Route on GIS Map
+              </button>
+              <button type="button" class="action-btn" id="btnSnapshotArmRoadblock" style="background: linear-gradient(135deg, #f43f5e, #be123c); color: #ffffff; font-weight: 900; font-size: 0.8rem; padding: 0.45rem 0.8rem;">
+                <i class="fa-solid fa-shield-halved"></i> Arm Forward Roadblock
+              </button>
+              <button type="button" class="action-btn" id="btnDismissSnapshot" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; text-align: center;">
+                Dismiss Notification
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
       <!-- CROSS-DEPARTMENT VEHICLE PURSUIT & PREDICTIVE TRAJECTORY LAB -->
       <!-- ========================================================================= -->
       <div class="anpr-lab-card" style="margin-top: 1.5rem; border-color: rgba(244,63,94,0.4); background: linear-gradient(180deg, rgba(244,63,94,0.06) 0%, rgba(15,23,42,0.8) 100%);">

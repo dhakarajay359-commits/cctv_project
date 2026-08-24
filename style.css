@@ -3713,5 +3713,61 @@ body.focus-mode .leaflet-container-view {
   }
 }
 
+/* =========================================================================
+   AUTHORITY SUSPECT REGISTRATION & LIVE SNAPSHOT DOSSIER STYLES
+   ========================================================================= */
+#suspectCaptureSnapshotCard {
+  animation: pulseGlowRose 2.2s infinite alternate ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
 
+#suspectCaptureSnapshotCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.15), transparent);
+  animation: scanShimmer 3s infinite;
+  pointer-events: none;
+}
 
+@keyframes pulseGlowRose {
+  0% {
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.25);
+    border-color: rgba(244, 63, 94, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 35px rgba(244, 63, 94, 0.55), inset 0 0 15px rgba(244, 63, 94, 0.15);
+    border-color: rgba(244, 63, 94, 1);
+  }
+}
+
+@keyframes scanShimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.sample-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.28rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sample-chip:hover {
+  background: rgba(0, 242, 254, 0.12);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
