@@ -9,20 +9,20 @@
   --bg-card: #131a29;
   --bg-card-hover: #1a2336;
   --border-color: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(0, 242, 254, 0.25);
+  --border-glow: transparent;
   
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   
   --accent-cyan: #00f2fe;
-  --accent-cyan-glow: rgba(0, 242, 254, 0.25);
+  --accent-cyan-glow: transparent;
   --accent-amber: #f59e0b;
-  --accent-amber-glow: rgba(245, 158, 11, 0.25);
+  --accent-amber-glow: transparent;
   --accent-emerald: #10b981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+  --accent-emerald-glow: transparent;
   --accent-rose: #f43f5e;
-  --accent-rose-glow: rgba(244, 63, 94, 0.25);
+  --accent-rose-glow: transparent;
   --accent-blue: #3b82f6;
   --accent-purple: #a855f7;
   
@@ -32,7 +32,7 @@
   --radius-full: 9999px;
   
   --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 24px rgba(0, 242, 254, 0.15);
+  --shadow-glow: none;
   --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -115,7 +115,7 @@ body.dark-theme {
 .app-sidebar:hover,
 .app-sidebar.pinned {
   width: 260px;
-  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.75), 0 0 25px rgba(0, 242, 254, 0.12);
+  box-shadow: 12px 0 36px rgba(0, 0, 0, 0.75);
 }
 
 /* Sidebar Header (Centered Logo in Compact, Space-Between in Expanded) */
@@ -151,7 +151,7 @@ body.dark-theme {
   justify-content: center;
   font-size: 1.2rem;
   color: #04101e;
-  box-shadow: 0 0 14px var(--accent-cyan-glow);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
 }
 
@@ -768,13 +768,12 @@ body.dark-theme {
   color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-full);
-  box-shadow: 0 0 24px rgba(0, 242, 254, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   align-items: center;
   gap: 0.5rem;
-  animation: focusBtnPulse 2.5s infinite;
   backdrop-filter: blur(12px);
   transition: all 0.2s ease;
 }
@@ -791,19 +790,13 @@ body.dark-theme {
 .exit-focus-btn:hover {
   background: var(--accent-cyan);
   color: #04101e;
-  box-shadow: 0 0 32px var(--accent-cyan);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
 }
 
 .exit-focus-btn:hover i,
 .exit-focus-btn:hover kbd {
   color: #04101e;
   background: rgba(0, 0, 0, 0.2);
-}
-
-@keyframes focusBtnPulse {
-  0% { box-shadow: 0 0 16px rgba(0, 242, 254, 0.3); }
-  50% { box-shadow: 0 0 28px rgba(0, 242, 254, 0.6); }
-  100% { box-shadow: 0 0 16px rgba(0, 242, 254, 0.3); }
 }
 
 body.focus-mode .app-sidebar {
