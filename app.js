@@ -1728,14 +1728,14 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   }
 
   // 2. Optical YOLOv8 Target Bounding Brackets on the passing vehicle in the real camera feed
-  const vBoxX = 180;
-  const vBoxY = 125;
-  const vBoxW = 280;
-  const vBoxH = 160;
+  const vBoxX = 200;
+  const vBoxY = 130;
+  const vBoxW = 245;
+  const vBoxH = 140;
 
   ctx.strokeStyle = '#00f2fe';
   ctx.lineWidth = 2.5;
-  const corner = 22;
+  const corner = 20;
   // Top-left bracket
   ctx.beginPath(); ctx.moveTo(vBoxX, vBoxY + corner); ctx.lineTo(vBoxX, vBoxY); ctx.lineTo(vBoxX + corner, vBoxY); ctx.stroke();
   // Top-right bracket
@@ -1754,7 +1754,7 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
 
   // 3. PROMINENT HIGH SECURITY REGISTRATION PLATE (HSRP)
   const plateX = 265;
-  const plateY = vBoxY + vBoxH - 32;
+  const plateY = vBoxY + vBoxH - 30;
   const plateW = 114;
   const plateH = 26;
 
@@ -2386,7 +2386,7 @@ async function renderLiveWall() {
 
   const sampleVideos = [
     'assets/videos/highway-traffic.mp4',
-    'assets/videos/urban-traffic.mp4',
+    'assets/videos/highway-traffic.mp4',
     'assets/videos/highway-traffic.mp4',
     'assets/videos/cctv-pedestrians.mp4'
   ];
