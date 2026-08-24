@@ -1291,10 +1291,10 @@ body.focus-mode .leaflet-container-view {
 
 /* LEAFLET CLUSTER PIN BADGES (SUB-ZOOM AGGREGATION) */
 .leaflet-cluster-badge {
-  background: radial-gradient(circle, rgba(0, 242, 254, 0.95) 0%, rgba(14, 165, 233, 0.95) 100%);
+  background: #0284c7;
   border: 2px solid #ffffff;
-  box-shadow: 0 0 16px rgba(0, 242, 254, 0.8), inset 0 0 6px rgba(0, 0, 0, 0.35);
-  color: #04101e;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
   font-weight: 800;
   font-family: var(--font-mono);
   font-size: 0.74rem;
@@ -1303,12 +1303,13 @@ body.focus-mode .leaflet-container-view {
   justify-content: center;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s ease;
 }
 
 .leaflet-cluster-badge:hover {
-  transform: scale(1.18);
-  box-shadow: 0 0 24px var(--accent-cyan);
+  transform: scale(1.1);
+  background: #0369a1;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }
 
 .gis-nodes-list {
