@@ -1667,6 +1667,13 @@ function startSessionInactivityTimer() {
 
 // Active live stream canvas animation frames and webcam streams
 const activeStreamAnimFrames = new Map();
+const activeWebcamStreams = new Map();
+
+function cleanupLiveStreamCanvases() {
+  activeStreamAnimFrames.forEach((reqId) => cancelAnimationFrame(reqId));
+  activeStreamAnimFrames.clear();
+}
+
 // Track last triggered suspect hit timestamp to prevent spamming popups
 let lastSuspectAlertTimestamp = 0;
 let lastAlertedPlate = '';
