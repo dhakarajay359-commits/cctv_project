@@ -356,8 +356,8 @@ body, body.dark-theme, body.light-theme {
   width: 100%;
   background: transparent;
   border: 1px solid transparent;
-  color: var(--text-secondary);
-  padding: 0.65rem 0;
+  color: #475569;
+  padding: 0.62rem 0;
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
   font-weight: 600;
@@ -366,7 +366,7 @@ body, body.dark-theme, body.light-theme {
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  transition: all 0.18s ease;
+  transition: all 0.15s ease;
   font-family: var(--font-main);
   position: relative;
 }
@@ -378,13 +378,26 @@ body, body.dark-theme, body.light-theme {
   align-items: center;
   justify-content: center;
   font-size: 0.95rem;
-  color: var(--text-muted);
-  transition: color 0.18s ease, transform 0.18s ease;
+  color: #64748b;
+  transition: color 0.15s ease;
 }
 
 .main-nav-btn .btn-text,
 .main-nav-btn .nav-key {
   display: none;
+}
+
+.nav-key {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  margin-left: auto;
+  line-height: 1;
 }
 
 .main-nav-btn .nav-badge {
@@ -400,32 +413,31 @@ body, body.dark-theme, body.light-theme {
 }
 
 .main-nav-btn:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
 }
 
 .main-nav-btn:hover .btn-icon {
-  color: #38bdf8;
-  transform: scale(1.05);
+  color: #2563eb;
 }
 
 .main-nav-btn.active {
-  background: rgba(37, 99, 235, 0.12);
-  color: #ffffff;
-  border: 1px solid rgba(37, 99, 235, 0.3);
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-weight: 700;
   box-shadow: none;
 }
 
 .main-nav-btn.active .btn-icon {
-  color: #38bdf8;
-  text-shadow: none;
+  color: #2563eb;
 }
 
 .main-nav-btn.active .nav-key {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #38bdf8;
-  background: rgba(255, 255, 255, 0.05);
+  border-color: #bfdbfe;
+  color: #2563eb;
+  background: #ffffff;
   opacity: 1;
 }
 
