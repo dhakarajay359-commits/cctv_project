@@ -2119,77 +2119,77 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   <!-- TACTICAL FORWARD INTERCEPT DISPATCH MODAL -->
   <!-- ========================================================================= -->
   <div class="app-modal" id="tacticalDispatchModal">
-    <div class="modal-content" style="max-width: 600px; border-color: var(--accent-rose); box-shadow: 0 0 35px rgba(244,63,94,0.4);">
-      <div class="modal-header" style="background: rgba(244,63,94,0.12); border-bottom-color: rgba(244,63,94,0.3);">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
         <div>
-          <span class="node-status-pill online" style="background: rgba(244,63,94,0.25); color: var(--accent-rose); border-color: var(--accent-rose); font-weight: 800;">
-            <span class="dot-sm" style="background: var(--accent-rose);"></span> EMERGENCY DISPATCH BROADCAST
+          <span class="node-status-pill offline" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 800;">
+            <span class="dot-sm" style="background: #dc2626;"></span> EMERGENCY DISPATCH BROADCAST
           </span>
-          <h3 style="margin-top: 0.3rem; color: #ffffff;"><i class="fa-solid fa-tower-broadcast text-rose"></i> Nearest Authorities Alerted & Roadblock Armed!</h3>
+          <h3 style="margin-top: 0.3rem; color: #0f172a; font-weight: 800;"><i class="fa-solid fa-tower-broadcast text-rose"></i> Nearest Authorities Alerted &amp; Roadblock Armed!</h3>
         </div>
         <button class="close-modal-btn" id="closeTacticalModal">&times;</button>
       </div>
       <div class="modal-body" style="padding: 1.2rem;">
         <!-- Vehicle Badge & Order Reference -->
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.8rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
           <div>
-            <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">TARGET VEHICLE:</span>
+            <span style="font-size: 0.7rem; color: #64748b; display: block; font-weight: 700;">TARGET VEHICLE:</span>
             <div class="ind-plate-box" style="margin-top: 0.2rem;">
               <span class="ind-side">IND</span>
               <strong id="tacticalModalPlate">GJ-01-AB-1234</strong>
             </div>
           </div>
           <div style="text-align: right;">
-            <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">INTERCEPT ORDER REF:</span>
-            <strong style="font-family: var(--font-mono); color: var(--accent-cyan); font-size: 0.95rem;" id="tacticalModalOrderId">ORD-INT-8841</strong>
-            <span style="font-size: 0.7rem; color: var(--accent-emerald); display: block;" id="tacticalModalTimestamp">18:45 IST</span>
+            <span style="font-size: 0.7rem; color: #64748b; display: block; font-weight: 700;">INTERCEPT ORDER REF:</span>
+            <strong style="font-family: var(--font-mono); color: #2563eb; font-size: 0.95rem;" id="tacticalModalOrderId">ORD-INT-8841</strong>
+            <span style="font-size: 0.7rem; color: #059669; display: block; font-weight: 600;" id="tacticalModalTimestamp">18:45 IST</span>
           </div>
         </div>
 
         <!-- Alerted Authority & Radio Grid -->
-        <div style="background: rgba(244,63,94,0.06); border: 1px solid rgba(244,63,94,0.25); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 1rem;">
-          <h4 style="font-size: 0.85rem; color: var(--accent-rose); margin-bottom: 0.4rem;">
-            <i class="fa-solid fa-bullhorn"></i> Alerted Command Station & Tactical Radio:
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 1rem;">
+          <h4 style="font-size: 0.85rem; color: #dc2626; margin-bottom: 0.4rem; font-weight: 700;">
+            <i class="fa-solid fa-bullhorn"></i> Alerted Command Station &amp; Tactical Radio:
           </h4>
-          <p style="font-size: 0.82rem; color: #ffffff; font-weight: 700; margin-bottom: 0.2rem;" id="tacticalModalStation">
-            Mehsana District Highway Police Station & Toll Checkpost #03
+          <p style="font-size: 0.82rem; color: #0f172a; font-weight: 700; margin-bottom: 0.2rem;" id="tacticalModalStation">
+            Mehsana District Highway Police Station &amp; Toll Checkpost #03
           </p>
-          <span style="font-size: 0.75rem; color: var(--accent-cyan); display: block;" id="tacticalModalRadio">
+          <span style="font-size: 0.75rem; color: #2563eb; display: block; font-weight: 600;" id="tacticalModalRadio">
             <i class="fa-solid fa-walkie-talkie"></i> Broadcast: TETRA Radio Tactical Channel #08 (Sub-GHz Emergency Grid)
           </span>
         </div>
 
         <!-- Roadblock Action Status -->
-        <div style="display: flex; align-items: center; gap: 0.6rem; background: rgba(16,185,129,0.08); border: 1px solid var(--accent-emerald); border-radius: var(--radius-sm); padding: 0.8rem 1rem; margin-bottom: 1rem;">
-          <i class="fa-solid fa-circle-check text-green" style="font-size: 1.4rem;"></i>
+        <div style="display: flex; align-items: center; gap: 0.6rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: var(--radius-sm); padding: 0.8rem 1rem; margin-bottom: 1rem;">
+          <i class="fa-solid fa-circle-check" style="font-size: 1.4rem; color: #059669;"></i>
           <div>
-            <strong style="font-size: 0.85rem; color: var(--accent-emerald); display: block;">Automated Hydraulic Barrier Deployed</strong>
-            <span style="font-size: 0.75rem; color: var(--text-secondary);">Toll gates #01 & #02 locked. Spike strips positioned across exit lanes.</span>
+            <strong style="font-size: 0.85rem; color: #059669; display: block;">Automated Hydraulic Barrier Deployed</strong>
+            <span style="font-size: 0.75rem; color: #475569;">Toll gates #01 &amp; #02 locked. Spike strips positioned across exit lanes.</span>
           </div>
         </div>
 
         <!-- Active Interceptor Units Table -->
-        <h4 style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 0.5rem;">
-          <i class="fa-solid fa-car-side text-cyan"></i> 3 Interceptor Patrol Units Pre-Positioned:
+        <h4 style="font-size: 0.8rem; color: #64748b; text-transform: uppercase; font-family: var(--font-mono); margin-bottom: 0.5rem; font-weight: 700;">
+          <i class="fa-solid fa-car-side" style="color: #2563eb;"></i> 3 Interceptor Patrol Units Pre-Positioned:
         </h4>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;" id="tacticalUnitsList">
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
-            <div><strong style="color: #ffffff;">PCR Interceptor #11</strong> <span style="color: var(--text-muted);">&bull; Inspector K. L. Barot</span></div>
-            <span class="text-amber" style="font-family: var(--font-mono); font-weight: 800;">ETA: 2.1 Mins (1.4 km)</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
+            <div><strong style="color: #0f172a;">PCR Interceptor #11</strong> <span style="color: #64748b;">&bull; Inspector K. L. Barot</span></div>
+            <span style="font-family: var(--font-mono); font-weight: 800; color: #d97706;">ETA: 2.1 Mins (1.4 km)</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
-            <div><strong style="color: #ffffff;">Toll Barrier Squad #02</strong> <span style="color: var(--text-muted);">&bull; Sub-Inspector R. Solanki</span></div>
-            <span class="text-green" style="font-family: var(--font-mono); font-weight: 800;">ARMED AT TOLL GATE</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
+            <div><strong style="color: #0f172a;">Toll Barrier Squad #02</strong> <span style="color: #64748b;">&bull; Sub-Inspector R. Solanki</span></div>
+            <span style="font-family: var(--font-mono); font-weight: 800; color: #059669;">ARMED AT TOLL GATE</span>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
-            <div><strong style="color: #ffffff;">RTO Mobile Flying Squad</strong> <span style="color: var(--text-muted);">&bull; MVI V. Joshi</span></div>
-            <span class="text-amber" style="font-family: var(--font-mono); font-weight: 800;">ETA: 3.4 Mins (2.8 km)</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.78rem;">
+            <div><strong style="color: #0f172a;">RTO Mobile Flying Squad</strong> <span style="color: #64748b;">&bull; MVI V. Joshi</span></div>
+            <span style="font-family: var(--font-mono); font-weight: 800; color: #d97706;">ETA: 3.4 Mins (2.8 km)</span>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="action-btn primary" id="btnAckTacticalModal" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
-          <i class="fa-solid fa-check-double"></i> Acknowledge Broadcast & Monitor Live Feeds
+        <button type="button" class="action-btn primary" id="btnAckTacticalModal" style="width: 100%; background: #059669; color: #ffffff;">
+          <i class="fa-solid fa-check-double"></i> Acknowledge Broadcast &amp; Monitor Live Feeds
         </button>
       </div>
     </div>
@@ -2199,20 +2199,20 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   <!-- CAMERA INSTALLATION PROPOSAL MODAL -->
   <!-- ========================================================================= -->
   <div class="app-modal" id="cameraProposalModal">
-    <div class="modal-content" style="max-width: 580px; border-color: var(--accent-emerald); box-shadow: 0 0 35px rgba(16,185,129,0.3);">
-      <div class="modal-header" style="background: rgba(16,185,129,0.12); border-bottom-color: rgba(16,185,129,0.3);">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
         <div>
-          <span class="node-status-pill online" style="font-size: 0.65rem;">
+          <span class="node-status-pill online" style="font-size: 0.65rem; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-weight: 700;">
             <span class="dot-sm green"></span> INFRASTRUCTURE GAP RESOLUTION
           </span>
-          <h3 style="margin-top: 0.3rem; color: #ffffff;"><i class="fa-solid fa-video text-green"></i> Propose New Camera Node for Blind-Spot</h3>
+          <h3 style="margin-top: 0.3rem; color: #0f172a; font-weight: 800;"><i class="fa-solid fa-video" style="color: #059669;"></i> Propose New Camera Node for Blind-Spot</h3>
         </div>
         <button class="close-modal-btn" id="closeProposalModal">&times;</button>
       </div>
       <div class="modal-body" style="padding: 1.2rem;">
-        <div style="background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
-          <span style="font-size: 0.7rem; color: var(--text-muted); display: block;">TARGET BLIND-SPOT DEFICIT:</span>
-          <strong id="proposalBlindDesc" style="font-size: 0.85rem; color: #ffffff; display: block; margin-top: 0.2rem;">
+        <div style="background: #f8fafc; padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 1rem;">
+          <span style="font-size: 0.7rem; color: #64748b; display: block; font-weight: 700;">TARGET BLIND-SPOT DEFICIT:</span>
+          <strong id="proposalBlindDesc" style="font-size: 0.85rem; color: #0f172a; display: block; margin-top: 0.2rem; font-weight: 700;">
             Service Road South Inflow Gap (2,400 sq.m uncovered)
           </strong>
         </div>
@@ -2235,25 +2235,25 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           </div>
           <div class="form-group">
             <label>Estimated CAPEX Budget:</label>
-            <input type="text" id="propBudget" class="custom-input" value="₹45,000 (State Modernization Grant)" readonly style="color: var(--accent-amber); font-weight: 700;">
+            <input type="text" id="propBudget" class="custom-input" value="₹45,000 (State Modernization Grant)" readonly style="color: #d97706; font-weight: 700;">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label>Optimal Install Latitude (GPS):</label>
-            <input type="text" id="propLat" class="custom-input" value="23.0284" readonly style="font-family: var(--font-mono); color: var(--accent-cyan);">
+            <input type="text" id="propLat" class="custom-input" value="23.0284" readonly style="font-family: var(--font-mono); color: #2563eb; font-weight: 600;">
           </div>
           <div class="form-group">
             <label>Optimal Install Longitude (GPS):</label>
-            <input type="text" id="propLng" class="custom-input" value="72.5058" readonly style="font-family: var(--font-mono); color: var(--accent-cyan);">
+            <input type="text" id="propLng" class="custom-input" value="72.5058" readonly style="font-family: var(--font-mono); color: #2563eb; font-weight: 600;">
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" id="btnCancelProposal">Cancel</button>
-        <button type="button" class="action-btn primary" id="btnSubmitProposal" style="background: linear-gradient(135deg, #10b981, #059669);">
-          <i class="fa-solid fa-check"></i> Authorize & Queue Camera Installation
+        <button type="button" class="action-btn primary" id="btnSubmitProposal" style="background: #059669; color: #ffffff;">
+          <i class="fa-solid fa-check"></i> Authorize &amp; Queue Camera Installation
         </button>
       </div>
     </div>
