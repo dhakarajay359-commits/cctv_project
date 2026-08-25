@@ -366,6 +366,104 @@ function initNavigation() {
    ========================================================================= */
 let mapTrajectoryLayers = [];
 
+function setupCustomZoneDropdown() {
+  const selectEl = document.getElementById('gisZoneSelect');
+  if (!selectEl || selectEl.dataset.customized === 'true') return;
+  selectEl.dataset.customized = 'true';
+  selectEl.style.display = 'none';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'custom-dropdown-wrap';
+
+  const selectedOpt = selectEl.options[selectEl.selectedIndex] || selectEl.options[0];
+  const trigger = document.createElement('div');
+  trigger.className = 'custom-dropdown-trigger';
+  trigger.innerHTML = `
+    <span class="trigger-label">${selectedOpt ? selectedOpt.textContent : 'Select District'}</span>
+    <i class="fa-solid fa-chevron-down trigger-icon"></i>
+  `;
+
+  const menu = document.createElement('div');
+  menu.className = 'custom-dropdown-menu';
+
+  // Build menu from optgroups and options
+  const children = Array.from(selectEl.children);
+  children.forEach(child => {
+    if (child.tagName === 'OPTGROUP') {
+      const header = document.createElement('div');
+      header.className = 'dropdown-group-header';
+      header.textContent = child.label;
+      menu.appendChild(header);
+
+      Array.from(child.children).forEach(opt => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item-row' + (opt.value === selectEl.value ? ' selected' : '');
+        item.dataset.value = opt.value;
+        item.textContent = opt.textContent;
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectEl.value = opt.value;
+          trigger.querySelector('.trigger-label').textContent = opt.textContent;
+          menu.querySelectorAll('.dropdown-item-row').forEach(r => r.classList.remove('selected'));
+          item.classList.add('selected');
+          menu.classList.remove('show');
+          trigger.classList.remove('active');
+          selectEl.dispatchEvent(new Event('change'));
+        });
+        menu.appendChild(item);
+      });
+    } else if (child.tagName === 'OPTION') {
+      const item = document.createElement('div');
+      item.className = 'dropdown-item-row' + (child.value === selectEl.value ? ' selected' : '');
+      item.dataset.value = child.value;
+      item.textContent = child.textContent;
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectEl.value = child.value;
+        trigger.querySelector('.trigger-label').textContent = child.textContent;
+        menu.querySelectorAll('.dropdown-item-row').forEach(r => r.classList.remove('selected'));
+        item.classList.add('selected');
+        menu.classList.remove('show');
+        trigger.classList.remove('active');
+        selectEl.dispatchEvent(new Event('change'));
+      });
+      menu.appendChild(item);
+    }
+  });
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = menu.classList.contains('show');
+    document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('.custom-dropdown-trigger').forEach(t => t.classList.remove('active'));
+    if (!isOpen) {
+      menu.classList.add('show');
+      trigger.classList.add('active');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target)) {
+      menu.classList.remove('show');
+      trigger.classList.remove('active');
+    }
+  });
+
+  selectEl.addEventListener('change', () => {
+    const curOpt = selectEl.options[selectEl.selectedIndex];
+    if (curOpt) {
+      trigger.querySelector('.trigger-label').textContent = curOpt.textContent;
+      menu.querySelectorAll('.dropdown-item-row').forEach(r => {
+        r.classList.toggle('selected', r.dataset.value === selectEl.value);
+      });
+    }
+  });
+
+  selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
+  wrapper.appendChild(trigger);
+  wrapper.appendChild(menu);
+}
+
 async function initGisDashboard() {
   const mapEl = document.getElementById('leafletMap');
   if (!mapEl) return;
@@ -409,6 +507,7 @@ async function initGisDashboard() {
 
   // Zone & District Matrix Quick Navigator
   if (zoneSelect) {
+    setupCustomZoneDropdown();
     zoneSelect.addEventListener('change', async (e) => {
       const val = e.target.value;
       if (val === 'zone-all') {
