@@ -912,8 +912,9 @@ body.focus-mode .leaflet-container-view {
 }
 
 .custom-input:focus, .custom-select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: #94a3b8;
+  box-shadow: none;
+  outline: none;
 }
 
 /* STATS COUNTER GRID */
@@ -1448,8 +1449,9 @@ body.focus-mode .leaflet-container-view {
 }
 
 .map-pursuit-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: #94a3b8;
+  box-shadow: none;
+  outline: none;
 }
 
 .btn-trace-pursuit {
