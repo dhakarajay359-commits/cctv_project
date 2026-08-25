@@ -3446,13 +3446,13 @@ body.focus-mode .leaflet-container-view {
 }
 
 .modal-content {
-  background: linear-gradient(145deg, rgba(17, 25, 40, 0.98), rgba(10, 15, 26, 0.98));
-  border: 1px solid rgba(0, 242, 254, 0.3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 580px;
   padding: 1.8rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 242, 254, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
   position: relative;
   overflow: hidden;
   animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3461,16 +3461,6 @@ body.focus-mode .leaflet-container-view {
 @keyframes modalPopIn {
   from { opacity: 0; transform: scale(0.96) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.modal-content::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
 }
 
 .modal-header {
@@ -3507,9 +3497,9 @@ body.focus-mode .leaflet-container-view {
 }
 
 .close-modal-btn:hover {
-  background: rgba(244, 63, 94, 0.2);
-  border-color: var(--accent-rose);
-  color: var(--accent-rose);
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #ef4444;
 }
 
 .modal-form .form-group {
@@ -3566,19 +3556,19 @@ body.focus-mode .leaflet-container-view {
   bottom: 24px;
   left: 24px;
   width: 380px;
-  background: rgba(13, 20, 36, 0.95);
-  border: 1px solid rgba(0, 242, 254, 0.35);
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 0.9rem;
   z-index: 999;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 242, 254, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(16px);
   animation: slideUpFade 0.3s ease-out;
 }
 
 .blind-spot-alert-box {
-  background: rgba(244, 63, 94, 0.08);
-  border: 1px solid rgba(244, 63, 94, 0.3);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.8rem;
   margin-top: 0.6rem;
@@ -3591,14 +3581,13 @@ body.focus-mode .leaflet-container-view {
   right: -460px;
   width: 440px;
   height: 100vh;
-  background: rgba(13, 20, 36, 0.98);
-  border-left: 1px solid rgba(0, 242, 254, 0.25);
-  box-shadow: -8px 0 35px rgba(0, 0, 0, 0.7);
+  background: rgba(15, 23, 42, 0.98);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.6);
   z-index: 1050;
   transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(20px);
 }
 
 .cam-detail-drawer.open {
@@ -3708,37 +3697,12 @@ body.focus-mode .leaflet-container-view {
    AUTHORITY SUSPECT REGISTRATION & LIVE SNAPSHOT DOSSIER STYLES
    ========================================================================= */
 #suspectCaptureSnapshotCard {
-  animation: pulseGlowRose 2.2s infinite alternate ease-in-out;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   position: relative;
   overflow: hidden;
-}
-
-#suspectCaptureSnapshotCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.15), transparent);
-  animation: scanShimmer 3s infinite;
-  pointer-events: none;
-}
-
-@keyframes pulseGlowRose {
-  0% {
-    box-shadow: 0 0 16px rgba(244, 63, 94, 0.25);
-    border-color: rgba(244, 63, 94, 0.7);
-  }
-  100% {
-    box-shadow: 0 0 35px rgba(244, 63, 94, 0.55), inset 0 0 15px rgba(244, 63, 94, 0.15);
-    border-color: rgba(244, 63, 94, 1);
-  }
-}
-
-@keyframes scanShimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
 }
 
 .sample-chip {
