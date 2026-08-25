@@ -1032,29 +1032,31 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
 
       const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
       marker.bindPopup(`
-        <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
-          <strong style="color: #00f2fe; font-size: 13px;">${cam.id}</strong><br/>
-          <strong>${cam.name}</strong><br/>
-          <span style="color: #94a3b8;">Vendor: ${cam.vendor}</span><br/>
-          <span style="color: #10b981;">Status: ${cam.status.toUpperCase()}</span><br/>
-          <span style="color: #f59e0b;">FOV: ${cam.direction} (${cam.fov_angle}°)</span><br/>
-          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
-            <button onclick="inspectCameraFovRange('${cam.id}')" style="
-              background: rgba(0, 242, 254, 0.15);
-              border: 1px solid #00f2fe;
-              color: #00f2fe;
-              padding: 4px 8px;
+        <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 220px; padding: 2px;">
+          <strong style="color: #2563eb; font-size: 13px; font-weight: 800;">${cam.id}</strong><br/>
+          <strong style="color: #0f172a; font-size: 12px;">${cam.name}</strong><br/>
+          <span style="color: #64748b;">Vendor: ${cam.vendor}</span><br/>
+          <span style="color: #059669; font-weight: 700;">Status: ${cam.status.toUpperCase()}</span><br/>
+          <span style="color: #d97706; font-weight: 600;">FOV: ${cam.direction} (${cam.fov_angle}°)</span><br/>
+          <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+            <button type="button" onclick="inspectCameraFovRange('${cam.id}')" style="
+              background: #eff6ff;
+              border: 1px solid #bfdbfe;
+              color: #2563eb;
+              padding: 5px 10px;
               border-radius: 4px;
               font-weight: 700;
+              font-size: 11px;
               cursor: pointer;
             "><i class="fa-solid fa-satellite-dish"></i> Check Range & Blind-Spots</button>
-            <button onclick="pullOnDemandStream('${cam.id}')" style="
-              background: #00f2fe;
-              color: #04101e;
-              border: none;
-              padding: 4px 8px;
+            <button type="button" onclick="pullOnDemandStream('${cam.id}')" style="
+              background: #2563eb;
+              color: #ffffff;
+              border: 1px solid #2563eb;
+              padding: 5px 10px;
               border-radius: 4px;
               font-weight: 700;
+              font-size: 11px;
               cursor: pointer;
             "><i class="fa-solid fa-play"></i> Pull WebRTC Live Stream</button>
           </div>
@@ -1222,15 +1224,39 @@ window.openCameraProposalModal = function() {
 };
 
 window.pullOnDemandStream = async function(camId) {
+  // 1. Stop all other active streaming sessions so ONLY the clicked camera stream runs
+  const active = await window.apiClient.getActiveStreamingSessions();
+  if (active.sessions && active.sessions.length > 0) {
+    for (const sess of active.sessions) {
+      if (sess.camera_id !== camId) {
+        await window.apiClient.stopStreamingSession(sess.camera_id || sess.session_id);
+      }
+    }
+  }
+
+  // 2. Start streaming session strictly for the targeted camera
   const session = await window.apiClient.startStreamingSession(camId);
-  // Switch to Live Wall view
+  focusedCameraId = camId;
+  liveWallGridMode = '1x1';
+
+  // Update Grid buttons UI in Live Wall
+  const gridBtns = document.querySelectorAll('.grid-btn');
+  gridBtns.forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-grid') === '1x1');
+  });
+
+  const wallGrid = document.getElementById('videoWallGrid');
+  if (wallGrid) {
+    wallGrid.className = 'video-wall-grid grid-1x1';
+  }
+
+  // 3. Switch to Live Wall view
   const liveWallNav = document.querySelector('.main-nav-btn[data-view="view-livewall"]');
   if (liveWallNav) {
     liveWallNav.click();
   }
 
   await renderLiveWall();
-  alert(`On-Demand WebRTC Relay Established!\nSession ID: ${session.session_id}\nCamera: ${session.camera_id} (${session.camera_name})\nBandwidth: ${session.bitrate_mbps} Mbps (Auto-stops in 5 mins).`);
 };
 
 /* =========================================================================
@@ -1531,6 +1557,7 @@ function getDeptName(deptId) {
    6. LIVE VIDEO WALL (PHASE 3 - MODEL 2 UNIFIED VIEWING PLATFORM)
    ========================================================================= */
 let liveWallGridMode = '2x2';
+let focusedCameraId = null;
 let sessionCountdownSeconds = 300; // 5-minute bandwidth discipline timer
 let sessionCountdownInterval = null;
 
@@ -1574,6 +1601,9 @@ async function initLiveWallView() {
       btn.classList.add('active');
       liveWallGridMode = btn.getAttribute('data-grid');
       wallGrid.className = `video-wall-grid grid-${liveWallGridMode}`;
+      if (liveWallGridMode !== '1x1') {
+        focusedCameraId = null;
+      }
       await renderLiveWall();
     });
   });
@@ -1606,10 +1636,12 @@ async function initLiveWallView() {
   // Start Session Inactivity Countdown
   startSessionInactivityTimer();
 
-  // Start initial streams ONLY ON FIRST LOAD of the Live Wall
-  const initialCams = await window.apiClient.getCameras();
-  for (let i = 0; i < Math.min(2, initialCams.length); i++) {
-    await window.apiClient.startStreamingSession(initialCams[i].id);
+  // Start initial streams ONLY if no specific focused camera is requested
+  if (!focusedCameraId) {
+    const initialCams = await window.apiClient.getCameras();
+    for (let i = 0; i < Math.min(2, initialCams.length); i++) {
+      await window.apiClient.startStreamingSession(initialCams[i].id);
+    }
   }
 
   await renderLiveWall();
@@ -2421,7 +2453,17 @@ async function renderLiveWall() {
   if (liveWallGridMode === '3x3') maxSlots = 9;
   if (liveWallGridMode === '4x4') maxSlots = 16;
 
-  const displayCams = cameras.slice(0, maxSlots);
+  let displayCams = [];
+  if (focusedCameraId && liveWallGridMode === '1x1') {
+    const target = cameras.find(c => c.id === focusedCameraId);
+    displayCams = target ? [target] : cameras.slice(0, 1);
+  } else if (focusedCameraId) {
+    const target = cameras.find(c => c.id === focusedCameraId);
+    const others = cameras.filter(c => c.id !== focusedCameraId);
+    displayCams = target ? [target, ...others].slice(0, maxSlots) : cameras.slice(0, maxSlots);
+  } else {
+    displayCams = cameras.slice(0, maxSlots);
+  }
 
   const sessionData = await window.apiClient.getActiveStreamingSessions();
   if (activeCountEl) activeCountEl.textContent = `${sessionData.active_sessions_count} Active Streams`;
@@ -2438,8 +2480,8 @@ async function renderLiveWall() {
 
   displayCams.forEach((cam, idx) => {
     const isSessionActive = sessionData.sessions.some(s => s.camera_id === cam.id);
-    const hasAnprHit = idx === 0 && isSessionActive;
-    const isFaceHit = idx === 3 && isSessionActive;
+    const hasAnprHit = (cam.id === 'CAM-GJ-0101') && isSessionActive;
+    const isFaceHit = (cam.id === 'CAM-GJ-0302' || cam.id === 'CAM-GJ-0104') && isSessionActive;
     const cell = document.createElement('div');
     cell.className = `wall-feed-cell ${!isSessionActive ? 'idle-mode' : ''}`;
     cell.setAttribute('data-cam-id', cam.id);
