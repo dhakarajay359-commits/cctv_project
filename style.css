@@ -382,22 +382,12 @@ body, body.dark-theme, body.light-theme {
   transition: color 0.15s ease;
 }
 
-.main-nav-btn .btn-text,
-.main-nav-btn .nav-key {
+.main-nav-btn .btn-text {
   display: none;
 }
 
 .nav-key {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #64748b;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  padding: 0.1rem 0.35rem;
-  margin-left: auto;
-  line-height: 1;
+  display: none !important;
 }
 
 .main-nav-btn .nav-badge {
@@ -434,13 +424,6 @@ body, body.dark-theme, body.light-theme {
   color: #2563eb;
 }
 
-.main-nav-btn.active .nav-key {
-  border-color: #bfdbfe;
-  color: #2563eb;
-  background: #ffffff;
-  opacity: 1;
-}
-
 /* Expanded Navigation Buttons on Hover / Pin */
 .app-sidebar:hover .main-nav-btn,
 .app-sidebar.pinned .main-nav-btn {
@@ -449,9 +432,7 @@ body, body.dark-theme, body.light-theme {
 }
 
 .app-sidebar:hover .main-nav-btn .btn-text,
-.app-sidebar.pinned .main-nav-btn .btn-text,
-.app-sidebar:hover .main-nav-btn .nav-key,
-.app-sidebar.pinned .main-nav-btn .nav-key {
+.app-sidebar.pinned .main-nav-btn .btn-text {
   display: block;
 }
 
