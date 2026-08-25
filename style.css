@@ -3776,11 +3776,12 @@ body.focus-mode .leaflet-container-view {
 .wall-grid-toggles {
   display: inline-flex;
   align-items: center;
-  background: rgba(15, 23, 42, 0.85);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 0.22rem 0.4rem;
   gap: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .wall-grid-toggles .toggle-label {
@@ -3793,10 +3794,10 @@ body.focus-mode .leaflet-container-view {
 }
 
 .grid-btn {
-  background: rgba(255, 255, 255, 0.04);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  padding: 0.32rem 0.65rem;
+  padding: 0.35rem 0.65rem;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
@@ -3809,29 +3810,30 @@ body.focus-mode .leaflet-container-view {
 }
 
 .grid-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #f8fafc;
+  color: var(--text-primary);
+  border-color: #cbd5e1;
 }
 
 .grid-btn.active {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
 }
 
 .bandwidth-discipline-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-card);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 0.75rem 1.2rem;
   margin-bottom: 1.2rem;
   flex-wrap: wrap;
   gap: 0.8rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .bw-stat-item {
@@ -3849,6 +3851,7 @@ body.focus-mode .leaflet-container-view {
 .bw-val {
   font-weight: 800;
   font-family: var(--font-mono);
+  color: var(--text-primary);
 }
 
 .bw-sub {
@@ -3858,7 +3861,7 @@ body.focus-mode .leaflet-container-view {
 }
 
 /* =========================================================================
-   ALERTS VIEW TOOLBAR & SEVERITY FILTER PILLS (NATURAL SYSTEMATIC STYLE)
+   ALERTS VIEW TOOLBAR & SEVERITY FILTER PILLS (CLEAN NORMAL STYLE)
    ========================================================================= */
 .registry-toolbar {
   display: flex;
@@ -3872,16 +3875,17 @@ body.focus-mode .leaflet-container-view {
 .alert-severity-pills {
   display: inline-flex;
   align-items: center;
-  background: rgba(15, 23, 42, 0.85);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 0.22rem 0.35rem;
   gap: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .filter-pill-btn {
-  background: transparent;
-  border: 1px solid transparent;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -3896,15 +3900,16 @@ body.focus-mode .leaflet-container-view {
 }
 
 .filter-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #f8fafc;
   color: var(--text-primary);
+  border-color: #cbd5e1;
 }
 
 .filter-pill-btn.active {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
-  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
 }
 
 .filter-pill-btn.critical.active {
@@ -3914,6 +3919,16 @@ body.focus-mode .leaflet-container-view {
 }
 
 .filter-pill-btn.warning.active {
+  background: #d97706;
+  color: #ffffff;
+  border-color: #d97706;
+}
+
+.filter-pill-btn.info.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
   background: #d97706;
   color: #ffffff;
   border-color: #d97706;
