@@ -407,23 +407,55 @@ async function initGisDashboard() {
     await renderGisNodes(currentDept, currentStatus, currentQuery);
   }
 
-  // Zone & District Matrix Quick Navigator
-  if (zoneSelect) {
-    zoneSelect.addEventListener('change', async (e) => {
-      const val = e.target.value;
-      if (val === 'zone-all') {
-        leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 1.2 });
-      } else if (val.startsWith('zone-')) {
-        const zones = await window.apiClient.getZones();
-        const z = zones.find(item => item.id === val);
-        if (z) leafletMapInstance.flyTo(z.center, z.zoom, { duration: 1.2 });
-      } else if (val.startsWith('dist-')) {
-        const dists = await window.apiClient.getDistricts();
-        const d = dists.find(item => item.id === val);
-        if (d && d.lat && d.lng) {
-          leafletMapInstance.flyTo([d.lat, d.lng], 11, { duration: 1.2 });
-        }
+  // Zone & District Matrix Quick Navigator Dropdown
+  const zoneContainer = document.querySelector('.zone-dropdown-container');
+  const zoneBtn = document.getElementById('gisZoneDropdownBtn');
+  const zoneLabel = document.getElementById('gisZoneDropdownLabel');
+  const zoneMenu = document.getElementById('gisZoneDropdownMenu');
+
+  if (zoneBtn && zoneMenu) {
+    zoneBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      zoneContainer.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (zoneContainer && !zoneContainer.contains(e.target)) {
+        zoneContainer.classList.remove('open');
       }
+    });
+
+    const optItems = zoneMenu.querySelectorAll('.zone-opt-item');
+    optItems.forEach(item => {
+      item.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const val = item.getAttribute('data-value');
+        const text = item.textContent;
+
+        optItems.forEach(opt => opt.classList.remove('selected'));
+        item.classList.add('selected');
+        if (zoneLabel) zoneLabel.textContent = text;
+        zoneContainer.classList.remove('open');
+
+        if (zoneSelect) {
+          zoneSelect.value = val;
+        }
+
+        // Fly smoothly to target zone / district
+        if (val === 'zone-all') {
+          leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 1.2 });
+        } else if (val.startsWith('zone-')) {
+          const zones = await window.apiClient.getZones();
+          const z = zones.find(item => item.id === val);
+          if (z) leafletMapInstance.flyTo(z.center, z.zoom, { duration: 1.2 });
+        } else if (val.startsWith('dist-')) {
+          const dists = await window.apiClient.getDistricts();
+          const d = dists.find(item => item.id === val);
+          if (d && d.lat && d.lng) {
+            leafletMapInstance.flyTo([d.lat, d.lng], 11, { duration: 1.2 });
+          }
+        }
+      });
     });
   }
 

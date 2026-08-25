@@ -3974,3 +3974,112 @@ body.focus-mode .leaflet-container-view {
   position: relative;
   margin-bottom: 0.85rem;
 }
+
+/* ROBUST DOWNWARD-OPENING ZONE MATRIX DROPDOWN */
+.zone-dropdown-container {
+  position: relative;
+  width: 100%;
+  z-index: 100;
+}
+
+.zone-dropdown-btn {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  padding: 0.58rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s ease;
+  font-family: var(--font-main);
+}
+
+.zone-dropdown-btn:hover {
+  border-color: #94a3b8;
+}
+
+.zone-dropdown-btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zone-dropdown-btn i {
+  font-size: 0.72rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.zone-dropdown-container.open .zone-dropdown-btn i {
+  transform: rotate(180deg);
+}
+
+.zone-dropdown-container.open .zone-dropdown-btn {
+  border-color: #94a3b8;
+}
+
+.zone-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 99999;
+  display: none;
+  padding: 4px 0;
+}
+
+.zone-dropdown-container.open .zone-dropdown-menu {
+  display: block;
+}
+
+.zone-group-hdr {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  background: #f8fafc;
+  padding: 6px 12px;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  user-select: none;
+}
+
+.zone-group-hdr:first-child {
+  border-top: none;
+}
+
+.zone-opt-item {
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+
+.zone-opt-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.zone-opt-item.selected {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
