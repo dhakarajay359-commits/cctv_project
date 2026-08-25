@@ -2386,13 +2386,7 @@ body.focus-mode .leaflet-container-view {
 }
 
 .feed-timer-chip {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: #f59e0b;
-  background: rgba(217, 119, 6, 0.15);
-  border: 1px solid rgba(217, 119, 6, 0.3);
-  padding: 0.15rem 0.45rem;
-  border-radius: 3px;
+  display: none !important;
 }
 
 /* PHASE 4 — ANPR ENGINE & EVENT DETECTION STYLES */
