@@ -1852,19 +1852,24 @@ body.focus-mode .leaflet-container-view {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
+  background: #ffffff;
 }
 
 .compact-table th {
-  background: rgba(0, 0, 0, 0.4);
-  padding: 0.45rem 0.6rem;
-  color: var(--text-muted);
-  font-size: 0.68rem;
+  background: #f8fafc;
+  padding: 0.55rem 0.75rem;
+  color: #475569;
+  font-size: 0.7rem;
   text-align: left;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.02em;
 }
 
 .compact-table td {
-  padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .drawer-actions-row {
@@ -2341,12 +2346,12 @@ body.focus-mode .leaflet-container-view {
 
 /* PHASE 4 — ANPR ENGINE & EVENT DETECTION STYLES */
 .anpr-lab-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-glow);
-  border-radius: var(--radius-md);
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .anpr-lab-header {
@@ -2364,17 +2369,51 @@ body.focus-mode .leaflet-container-view {
 }
 
 .anpr-lab-title i {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
 }
 
 .anpr-lab-title h3 {
   font-size: 1.05rem;
-  color: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .anpr-lab-title p {
   font-size: 0.78rem;
   color: var(--text-secondary);
+}
+
+.quick-samples-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.quick-samples-bar span {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.sample-chip {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sample-chip:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
 }
 
 .anpr-lab-presets {

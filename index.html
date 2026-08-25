@@ -851,7 +851,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
                 </span>
               </div>
               <h3 style="margin-top: 0.35rem; font-size: 1.15rem;">Suspect Vehicle Registration &amp; Crime Hotlist Management</h3>
-              <p style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">Register suspect vehicles with specific FIR and crime details to enable automated real-time CCTV camera matching, instant pursuit routing, and automated intercept alerting.</p>
             </div>
           </div>
         </div>
@@ -988,13 +987,12 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
       <!-- ========================================================================= -->
       <!-- CROSS-DEPARTMENT VEHICLE PURSUIT & PREDICTIVE TRAJECTORY LAB -->
       <!-- ========================================================================= -->
-      <div class="anpr-lab-card" style="margin-top: 1.5rem; border-color: rgba(244,63,94,0.4); background: linear-gradient(180deg, rgba(244,63,94,0.06) 0%, rgba(15,23,42,0.8) 100%);">
+      <div class="anpr-lab-card" style="margin-top: 1.2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
         <div class="anpr-lab-header">
           <div class="anpr-lab-title">
             <i class="fa-solid fa-route text-rose" style="font-size: 1.4rem;"></i>
             <div>
-              <h3>Cross-Department Trajectory Reconstruction & Predictive Interception</h3>
-              <p>Reconstructs multi-agency sighting trails across Police, AMC Smart City, RTO, Private Citizen, and Forest Department cameras to calculate vehicle speed, heading, and predict the exact forward roadblock location.</p>
+              <h3 style="color: #0f172a; font-weight: 700;">Cross-Department Trajectory Reconstruction &amp; Predictive Interception</h3>
             </div>
           </div>
           <div class="anpr-lab-presets">
@@ -1002,16 +1000,16 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <i class="fa-solid fa-car"></i>
               <input type="text" id="trajectoryPlateInput" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter Stolen Plate (e.g. GJ-01-AB-1234)">
             </div>
-            <button class="action-btn primary" id="btnTraceTrajectory" style="background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 0 16px rgba(244,63,94,0.4);">
+            <button class="action-btn primary" id="btnTraceTrajectory" style="background: #dc2626; color: #ffffff; border: 1px solid #dc2626; font-weight: 700;">
               <i class="fa-solid fa-compass"></i> Trace Route
             </button>
-            <button class="action-btn" id="btnViewOnGisMap" style="background: rgba(0, 242, 254, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+            <button class="action-btn" id="btnViewOnGisMap" style="background: #ffffff; border: 1px solid var(--border-color); color: #2563eb; font-weight: 600;">
               <i class="fa-solid fa-map-location-dot"></i> View on GIS Map
             </button>
           </div>
         </div>
 
-        <div class="quick-samples-bar" style="margin-top: 0.5rem; margin-bottom: 0.8rem;">
+        <div class="quick-samples-bar" style="margin-top: 0.6rem; margin-bottom: 0.8rem;">
           <span>Select Target Pursuit:</span>
           <button class="sample-chip" onclick="document.getElementById('trajectoryPlateInput').value='GJ-01-AB-1234'; document.getElementById('btnTraceTrajectory').click();">GJ-01-AB-1234 (Stolen Creta &bull; Police ➔ AMC ➔ Private ➔ RTO ➔ Forest)</button>
           <button class="sample-chip" onclick="document.getElementById('trajectoryPlateInput').value='MP-09-HH-5541'; document.getElementById('btnTraceTrajectory').click();">MP-09-HH-5541 (Overweight Truck &bull; Civil Supplies ➔ RTO ➔ Border Patrol)</button>
