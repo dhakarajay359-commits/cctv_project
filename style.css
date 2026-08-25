@@ -1126,7 +1126,7 @@ body.focus-mode .leaflet-container-view {
 
 .st-filter-btn {
   flex: 1;
-  background: rgba(10, 13, 20, 0.6);
+  background: rgba(15, 23, 42, 0.6);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.4rem 0.3rem;
@@ -1138,12 +1138,20 @@ body.focus-mode .leaflet-container-view {
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.st-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .st-filter-btn.active {
-  background: rgba(0, 242, 254, 0.12);
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .dot-sm {
@@ -1185,7 +1193,7 @@ body.focus-mode .leaflet-container-view {
 
 .search-bar-wrap:focus-within i,
 .search-input-wrap:focus-within i {
-  color: var(--accent-cyan);
+  color: #38bdf8;
 }
 
 .voice-search-btn {
@@ -1193,9 +1201,9 @@ body.focus-mode .leaflet-container-view {
   right: 0.45rem;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 242, 254, 0.1);
-  border: 1px solid rgba(0, 242, 254, 0.3);
-  color: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -1209,9 +1217,10 @@ body.focus-mode .leaflet-container-view {
 }
 
 .voice-search-btn:hover {
-  background: var(--accent-cyan);
-  color: #04101e;
-  box-shadow: 0 0 12px var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
 }
 
 .voice-search-btn.listening {
