@@ -3498,15 +3498,15 @@ body.focus-mode .leaflet-container-view {
 
 /* HIGH-PRECISION MODALS & DIALOGS */
 .app-modal {
-  display: none;
+  display: none !important;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(4, 7, 14, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 2000;
   align-items: center;
   justify-content: center;
@@ -3514,17 +3514,18 @@ body.focus-mode .leaflet-container-view {
 }
 
 .app-modal.open {
-  display: flex;
+  display: flex !important;
 }
 
 .modal-content {
-  background: var(--bg-card);
+  background: #ffffff;
+  color: #0f172a;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   width: 100%;
   max-width: 580px;
   padding: 1.8rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
   animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3967,118 +3968,9 @@ body.focus-mode .leaflet-container-view {
 }
 
 /* =========================================================================
-   CUSTOM DOWNWARD-OPENING DROPDOWN COMPONENT (ALWAYS OPENS LOWER SIDE)
+   GIS FILTERS
    ========================================================================= */
 .filter-block {
   position: relative;
   margin-bottom: 0.85rem;
-}
-
-.custom-dropdown-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.custom-dropdown-trigger {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: var(--radius-sm);
-  padding: 0.52rem 0.8rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.custom-dropdown-trigger:hover {
-  border-color: #94a3b8;
-}
-
-.custom-dropdown-trigger.active {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-.custom-dropdown-trigger .trigger-icon {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  transition: transform 0.2s ease;
-}
-
-.custom-dropdown-trigger.active .trigger-icon {
-  transform: rotate(180deg);
-}
-
-.custom-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  max-height: 280px;
-  overflow-y: auto;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
-  z-index: 1050;
-  display: none;
-  padding: 4px 0;
-}
-
-.custom-dropdown-menu.show {
-  display: block;
-  animation: dropdownFadeIn 0.15s ease-out;
-}
-
-@keyframes dropdownFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dropdown-group-header {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #64748b;
-  background: #f8fafc;
-  padding: 6px 12px;
-  border-top: 1px solid #f1f5f9;
-  border-bottom: 1px solid #f1f5f9;
-  margin-top: 2px;
-  user-select: none;
-}
-
-.dropdown-group-header:first-child {
-  border-top: none;
-  margin-top: 0;
-}
-
-.dropdown-item-row {
-  padding: 7px 12px 7px 18px;
-  font-size: 0.76rem;
-  color: #1e293b;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.dropdown-item-row:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.dropdown-item-row.selected {
-  background: #eff6ff;
-  color: #2563eb;
-  font-weight: 600;
 }
