@@ -2774,33 +2774,6 @@ body.focus-mode .leaflet-container-view {
 }
 
 /* PHASE 6 — SECURITY, RBAC & GOVERNANCE STYLES */
-.persona-switcher-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius-sm);
-}
-
-.persona-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--accent-cyan);
-  white-space: nowrap;
-}
-
-.persona-select {
-  background: #0b1120;
-  border: 1px solid var(--border-color);
-  color: #ffffff;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 .admin-sub-btn {
   background: transparent;
   border: 1px solid var(--border-color);
