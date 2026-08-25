@@ -1498,23 +1498,7 @@ body.focus-mode .leaflet-container-view {
 }
 
 .map-telemetry-badge {
-  color: var(--text-secondary);
-  font-family: var(--font-main);
-  font-size: 0.72rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  white-space: nowrap;
-  background: #f8fafc;
-  border: 1px solid var(--border-color);
-  padding: 0.22rem 0.65rem;
-  border-radius: var(--radius-full);
-}
-
-.map-telemetry-badge strong {
-  color: var(--text-primary);
-  font-weight: 700;
-  font-family: var(--font-mono);
+  display: none !important;
 }
 
 .leaflet-container-view {
