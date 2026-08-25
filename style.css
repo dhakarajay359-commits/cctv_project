@@ -1088,19 +1088,25 @@ body.focus-mode .leaflet-container-view {
 .sidebar-header h3 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
 .btn-refresh {
-  background: transparent;
+  background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.3rem 0.5rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-refresh:hover {
+  background: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .filter-block label {
@@ -1119,7 +1125,7 @@ body.focus-mode .leaflet-container-view {
 
 .st-filter-btn {
   flex: 1;
-  background: rgba(15, 23, 42, 0.6);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.4rem 0.3rem;
@@ -1128,6 +1134,11 @@ body.focus-mode .leaflet-container-view {
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
@@ -1297,17 +1308,23 @@ body.focus-mode .leaflet-container-view {
 }
 
 .node-item-card {
-  background: rgba(10, 13, 20, 0.5);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.8rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.node-item-card:hover, .node-item-card.selected {
-  background: rgba(0, 242, 254, 0.08);
-  border-color: var(--accent-cyan);
+.node-item-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.node-item-card.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
 }
 
 .node-item-top {
@@ -1319,7 +1336,7 @@ body.focus-mode .leaflet-container-view {
 
 .node-id {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1328,20 +1345,35 @@ body.focus-mode .leaflet-container-view {
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
 }
 
-.node-status-pill.online { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
-.node-status-pill.degraded { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
-.node-status-pill.offline { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+.node-status-pill.online {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.node-status-pill.degraded {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.node-status-pill.offline {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
 
 .node-name {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 /* LEAFLET MAP WRAPPER */
