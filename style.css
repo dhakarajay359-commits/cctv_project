@@ -2211,18 +2211,26 @@ body.focus-mode .leaflet-container-view {
 }
 
 .feed-title-badge {
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(8px);
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: 4px;
   font-size: 0.75rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
+  font-weight: 600;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 70%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.feed-title-badge i {
+  color: #cbd5e1;
 }
 
 .feed-live-indicator {

@@ -2426,7 +2426,7 @@ async function renderLiveWall() {
 
     cell.innerHTML = `
       <div class="wall-feed-top">
-        <span class="feed-title-badge" title="${cam.name}"><i class="fa-solid fa-video text-cyan"></i> ${cam.id} &bull; ${cam.name.slice(0, 22)}...</span>
+        <span class="feed-title-badge" title="${cam.name}"><i class="fa-solid fa-video"></i> ${cam.id} &bull; ${cam.name.slice(0, 22)}...</span>
         <span class="feed-vendor-chip">${cam.vendor.split(' ')[0]} ${cam.resolution}</span>
         ${isSessionActive 
           ? `<span class="feed-live-indicator"><span class="dot-sm" style="background: var(--accent-rose);"></span> LIVE RELAY</span>`
