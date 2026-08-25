@@ -2699,6 +2699,78 @@ body.focus-mode .leaflet-container-view {
 }
 
 /* Alert Cards in Feed */
+.alert-feed-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid #dc2626;
+  border-radius: var(--radius-sm);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.alert-feed-card.high, .alert-feed-card.warning {
+  border-left-color: #d97706;
+}
+
+.alert-feed-card.medium, .alert-feed-card.info {
+  border-left-color: #2563eb;
+}
+
+.alert-feed-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.alert-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.alert-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.alert-title-wrap h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.alert-desc-text {
+  font-size: 0.82rem;
+  color: #334155;
+  line-height: 1.4;
+  margin-bottom: 0.4rem;
+}
+
+.alert-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.alert-node-info {
+  font-size: 0.72rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+}
+
 /* PHASE 6 — SECURITY, RBAC & GOVERNANCE STYLES */
 .persona-switcher-wrap {
   display: flex;

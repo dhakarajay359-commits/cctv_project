@@ -3515,26 +3515,26 @@ async function renderAlerts() {
     }
 
     let snapshotHtml = `
-      <div style="display: flex; gap: 1rem; align-items: center; background: rgba(0,0,0,0.45); padding: 0.75rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid rgba(244,63,94,0.4); margin: 0.6rem 0; flex-wrap: wrap;">
-        <div style="width: 170px; height: 96px; border-radius: 6px; overflow: hidden; border: 1.5px solid var(--accent-rose); position: relative; background: #000; flex-shrink: 0; box-shadow: 0 0 12px rgba(244,63,94,0.3);">
+      <div style="display: flex; gap: 1rem; align-items: center; background: #f8fafc; padding: 0.75rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; margin: 0.6rem 0; flex-wrap: wrap;">
+        <div style="width: 170px; height: 96px; border-radius: 4px; overflow: hidden; border: 1px solid #cbd5e1; position: relative; background: #060a12; flex-shrink: 0;">
           <img src="${snapshotUrl}" alt="Suspect Capture" style="width: 100%; height: 100%; object-fit: cover;" />
-          <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: var(--accent-cyan); font-size: 0.55rem; padding: 1px 4px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">${isFaceAlert ? 'CCTNS 4K BIOMETRIC SCAN' : 'ANPR 1080p CAPTURE'}</span>
+          <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: #38bdf8; font-size: 0.55rem; padding: 1px 4px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">${isFaceAlert ? 'CCTNS 4K BIOMETRIC SCAN' : 'ANPR 1080p CAPTURE'}</span>
         </div>
         <div style="flex: 1; min-width: 190px;">
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-            <span style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 800; text-transform: uppercase;"><i class="fa-solid ${isFaceAlert ? 'fa-user-shield' : 'fa-camera'}"></i> ${isFaceAlert ? 'Focused Biometric Facial Profile:' : 'Focused OCR License Plate:'}</span>
-            <span style="font-size: 0.65rem; color: var(--accent-emerald); font-weight: 900;">${alert.ocr_confidence || (isFaceAlert ? 96.8 : 99.4)}% MATCH</span>
+            <span style="font-size: 0.68rem; color: #2563eb; font-weight: 800; text-transform: uppercase;"><i class="fa-solid ${isFaceAlert ? 'fa-user-shield' : 'fa-camera'}"></i> ${isFaceAlert ? 'Focused Biometric Facial Profile:' : 'Focused OCR License Plate:'}</span>
+            <span style="font-size: 0.65rem; color: #059669; font-weight: 800; background: #ecfdf5; padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid #a7f3d0;">${alert.ocr_confidence || (isFaceAlert ? 96.8 : 99.4)}% MATCH</span>
           </div>
-          <img src="${plateCropUrl}" alt="${isFaceAlert ? 'Biometric Face Crop' : 'OCR Plate'}" style="${isFaceAlert ? 'width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 2px solid var(--accent-rose);' : 'height: 38px; border-radius: 4px; border: 1px solid #ffffff;'} box-shadow: 0 0 14px rgba(0,242,254,0.3);" />
-          <div style="margin-top: 0.35rem; font-size: 0.7rem; color: var(--text-secondary);">
+          <img src="${plateCropUrl}" alt="${isFaceAlert ? 'Biometric Face Crop' : 'OCR Plate'}" style="${isFaceAlert ? 'width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 2px solid #dc2626;' : 'height: 38px; border-radius: 4px; border: 1px solid #cbd5e1;'}" />
+          <div style="margin-top: 0.35rem; font-size: 0.72rem; color: #475569;">
             ${isFaceAlert ? `
-              <span>Movement: <strong>Pedestrian (3.2 km/h)</strong></span> &bull; 
-              <span style="color: var(--accent-rose); font-family: var(--font-mono); font-weight: 700;">CCTNS Red Notice Match</span> &bull;
-              <span style="color: var(--text-muted); font-family: var(--font-mono);">Section 65B Hash Validated</span>
+              <span>Movement: <strong style="color: #0f172a;">Pedestrian (3.2 km/h)</strong></span> &bull; 
+              <span style="color: #dc2626; font-family: var(--font-mono); font-weight: 700;">CCTNS Red Notice Match</span> &bull;
+              <span style="color: #64748b; font-family: var(--font-mono);">Section 65B Hash Validated</span>
             ` : `
-              <span>Speed: <strong>${alert.speed_kmph || 81.5} km/h</strong></span> &bull; 
-              <span style="color: var(--accent-amber); font-family: var(--font-mono); font-weight: 700;">HSRP Hologram Verified</span> &bull;
-              <span style="color: var(--text-muted); font-family: var(--font-mono);">Sec 65B Hash Validated</span>
+              <span>Speed: <strong style="color: #0f172a;">${alert.speed_kmph || 81.5} km/h</strong></span> &bull; 
+              <span style="color: #d97706; font-family: var(--font-mono); font-weight: 700;">HSRP Hologram Verified</span> &bull;
+              <span style="color: #64748b; font-family: var(--font-mono);">Sec 65B Hash Validated</span>
             `}
           </div>
         </div>
@@ -3544,23 +3544,26 @@ async function renderAlerts() {
     let autoDispatchBanner = '';
     if (alert.status === 'dispatched' || alert.assigned_station) {
       autoDispatchBanner = `
-        <div style="background: linear-gradient(90deg, rgba(0,242,254,0.12) 0%, rgba(16,185,129,0.08) 100%); border-left: 3px solid var(--accent-cyan); padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); margin: 0.5rem 0; font-size: 0.73rem;">
+        <div style="background: #eff6ff; border-left: 3px solid #2563eb; padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); margin: 0.5rem 0; font-size: 0.73rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-              <span style="color: var(--accent-cyan); font-weight: 800;"><i class="fa-solid fa-bolt text-amber"></i> AUTOMATIC ZERO-DELAY DISPATCH:</span>
-              <strong style="color: #ffffff; margin-left: 0.3rem;">${alert.assigned_station || 'Satellite Police Station & SG-1 Division'}</strong>
+              <span style="color: #2563eb; font-weight: 800;"><i class="fa-solid fa-bolt text-amber"></i> AUTOMATIC ZERO-DELAY DISPATCH:</span>
+              <strong style="color: #0f172a; margin-left: 0.3rem;">${alert.assigned_station || 'Satellite Police Station & SG-1 Division'}</strong>
             </div>
-            <span class="node-status-pill online" style="font-size: 0.65rem; background: rgba(16,185,129,0.2); color: var(--accent-emerald); border-color: var(--accent-emerald);">
+            <span class="node-status-pill online" style="font-size: 0.65rem; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
               <i class="fa-solid fa-truck-fast"></i> ${alert.pcr_unit || 'PCR Cheetah Unit • ETA: 2.1 Mins'}
             </span>
           </div>
-          <div style="margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.68rem; display: flex; gap: 0.8rem; flex-wrap: wrap;">
-            <span><i class="fa-solid fa-shield-halved text-rose"></i> Roadblock: <strong>${alert.forward_roadblock_location || 'SG Highway Forward Toll Barrier (ARMED)'}</strong></span>
-            <span><i class="fa-solid fa-map-pin text-cyan"></i> GIS Pursuit: <strong>Automated Trajectory Synced</strong></span>
+          <div style="margin-top: 0.25rem; color: #475569; font-size: 0.68rem; display: flex; gap: 0.8rem; flex-wrap: wrap;">
+            <span><i class="fa-solid fa-shield-halved text-rose"></i> Roadblock: <strong style="color: #0f172a;">${alert.forward_roadblock_location || 'SG Highway Forward Toll Barrier (ARMED)'}</strong></span>
+            <span><i class="fa-solid fa-map-pin text-cyan"></i> GIS Pursuit: <strong style="color: #0f172a;">Automated Trajectory Synced</strong></span>
           </div>
         </div>
       `;
     }
+
+    const alertLocation = alert.location && alert.location !== 'undefined' ? alert.location : 'Ahmedabad Zone • SG Highway Junction';
+    const alertCamera = alert.camera_id && alert.camera_id !== 'undefined' ? alert.camera_id : 'CAM-GJ-0101';
 
     card.innerHTML = `
       <div class="alert-card-top">
@@ -3581,24 +3584,24 @@ async function renderAlerts() {
 
       <div class="alert-card-footer">
         <div class="alert-node-info">
-          <i class="fa-solid fa-location-dot"></i> ${alert.location} &bull; <i class="fa-solid fa-video"></i> ${alert.camera_id} &bull; <i class="fa-solid fa-clock"></i> ${new Date(alert.created_at || alert.ts || Date.now()).toLocaleTimeString('en-IN')} IST
+          <i class="fa-solid fa-location-dot"></i> ${alertLocation} &bull; <i class="fa-solid fa-video"></i> ${alertCamera} &bull; <i class="fa-solid fa-clock"></i> ${new Date(alert.created_at || alert.ts || Date.now()).toLocaleTimeString('en-IN')} IST
         </div>
 
         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
           ${alert.target_vehicle ? `
-            <button class="action-btn" onclick="window.renderTrajectoryOnGisMap('${alert.target_vehicle}')" style="background: rgba(0, 242, 254, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan); font-size: 0.72rem; padding: 0.25rem 0.6rem;" title="Trace Multi-Dept Pursuit Route on GIS Map">
+            <button class="action-btn" onclick="window.renderTrajectoryOnGisMap('${alert.target_vehicle}')" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; font-size: 0.72rem; padding: 0.3rem 0.65rem; font-weight: 600;" title="Trace Multi-Dept Pursuit Route on GIS Map">
               <i class="fa-solid fa-map-location-dot"></i> Track on GIS
             </button>
           ` : ''}
           ${alert.status === 'active' ? `
-            <button class="action-btn primary" onclick="dispatchPcrUnit('${alert.id}')" style="background: linear-gradient(135deg, #f43f5e, #be123c); font-size: 0.72rem; padding: 0.25rem 0.6rem;">
+            <button class="action-btn primary" onclick="dispatchPcrUnit('${alert.id}')" style="background: #dc2626; border: 1px solid #dc2626; color: #ffffff; font-size: 0.72rem; padding: 0.3rem 0.65rem; font-weight: 700;">
               <i class="fa-solid fa-truck-fast"></i> Dispatch PCR Interceptor
             </button>
-            <button class="action-btn" onclick="acknowledgeAlertItem('${alert.id}')" style="font-size: 0.72rem; padding: 0.25rem 0.6rem;">
+            <button class="action-btn" onclick="acknowledgeAlertItem('${alert.id}')" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; font-size: 0.72rem; padding: 0.3rem 0.65rem; font-weight: 600;">
               <i class="fa-solid fa-check"></i> Acknowledge
             </button>
           ` : (alert.status === 'dispatched' ? `
-            <button class="action-btn" onclick="acknowledgeAlertItem('${alert.id}')" style="font-size: 0.72rem; padding: 0.25rem 0.6rem;">
+            <button class="action-btn" onclick="acknowledgeAlertItem('${alert.id}')" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; font-size: 0.72rem; padding: 0.3rem 0.65rem; font-weight: 600;">
               <i class="fa-solid fa-check"></i> Mark Case Closed
             </button>
           ` : `
