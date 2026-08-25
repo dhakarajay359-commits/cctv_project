@@ -451,38 +451,38 @@
           <div class="fov-map-hud" id="fovMapHud" style="display: none;">
             <div class="hud-top">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span class="hud-live-pill" style="background: rgba(0,242,254,0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);">
-                  <i class="fa-solid fa-satellite-dish"></i> OPTICAL FOV & BLIND-SPOT HUD
+                <span class="hud-live-pill" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-weight: 700;">
+                  <i class="fa-solid fa-satellite-dish"></i> OPTICAL FOV &amp; BLIND-SPOT HUD
                 </span>
-                <strong id="fovHudCamId" style="font-family: var(--font-mono); color: var(--text-primary);">CAM-GJ-0101</strong>
+                <strong id="fovHudCamId" style="font-family: var(--font-mono); color: #0f172a;">CAM-GJ-0101</strong>
               </div>
               <button class="hud-close-btn" id="btnCloseFovHud">&times;</button>
             </div>
             <div class="hud-body">
               <div class="hud-stat-grid">
                 <div><span>Camera:</span> <strong id="fovHudCamName">SG Highway Overbridge</strong></div>
-                <div><span>Direction / FOV:</span> <strong class="text-cyan" id="fovHudDirection">Northbound (90°)</strong></div>
-                <div><span>DORI Range:</span> <strong class="text-green" id="fovHudRange">280m Max / 140m Recog</strong></div>
-                <div><span>District / Dept:</span> <strong class="text-amber" id="fovHudDistrict">Ahmedabad • Police</strong></div>
+                <div><span>Direction / FOV:</span> <strong style="color: #2563eb;" id="fovHudDirection">Northbound (90°)</strong></div>
+                <div><span>DORI Range:</span> <strong style="color: #059669;" id="fovHudRange">280m Max / 140m Recog</strong></div>
+                <div><span>District / Dept:</span> <strong style="color: #d97706;" id="fovHudDistrict">Ahmedabad • Police</strong></div>
               </div>
               
               <!-- Uncovered Blind-Spot Alert Card -->
               <div class="blind-spot-alert-box" id="fovBlindSpotBox">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 0.72rem; font-weight: 800; color: var(--accent-rose); text-transform: uppercase;">
+                  <span style="font-size: 0.72rem; font-weight: 800; color: #dc2626; text-transform: uppercase;">
                     <i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE DETECTED
                   </span>
-                  <span class="node-status-pill offline" style="font-size: 0.62rem; padding: 0.1rem 0.4rem;">GAP DEFICIT</span>
+                  <span class="node-status-pill offline" style="font-size: 0.62rem; padding: 0.1rem 0.4rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 700;">GAP DEFICIT</span>
                 </div>
-                <p id="fovBlindSpotDesc" style="font-size: 0.76rem; color: #ffffff; margin: 0.25rem 0 0.4rem 0; font-weight: 600;">
-                  Service Road South Approach & Underpass is completely unmonitored.
+                <p id="fovBlindSpotDesc" style="font-size: 0.78rem; color: #0f172a; margin: 0.25rem 0 0.4rem 0; font-weight: 600;">
+                  Service Road South Approach &amp; Underpass is completely unmonitored.
                 </p>
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid rgba(244,63,94,0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 0.45rem 0.65rem; border-radius: 4px; border: 1px solid var(--border-color);">
                   <div>
-                    <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Recommended Hardware:</span>
-                    <strong id="fovRecHardware" style="font-size: 0.74rem; color: var(--accent-emerald);">4K Ultra-Starlight ANPR + PTZ</strong>
+                    <span style="font-size: 0.65rem; color: #64748b; display: block; font-weight: 700;">Recommended Hardware:</span>
+                    <strong id="fovRecHardware" style="font-size: 0.74rem; color: #059669;">4K Ultra-Starlight ANPR + PTZ</strong>
                   </div>
-                  <button class="action-btn primary" id="btnProposeCameraFromHud" style="font-size: 0.7rem; padding: 0.3rem 0.65rem; background: linear-gradient(135deg, #10b981, #059669);">
+                  <button class="action-btn primary" id="btnProposeCameraFromHud" style="font-size: 0.72rem; padding: 0.35rem 0.7rem; background: #059669; color: #ffffff;">
                     <i class="fa-solid fa-plus-circle"></i> Install Camera Here
                   </button>
                 </div>
