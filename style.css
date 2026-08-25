@@ -4,10 +4,10 @@
    ========================================================================= */
 
 :root {
-  --bg-primary: #f8fafc;
+  --bg-primary: #ffffff;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
+  --bg-card-hover: #f8fafc;
   --border-color: #e2e8f0;
   --border-glow: transparent;
   
@@ -596,7 +596,7 @@ body, body.dark-theme, body.light-theme {
 }
 
 .breadcrumb-current {
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
