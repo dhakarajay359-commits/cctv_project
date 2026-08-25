@@ -1689,10 +1689,10 @@ function startSessionInactivityTimer() {
       sessionCountdownSeconds--;
       const mins = Math.floor(sessionCountdownSeconds / 60).toString().padStart(2, '0');
       const secs = (sessionCountdownSeconds % 60).toString().padStart(2, '0');
-      if (timerEl) timerEl.textContent = `${mins}:${secs} Remaining`;
+      if (timerEl) timerEl.textContent = `${mins}:${secs}`;
     } else {
       // Auto-stop all sessions when idle
-      if (timerEl) timerEl.textContent = '00:00 Auto-Stopped (Idle)';
+      if (timerEl) timerEl.textContent = 'Auto-Stop';
       const active = await window.apiClient.getActiveStreamingSessions();
       if (active.active_sessions_count > 0) {
         for (const sess of active.sessions) {
