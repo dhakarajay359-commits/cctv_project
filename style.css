@@ -190,9 +190,9 @@ body.dark-theme {
 }
 
 .sidebar-toggle-btn:hover {
-  background: rgba(0, 242, 254, 0.15);
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 /* Expanded Header Behavior on Hover / Pin */
@@ -221,7 +221,7 @@ body.dark-theme {
 }
 
 .app-sidebar.pinned .sidebar-toggle-btn i {
-  color: var(--accent-cyan);
+  color: #38bdf8;
 }
 
 /* Sidebar Quick Focus Wrap */
@@ -232,8 +232,8 @@ body.dark-theme {
 
 .sidebar-focus-btn {
   width: 100%;
-  background: rgba(0, 242, 254, 0.06);
-  border: 1px dashed rgba(0, 242, 254, 0.35);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-color);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0;
   color: var(--text-primary);
@@ -248,9 +248,8 @@ body.dark-theme {
 }
 
 .sidebar-focus-btn:hover {
-  background: rgba(0, 242, 254, 0.14);
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 14px rgba(0, 242, 254, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .focus-btn-inner {
@@ -263,11 +262,11 @@ body.dark-theme {
   font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.5);
-  color: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.05);
+  color: #38bdf8;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  border: 1px solid rgba(0, 242, 254, 0.3);
+  border: 1px solid var(--border-color);
 }
 
 .sidebar-focus-btn .focus-btn-label,
@@ -402,7 +401,6 @@ body.dark-theme {
   color: #ffffff;
   font-weight: 800;
   border-radius: var(--radius-full);
-  box-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
 }
 
 .main-nav-btn:hover {
@@ -412,26 +410,26 @@ body.dark-theme {
 }
 
 .main-nav-btn:hover .btn-icon {
-  color: var(--accent-cyan);
-  transform: scale(1.1);
+  color: #38bdf8;
+  transform: scale(1.05);
 }
 
 .main-nav-btn.active {
-  background: linear-gradient(90deg, rgba(0, 242, 254, 0.15), rgba(0, 242, 254, 0.03));
+  background: rgba(37, 99, 235, 0.12);
   color: #ffffff;
-  border-color: rgba(0, 242, 254, 0.35);
-  box-shadow: inset 3px 0 0 var(--accent-cyan), 0 0 16px rgba(0, 242, 254, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  box-shadow: none;
 }
 
 .main-nav-btn.active .btn-icon {
-  color: var(--accent-cyan);
-  text-shadow: 0 0 10px var(--accent-cyan-glow);
+  color: #38bdf8;
+  text-shadow: none;
 }
 
 .main-nav-btn.active .nav-key {
-  border-color: rgba(0, 242, 254, 0.3);
-  color: var(--accent-cyan);
-  background: rgba(0, 242, 254, 0.1);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #38bdf8;
+  background: rgba(255, 255, 255, 0.05);
   opacity: 1;
 }
 
