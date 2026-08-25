@@ -748,54 +748,54 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         </button>
       </div>
 
-      <!-- Compact Live Optical Range & Blind-Spot Analyzer Panel (Click Option Type) -->
-      <div class="live-fov-analyzer-panel" id="liveFovAnalyzerPanel" style="display: none; margin-bottom: 1rem; background: rgba(13, 20, 36, 0.95); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: var(--radius-md); padding: 0.8rem 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span class="node-status-pill online" style="background: rgba(0,242,254,0.15); color: var(--accent-cyan); border-color: var(--accent-cyan); font-size: 0.68rem;">
+      <!-- Compact Live Optical Range & Blind-Spot Analyzer Panel -->
+      <div class="live-fov-analyzer-panel" id="liveFovAnalyzerPanel" style="display: none; margin-bottom: 1.2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="node-status-pill" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem;">
               <i class="fa-solid fa-satellite-dish"></i> OPTICAL COVERAGE & BLIND-SPOT ANALYZER
             </span>
-            <strong id="liveFovCamTitle" style="color: #ffffff; font-size: 0.82rem;">CAM-GJ-0101 &bull; SG Highway Iskcon Overbridge</strong>
+            <strong id="liveFovCamTitle" style="color: var(--text-primary); font-size: 0.85rem; font-weight: 700;">CAM-GJ-0101 &bull; SG Highway Iskcon Overbridge</strong>
           </div>
-          <button class="action-btn" id="btnCloseLiveFovPanel" style="padding: 0.15rem 0.5rem; font-size: 0.7rem;">&times; Close</button>
+          <button class="action-btn" id="btnCloseLiveFovPanel" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: #f8fafc; border: 1px solid var(--border-color); color: var(--text-secondary);">&times; Close</button>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.8rem;">
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.9rem;">
           <!-- DORI Standard Range Metrics Card -->
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.6rem;">
-            <div style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; margin-bottom: 0.4rem;">
+          <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+            <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem;">
               <i class="fa-solid fa-ruler-combined"></i> Standard DORI Optical Range:
             </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; text-align: center;">
-              <div style="background: rgba(255,255,255,0.02); padding: 0.3rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                <span style="font-size: 0.62rem; color: var(--text-muted); display: block;">Identification</span>
-                <strong style="color: #ffffff; font-family: var(--font-mono); font-size: 0.78rem;" id="liveFovId">45m</strong>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; text-align: center;">
+              <div style="background: #ffffff; padding: 0.4rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                <span style="font-size: 0.68rem; color: var(--text-muted); display: block; font-weight: 600;">Identification</span>
+                <strong style="color: #0f172a; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;" id="liveFovId">45m</strong>
               </div>
-              <div style="background: rgba(255,255,255,0.02); padding: 0.3rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                <span style="font-size: 0.62rem; color: var(--text-muted); display: block;">Recognition</span>
-                <strong style="color: var(--accent-emerald); font-family: var(--font-mono); font-size: 0.78rem;" id="liveFovRec">110m</strong>
+              <div style="background: #ffffff; padding: 0.4rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                <span style="font-size: 0.68rem; color: var(--text-muted); display: block; font-weight: 600;">Recognition</span>
+                <strong style="color: #059669; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;" id="liveFovRec">110m</strong>
               </div>
-              <div style="background: rgba(255,255,255,0.02); padding: 0.3rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                <span style="font-size: 0.62rem; color: var(--text-muted); display: block;">Max Detection</span>
-                <strong style="color: var(--accent-cyan); font-family: var(--font-mono); font-size: 0.78rem;" id="liveFovDet">280m</strong>
+              <div style="background: #ffffff; padding: 0.4rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                <span style="font-size: 0.68rem; color: var(--text-muted); display: block; font-weight: 600;">Max Detection</span>
+                <strong style="color: #2563eb; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;" id="liveFovDet">280m</strong>
               </div>
             </div>
           </div>
 
           <!-- Uncovered Blind-Spot & Installation Recommendation -->
-          <div style="background: rgba(244,63,94,0.06); border: 1px solid rgba(244,63,94,0.25); border-radius: var(--radius-sm); padding: 0.6rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
-              <span style="font-size: 0.68rem; color: var(--accent-rose); font-weight: 700; text-transform: uppercase;">
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <span style="font-size: 0.72rem; color: #dc2626; font-weight: 700; text-transform: uppercase;">
                 <i class="fa-solid fa-triangle-exclamation"></i> Uncovered Space / Blind Spot:
               </span>
-              <span class="node-status-pill offline" style="font-size: 0.58rem; padding: 0.05rem 0.3rem;">Gap Deficit</span>
+              <span class="node-status-pill offline" style="font-size: 0.6rem; padding: 0.1rem 0.4rem; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">Gap Deficit</span>
             </div>
-            <p id="liveFovBlindDesc" style="font-size: 0.72rem; color: #ffffff; margin-bottom: 0.35rem; line-height: 1.25;">
+            <p id="liveFovBlindDesc" style="font-size: 0.76rem; color: #334155; margin-bottom: 0.5rem; line-height: 1.35; font-weight: 500;">
               Service Road South Approach is unmonitored (~2,400 sq.m blind zone).
             </p>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.65rem; color: var(--accent-emerald);" id="liveFovRecHw">Recommended: 4K Starlight ANPR</span>
-              <button class="action-btn primary" id="btnLiveFovProposeInstall" style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: linear-gradient(135deg, #10b981, #059669);">
+              <span style="font-size: 0.7rem; color: #059669; font-weight: 600;" id="liveFovRecHw">Recommended: 4K Starlight ANPR</span>
+              <button class="action-btn" id="btnLiveFovProposeInstall" style="font-size: 0.7rem; padding: 0.28rem 0.65rem; background: #059669; color: #ffffff; border: 1px solid #059669; border-radius: 4px;">
                 <i class="fa-solid fa-plus-circle"></i> Install Camera Here
               </button>
             </div>
