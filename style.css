@@ -2740,8 +2740,8 @@ body.focus-mode .leaflet-container-view {
 
 .alert-title-wrap h3 {
   font-size: 1.05rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 800;
+  color: #0f172a !important;
 }
 
 .alert-desc-text {

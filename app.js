@@ -3570,7 +3570,7 @@ async function renderAlerts() {
         <div class="alert-title-wrap">
           <i class="fa-solid ${alert.severity === 'critical' ? 'fa-triangle-exclamation text-rose' : 'fa-circle-exclamation text-amber'}" style="font-size: 1.2rem;"></i>
           <div>
-            <h3>${alert.title}</h3>
+            <h3 style="color: #0f172a !important; font-size: 1.05rem; font-weight: 800; margin: 0 0 0.15rem 0;">${alert.title}</h3>
             <span class="kafka-badge"><i class="fa-solid fa-bolt"></i> ${alert.kafka_topic || 'gujarat.police.intercept'}</span>
           </div>
         </div>
