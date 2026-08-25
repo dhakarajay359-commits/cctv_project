@@ -2461,7 +2461,7 @@ async function renderLiveWall() {
             <button type="button" class="feed-ctrl-btn btn-play-pause-cell danger" onclick="togglePlayPauseCell('${cam.id}')" title="Freeze Video Stream at Current Frame">
               <i class="fa-solid fa-pause"></i> Freeze
             </button>
-            <button type="button" class="feed-ctrl-btn" onclick="toggleWebcamFeed('${cam.id}')" title="Toggle Physical WebCam Stream" style="color: var(--accent-cyan);">
+            <button type="button" class="feed-ctrl-btn" onclick="toggleWebcamFeed('${cam.id}')" title="Toggle Physical WebCam Stream">
               <i class="fa-solid fa-camera-rotate"></i> WebCam
             </button>
             <button type="button" class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Optical Range & Blind-Spots">
@@ -2474,7 +2474,7 @@ async function renderLiveWall() {
               <i class="fa-solid fa-bookmark"></i> Tag
             </button>
           ` : `
-            <button type="button" class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.4); font-size: 0.7rem;">
+            <button type="button" class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="font-size: 0.7rem;">
               <i class="fa-solid fa-satellite-dish"></i> Range & Blind-Spot
             </button>
           `}
