@@ -2417,9 +2417,9 @@ async function renderLiveWall() {
 
     let overlayHtml = '';
     if (hasAnprHit) {
-      overlayHtml = '<div class="anpr-overlay-tag"><i class="fa-solid fa-car-burst text-rose"></i> ANPR Hit: GJ-01-AB-1234 (VAHAN Stolen)</div>';
+      overlayHtml = '<div class="anpr-overlay-tag"><i class="fa-solid fa-car-side"></i> ANPR Match: GJ-01-AB-1234 (VAHAN Watchlist)</div>';
     } else if (isFaceHit) {
-      overlayHtml = '<div class="anpr-overlay-tag" style="border-color: var(--accent-rose);"><i class="fa-solid fa-user-shield text-rose"></i> Face Match: Vikram K. (CCTNS Flag)</div>';
+      overlayHtml = '<div class="anpr-overlay-tag face-match"><i class="fa-solid fa-user-shield"></i> CCTNS Match: Vikram K. (Flagged)</div>';
     }
 
     const videoSrc = sampleVideos[idx % sampleVideos.length];
