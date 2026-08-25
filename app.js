@@ -1628,9 +1628,6 @@ window.openDetachedVideoWall = async function() {
       </div>
       <div style="flex: 1; min-height: 280px; position: relative; background: #020617; overflow: hidden;">
         <video src="${sampleVideos[idx] || sampleVideos[0]}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
-        <div style="position: absolute; top: 10px; left: 10px; background: rgba(15,23,42,0.85); padding: 3px 7px; border-radius: 4px; font-size: 10px; color: #f8fafc; font-family: monospace; z-index: 5;">
-          ${cam.vendor} • ${cam.resolution}
-        </div>
         <div style="position: absolute; top: 10px; right: 10px; background: rgba(217, 119, 6, 0.2); border: 1px solid rgba(217, 119, 6, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: monospace; z-index: 5;">
           25 FPS • 2.4 Mbps
         </div>
