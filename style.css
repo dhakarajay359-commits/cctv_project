@@ -3367,22 +3367,12 @@ body.focus-mode .leaflet-container-view {
    COMMAND CENTER DATA TABLES & REFINED CONTAINERS
    ========================================================================= */
 .table-card {
-  background: var(--bg-card);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow-x: auto;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
-}
-
-.table-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.3), transparent);
 }
 
 .data-table {
@@ -3395,38 +3385,38 @@ body.focus-mode .leaflet-container-view {
 }
 
 .data-table thead {
-  background: rgba(10, 14, 23, 0.95);
+  background: #f8fafc;
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
 .data-table th {
-  padding: 0.85rem 1rem;
-  font-size: 0.68rem;
-  font-weight: 800;
+  padding: 0.8rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  color: #475569;
   border-bottom: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.02);
+  background: #f8fafc;
 }
 
 .data-table td {
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  color: #334155;
   transition: all 0.15s ease;
   vertical-align: middle;
 }
 
 .data-table tbody tr {
-  transition: background 0.18s ease, transform 0.18s ease;
+  transition: background 0.15s ease;
   position: relative;
 }
 
 .data-table tbody tr:hover {
-  background: rgba(0, 242, 254, 0.04);
+  background: #f8fafc;
 }
 
 .data-table tbody tr:hover td {
