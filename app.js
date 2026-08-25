@@ -3544,7 +3544,7 @@ async function renderAlerts() {
     let autoDispatchBanner = '';
     if (alert.status === 'dispatched' || alert.assigned_station) {
       autoDispatchBanner = `
-        <div style="background: #eff6ff; border-left: 3px solid #2563eb; padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); margin: 0.5rem 0; font-size: 0.73rem;">
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 0.5rem 0.8rem; border-radius: var(--radius-sm); margin: 0.5rem 0; font-size: 0.73rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <div>
               <span style="color: #2563eb; font-weight: 800;"><i class="fa-solid fa-bolt text-amber"></i> AUTOMATIC ZERO-DELAY DISPATCH:</span>
