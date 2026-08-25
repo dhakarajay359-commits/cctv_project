@@ -2291,22 +2291,7 @@ body.focus-mode .leaflet-container-view {
 }
 
 .stream-watermark-overlay {
-  position: absolute;
-  bottom: 42px;
-  left: 10px;
-  z-index: 3;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: #ffffff;
-  background: rgba(15, 23, 42, 0.88);
-  padding: 0.22rem 0.55rem;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  backdrop-filter: blur(8px);
+  display: none !important;
 }
 
 .anpr-overlay-tag {

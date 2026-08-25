@@ -2438,10 +2438,6 @@ async function renderLiveWall() {
         ? `
           <video class="live-stream-video" id="video_${cam.id}" autoplay loop muted playsinline src="${videoSrc}"></video>
           <canvas class="live-stream-canvas" id="canvas_${cam.id}" style="background: transparent; z-index: 2; pointer-events: none;"></canvas>
-          <div class="stream-watermark-overlay" id="wm_${cam.id}" style="z-index: 3;">
-            <i class="fa-solid fa-crosshairs text-cyan"></i>
-            <span>${cam.id} &bull; 25.0 FPS &bull; REAL CCTV FEED</span>
-          </div>
           ${overlayHtml}
         `
         : `
