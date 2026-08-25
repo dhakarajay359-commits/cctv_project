@@ -3486,11 +3486,11 @@ async function renderAlerts() {
 
     let statusHtml = '';
     if (alert.status === 'active') {
-      statusHtml = `<span class="node-status-pill online" style="background: rgba(244,63,94,0.15); color: var(--accent-rose); border-color: var(--accent-rose);"><span class="dot-sm" style="background: var(--accent-rose);"></span> UNRESOLVED INCIDENT</span>`;
+      statusHtml = `<span class="node-status-pill offline" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 700; font-size: 0.68rem;"><span class="dot-sm" style="background: #dc2626;"></span> UNRESOLVED INCIDENT</span>`;
     } else if (alert.status === 'dispatched') {
-      statusHtml = `<span class="node-status-pill degraded" style="background: rgba(0,242,254,0.15); color: var(--accent-cyan); border-color: var(--accent-cyan);"><i class="fa-solid fa-truck-fast"></i> ${alert.pcr_unit || 'PCR Interceptor En Route'}</span>`;
+      statusHtml = `<span class="node-status-pill degraded" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-weight: 700; font-size: 0.68rem;"><i class="fa-solid fa-truck-fast"></i> ${alert.pcr_unit || 'PCR Interceptor En Route'}</span>`;
     } else {
-      statusHtml = `<span class="node-status-pill" style="background: rgba(16,185,129,0.15); color: var(--accent-emerald); border-color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> ACKNOWLEDGED</span>`;
+      statusHtml = `<span class="node-status-pill online" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-weight: 700; font-size: 0.68rem;"><i class="fa-solid fa-check"></i> ACKNOWLEDGED</span>`;
     }
 
     const isFaceAlert = alert.matched_source === 'cctns_facial_matrix' || (alert.id && alert.id.includes('FACE')) || (alert.title && alert.title.includes('FACE'));
