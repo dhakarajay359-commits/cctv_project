@@ -1083,13 +1083,37 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       });
 
       const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
+      
+      // Draw Dashed Distance Coverage Footprint for Camera at street zoom (>= 13)
+      if (currentZoom >= 13) {
+        const camDistCircle = L.circle([cam.lat, cam.lng], {
+          radius: 110,
+          color: '#3b82f6',
+          weight: 1.5,
+          dashArray: '3, 4',
+          fillColor: '#3b82f6',
+          fillOpacity: 0.12
+        }).addTo(leafletMapInstance);
+        leafletMarkers.push(camDistCircle);
+
+        const distTag = L.marker([cam.lat - 0.0009, cam.lng], {
+          icon: L.divIcon({
+            className: 'onmap-marker-wrap',
+            html: `<div class="onmap-dimension-badge" style="font-size: 8.5px; padding: 1px 5px;">📏 110m Coverage Distance (~38,000 m²)</div>`,
+            iconSize: [180, 16],
+            iconAnchor: [90, 8]
+          })
+        }).addTo(leafletMapInstance);
+        leafletMarkers.push(distTag);
+      }
+
       marker.bindPopup(`
         <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 220px; padding: 2px;">
           <strong style="color: #2563eb; font-size: 13px; font-weight: 800;">${cam.id}</strong><br/>
           <strong style="color: #0f172a; font-size: 12px;">${cam.name}</strong><br/>
           <span style="color: #64748b;">Vendor: ${cam.vendor}</span><br/>
           <span style="color: #059669; font-weight: 700;">Status: ${cam.status.toUpperCase()}</span><br/>
-          <span style="color: #d97706; font-weight: 600;">FOV: ${cam.direction} (${cam.fov_angle}°)</span><br/>
+          <span style="color: #d97706; font-weight: 600;">FOV: ${cam.direction} (${cam.fov_angle}°) &bull; 110m Range</span><br/>
           <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
             <button type="button" onclick="inspectCameraFovRange('${cam.id}')" style="
               background: #eff6ff;
@@ -1138,10 +1162,49 @@ window.inspectCameraFovRange = async function(camId) {
   // 3. Clear Previous FOV Layers
   clearFovRangeFromMap();
 
-  // 4. Draw Optical FOV Range Cone (Cyan Conical Sector)
+  const camLat = analysis.camera_lat || analysis.coverage_cone_polygon[0][0];
+  const camLng = analysis.camera_lng || analysis.coverage_cone_polygon[0][1];
+  const dori = analysis.optical_specs.dori_standards;
+
+  // 4A. Draw Multi-Tier DORI Distance Dashed Rings & Measurement Labels
+  // Detection Distance (120m)
+  const detectCircle = L.circle([camLat, camLng], {
+    radius: dori.detection_range_meters || 120,
+    color: '#00f2fe',
+    weight: 2,
+    dashArray: '5, 5',
+    fillColor: '#00f2fe',
+    fillOpacity: 0.08
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(detectCircle);
+
+  // Recognition Distance (65m)
+  const recogCircle = L.circle([camLat, camLng], {
+    radius: dori.recognition_range_meters || 65,
+    color: '#38bdf8',
+    weight: 1.5,
+    dashArray: '3, 4',
+    fillColor: '#38bdf8',
+    fillOpacity: 0.12
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(recogCircle);
+
+  // Distance Measurement Labels Directly on Map
+  const detectLabel = L.marker([camLat + 0.0010, camLng], {
+    icon: L.divIcon({
+      className: 'onmap-marker-wrap',
+      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe;">◄── ${dori.detection_range_meters || 120}m Detection Distance Range ──►</div>`,
+      iconSize: [260, 20],
+      iconAnchor: [130, 10]
+    })
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(detectLabel);
+
+  // 4B. Draw Optical FOV Range Cone (Cyan Conical Sector)
   const fovPolygon = L.polygon(analysis.coverage_cone_polygon, {
     color: '#00f2fe',
     weight: 2,
+    dashArray: '4, 4',
     fillColor: '#00f2fe',
     fillOpacity: 0.22
   }).addTo(leafletMapInstance);
