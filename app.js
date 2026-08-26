@@ -1653,7 +1653,188 @@ async function openDistrictBlindSpotModal(districtId) {
   modal.classList.add('open');
 }
 
-// Fly to specific blind-spot location on the GIS Map & show interactive marker
+// Tactical On-Map Surveillance Area Coverage Renderer with Individual Camera Distance Circles and Dashed Boundaries
+window.activeDeployedCoverageLayers = [];
+
+function renderTacticalAreaCoverageOnMap(spot, dist, deployedCount = 100, isArmed = true) {
+  if (!leafletMapInstance) return;
+
+  const areaSqM = Math.round(deployedCount * 11500); // 100 cams = 1.15 sq.km (1,150,000 sq.m)
+  const areaSqKm = (areaSqM / 1000000).toFixed(2);
+  const spanKm = (deployedCount * 0.024).toFixed(1); // 2.4 km highway perimeter
+
+  // 1. Clear Previous Custom Layers
+  if (window.activeDeployedCoverageLayers && window.activeDeployedCoverageLayers.length) {
+    window.activeDeployedCoverageLayers.forEach(layer => {
+      try { leafletMapInstance.removeLayer(layer); } catch(e) {}
+    });
+    window.activeDeployedCoverageLayers = [];
+  }
+
+  // 2. Fly directly to target location at clear street zoom
+  leafletMapInstance.flyTo([spot.lat, spot.lng], 16, { duration: 1.2 });
+
+  // 3. Master Dashed-Line Coverage Boundary Polygon (1.15 sq.km Total Monitored Area)
+  const polygonCoords = [
+    [spot.lat + 0.0042, spot.lng - 0.0028],
+    [spot.lat + 0.0042, spot.lng + 0.0030],
+    [spot.lat + 0.0015, spot.lng + 0.0080],
+    [spot.lat - 0.0025, spot.lng + 0.0080],
+    [spot.lat - 0.0045, spot.lng + 0.0015],
+    [spot.lat - 0.0045, spot.lng - 0.0025],
+    [spot.lat - 0.0015, spot.lng - 0.0032],
+    [spot.lat + 0.0015, spot.lng - 0.0030]
+  ];
+
+  const covPolygon = L.polygon(polygonCoords, {
+    color: '#059669',
+    weight: 2.5,
+    dashArray: '6, 6',
+    fillColor: '#10b981',
+    fillOpacity: 0.10
+  }).addTo(leafletMapInstance);
+  window.activeDeployedCoverageLayers.push(covPolygon);
+
+  // 4. Prominent On-Map Area Header & Dimension Markings
+  const headerMarker = L.marker([spot.lat + 0.0044, spot.lng + 0.0002], {
+    icon: L.divIcon({
+      className: 'onmap-marker-wrap',
+      html: `<div class="onmap-sector-banner"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> 100-CAMERA SURVEILLANCE GRID &bull; ${areaSqKm} SQ.KM (${areaSqM.toLocaleString()} m²) AREA COVERED</div>`,
+      iconSize: [410, 26],
+      iconAnchor: [205, 13]
+    })
+  }).addTo(leafletMapInstance);
+  window.activeDeployedCoverageLayers.push(headerMarker);
+
+  const dimMarker = L.marker([spot.lat - 0.0048, spot.lng + 0.0002], {
+    icon: L.divIcon({
+      className: 'onmap-marker-wrap',
+      html: `<div class="onmap-dimension-badge">&#9664; ${spanKm} KM HIGH-DENSITY HIGHWAY PERIMETER &bull; 85m DISTANCE PER CAMERA &bull; 0% BLIND SPOT GAP &#9654;</div>`,
+      iconSize: [440, 22],
+      iconAnchor: [220, 11]
+    })
+  }).addTo(leafletMapInstance);
+  window.activeDeployedCoverageLayers.push(dimMarker);
+
+  // 5. Road Sector Breakdown Labels Directly on Roads
+  const roadLabels = [
+    { text: '🛣️ SG Highway Fast Lanes (40 Cams &bull; 450,000 m² Covered)', pos: [spot.lat + 0.0028, spot.lng + 0.0007] },
+    { text: '🏬 Ganesh Glory East Street (35 Cams &bull; 380,000 m² Covered)', pos: [spot.lat + 0.0004, spot.lng + 0.0028] },
+    { text: '🚆 Jagatpur Railway Approach (25 Cams &bull; 320,000 m² Covered)', pos: [spot.lat - 0.0016, spot.lng + 0.0052] }
+  ];
+
+  roadLabels.forEach(rl => {
+    const rm = L.marker(rl.pos, {
+      icon: L.divIcon({
+        className: 'onmap-marker-wrap',
+        html: `<div class="onmap-road-label">${rl.text}</div>`,
+        iconSize: [310, 20],
+        iconAnchor: [155, 10]
+      })
+    }).addTo(leafletMapInstance);
+    window.activeDeployedCoverageLayers.push(rm);
+  });
+
+  // 6. Individual Distributed Cameras Spaced Along the Real Road Paths (NO two cameras in same spot)
+  const cameraNodes = [
+    // SG Highway (NH-147) Corridor (North to South)
+    { id: 'CAM-01', name: 'SG Highway Northbound (Chharodi Entry)', lat: spot.lat + 0.0035, lng: spot.lng + 0.0013, fovDir: [0.0010, 0.0004], distance: '85m Radius (~22,500 m²)', type: '4K ANPR Starlight Radar' },
+    { id: 'CAM-02', name: 'SG Highway North (Overbridge Approach)', lat: spot.lat + 0.0024, lng: spot.lng + 0.0009, fovDir: [0.0010, 0.0004], distance: '85m Radius (~22,500 m²)', type: 'Dual ANPR + PTZ' },
+    { id: 'CAM-03', name: 'SG Highway North (Junction Entry Ramp)', lat: spot.lat + 0.0012, lng: spot.lng + 0.0004, fovDir: [0.0010, 0.0004], distance: '85m Radius (~22,500 m²)', type: '4K Multi-Sensor Optical' },
+    { id: 'CAM-04', name: 'SG Highway Central Interchange Matrix', lat: spot.lat + 0.0000, lng: spot.lng + 0.0000, fovDir: [0.0000, 0.0010], distance: '90m Radius (~25,400 m²)', type: '360° Panoramic SpeedDome' },
+    { id: 'CAM-05', name: 'SG Highway South (Flyover Ingress)', lat: spot.lat - 0.0012, lng: spot.lng - 0.0004, fovDir: [-0.0010, -0.0004], distance: '85m Radius (~22,500 m²)', type: 'Speed Radar ANPR' },
+    { id: 'CAM-06', name: 'SG Highway Southbound (Fast Lane Exit)', lat: spot.lat - 0.0025, lng: spot.lng - 0.0009, fovDir: [-0.0010, -0.0004], distance: '85m Radius (~22,500 m²)', type: 'Thermal Night Bullet' },
+    // Ganesh Glory & Jagatpur Cross-Street (West to East)
+    { id: 'CAM-07', name: 'Ganesh Glory West Crossroad Ingress', lat: spot.lat + 0.0001, lng: spot.lng + 0.0016, fovDir: [-0.0001, 0.0010], distance: '80m Radius (~20,100 m²)', type: 'Traffic Optical Dome' },
+    { id: 'CAM-08', name: 'Ganesh Glory 11 Business Hub Access', lat: spot.lat - 0.0002, lng: spot.lng + 0.0032, fovDir: [-0.0003, 0.0010], distance: '85m Radius (~22,500 m²)', type: 'Facial Recognition Biometric' },
+    { id: 'CAM-09', name: 'Jagatpur Oxygen Park East Turn', lat: spot.lat - 0.0009, lng: spot.lng + 0.0050, fovDir: [-0.0004, 0.0009], distance: '85m Radius (~22,500 m²)', type: 'Panoramic SpeedDome' },
+    { id: 'CAM-10', name: 'Jagatpur Railway Flyover Arterial', lat: spot.lat - 0.0018, lng: spot.lng + 0.0068, fovDir: [-0.0005, 0.0008], distance: '90m Radius (~25,400 m²)', type: 'Heavy ANPR Sentry' }
+  ];
+
+  let mainMarker = null;
+
+  cameraNodes.forEach((cam, idx) => {
+    // A. Dashed Distance Coverage Circle showing exact covered distance radius
+    const distCircle = L.circle([cam.lat, cam.lng], {
+      radius: 85,
+      color: '#10b981',
+      weight: 1.5,
+      dashArray: '4, 4',
+      fillColor: '#10b981',
+      fillOpacity: 0.16
+    }).addTo(leafletMapInstance);
+    window.activeDeployedCoverageLayers.push(distCircle);
+
+    // B. Directional Optical FOV Triangle shooting along road
+    const fovCone = L.polygon([
+      [cam.lat, cam.lng],
+      [cam.lat + cam.fovDir[0] + 0.0003, cam.lng + cam.fovDir[1] - 0.0003],
+      [cam.lat + cam.fovDir[0] - 0.0003, cam.lng + cam.fovDir[1] + 0.0003]
+    ], {
+      color: '#059669',
+      weight: 1,
+      dashArray: '3, 3',
+      fillColor: '#10b981',
+      fillOpacity: 0.28
+    }).addTo(leafletMapInstance);
+    window.activeDeployedCoverageLayers.push(fovCone);
+
+    // C. Individual Distinct Camera Marker Pin
+    const isMain = idx === 3;
+    const camIcon = L.divIcon({
+      className: 'tactical-camera-node-pin',
+      html: `
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+          <div style="width: ${isMain ? '30px' : '24px'}; height: ${isMain ? '30px' : '24px'}; border-radius: 50%; background: ${isMain ? '#059669' : '#2563eb'}; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: ${isMain ? '12px' : '10px'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
+            <i class="fa-solid fa-video"></i>
+          </div>
+          <span style="font-size: 8.5px; font-weight: 800; background: #0f172a; color: #10b981; padding: 1px 4px; border-radius: 3px; margin-top: 2px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.4); border: 0.5px solid #10b981;">
+            ${cam.id} (85m)
+          </span>
+        </div>
+      `,
+      iconSize: [60, 40],
+      iconAnchor: [30, 20]
+    });
+
+    const marker = L.marker([cam.lat, cam.lng], { icon: camIcon }).addTo(leafletMapInstance);
+    marker.bindPopup(`
+      <div style="font-family: var(--font-main); font-size: 12px; min-width: 260px; padding: 4px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <span style="background: #10b981; color: #ffffff; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 3px;">
+            ${cam.id} &bull; INDIVIDUAL NODE
+          </span>
+          <span style="font-size: 10px; color: #64748b; font-weight: 700;">${dist.name}</span>
+        </div>
+        <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 4px;">${cam.name}</strong>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; margin-bottom: 6px; font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+            <span style="color: #64748b;">GPS Coordinates:</span>
+            <strong style="color: #2563eb; font-family: var(--font-mono);">${cam.lat.toFixed(4)}° N, ${cam.lng.toFixed(4)}° E</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+            <span style="color: #64748b;">Covered Distance Range:</span>
+            <strong style="color: #059669; font-weight: 800;">${cam.distance}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b;">Hardware Spec:</span>
+            <strong style="color: #0f172a;">${cam.type}</strong>
+          </div>
+        </div>
+        <div style="font-size: 11px; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+          <i class="fa-solid fa-circle-check text-green"></i> Active Optical Surveillance &bull; 0% Blind Spot
+        </div>
+      </div>
+    `);
+
+    if (isMain) mainMarker = marker;
+    window.activeDeployedCoverageLayers.push(marker);
+  });
+
+  if (mainMarker) mainMarker.openPopup();
+}
+
+// Fly to specific blind-spot location on GIS Map & show full dashed coverage markings
 function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
   const modal = document.getElementById('districtBlindSpotModal');
   if (modal) modal.classList.remove('open');
@@ -1662,61 +1843,12 @@ function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
   const dashBtn = document.querySelector('[data-view="view-dashboard"]');
   if (dashBtn) dashBtn.click();
 
-  if (leafletMapInstance) {
-    leafletMapInstance.flyTo([lat, lng], 16, { duration: 1.2 });
-
-    // Drop a tactical flashing blind spot marker
-    const icon = L.divIcon({
-      className: 'blind-spot-pulse-marker',
-      html: `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-          <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(220,38,38,0.25); animation: pulseRedBeacon 1.5s infinite;"></div>
-          <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
-            <i class="fa-solid fa-video-slash"></i>
-          </div>
-        </div>
-      `,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18]
-    });
-
-    const marker = L.marker([lat, lng], { icon }).addTo(leafletMapInstance);
-    marker.bindPopup(`
-      <div style="font-family: var(--font-main); font-size: 12px; min-width: 250px; padding: 4px;">
-        <div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;">
-          <span style="background: rgba(220,38,38,0.15); color:#dc2626; font-weight:800; font-size:10px; padding:2px 6px; border-radius:3px;">
-            ${camsNeeded === 0 ? 'COVERED ZONE' : 'IDENTIFIED BLIND SPOT'}
-          </span>
-          <strong style="color: #0f172a; font-size: 11px;">${distName}</strong>
-        </div>
-        <strong style="color: #0f172a; font-size: 13px; display:block; margin-bottom:4px;">${name}</strong>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:5px; margin-bottom:6px; font-size:11px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-            <span style="color:#64748b;">GPS Coordinates:</span>
-            <strong style="color:#2563eb; font-family:var(--font-mono);">${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E</strong>
-          </div>
-          <div style="display:flex; justify-content:space-between;">
-            <span style="color:#64748b;">Cameras Required:</span>
-            <strong style="color: ${camsNeeded > 0 ? '#dc2626' : '#059669'};">${camsNeeded > 0 ? `+${camsNeeded} Cams Needed` : '✓ Fully Covered'}</strong>
-          </div>
-        </div>
-        ${camsNeeded > 0 ? `
-          <button onclick="window.deployCamerasToLocation('${activeBlindSpotDistrictId || 'dist-ahmedabad'}', '', 50)" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">
-            <i class="fa-solid fa-bolt"></i> Deploy Cameras &amp; Pin on GIS Map
-          </button>
-        ` : `
-          <div style="font-size:11px; color:#059669; font-weight:700; text-align:center;">
-            <i class="fa-solid fa-circle-check"></i> Zone Active Under Surveillance
-          </div>
-        `}
-      </div>
-    `).openPopup();
-  }
+  const spot = { lat, lng, name };
+  const dist = { name: distName };
+  renderTacticalAreaCoverageOnMap(spot, dist, camsNeeded || 100, false);
 }
 
-// Deploy cameras dynamically, instantly open GIS Map, pin multi-pole 100-camera array with on-map markings showing which areas & how much area is covered
-window.activeDeployedCoverageLayers = [];
-
+// Deploy cameras dynamically, instantly open GIS Map, pin multi-camera array with dashed distance circles and area calculation
 async function deployCamerasToLocation(districtId, spotId, count = 100) {
   const res = await window.apiClient.deployCamerasToBlindSpot(districtId, spotId, count);
   if (res.status === 'success') {
@@ -1732,228 +1864,18 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
     const dashBtn = document.querySelector('[data-view="view-dashboard"]');
     if (dashBtn) dashBtn.click();
 
-    // 3. Calculate Real Multi-Node Area Coverage Metrics
-    const areaSqM = Math.round(deployedCount * 11500); // 100 cams = ~1,150,000 sq.m (1.15 sq.km)
-    const areaSqKm = (areaSqM / 1000000).toFixed(2);
-    const spanKm = (deployedCount * 0.024).toFixed(1); // 2.4 km corridor span
-    const poleCount = Math.max(4, Math.round(deployedCount / 10)); // 10 poles for 100 cams (10 cams/pole)
-    const camsPerPole = Math.round(deployedCount / poleCount);
+    // 3. Render Tactical Dashed Coverage Markings, Distance Circles, and Area Calculations
+    renderTacticalAreaCoverageOnMap(spot, dist, deployedCount, true);
 
-    // 4. Clear Previous Custom Coverage Layers & Fly to Location
-    if (window.activeDeployedCoverageLayers && window.activeDeployedCoverageLayers.length) {
-      window.activeDeployedCoverageLayers.forEach(layer => {
-        try { leafletMapInstance.removeLayer(layer); } catch(e) {}
-      });
-      window.activeDeployedCoverageLayers = [];
-    }
-
-    if (leafletMapInstance) {
-      leafletMapInstance.flyTo([spot.lat, spot.lng], 15.5, { duration: 1.2 });
-
-      // A. Master Surveillance Coverage Boundary Polygon (1.15 sq.km)
-      const polygonCoords = [
-        [spot.lat + 0.0035, spot.lng - 0.0024],
-        [spot.lat + 0.0035, spot.lng + 0.0028],
-        [spot.lat + 0.0010, spot.lng + 0.0034],
-        [spot.lat - 0.0022, spot.lng + 0.0030],
-        [spot.lat - 0.0038, spot.lng + 0.0020],
-        [spot.lat - 0.0038, spot.lng - 0.0022],
-        [spot.lat - 0.0018, spot.lng - 0.0030],
-        [spot.lat + 0.0012, spot.lng - 0.0028]
-      ];
-
-      const covPolygon = L.polygon(polygonCoords, {
-        color: '#10b981',
-        weight: 2.5,
-        dashArray: '6, 6',
-        fillColor: '#10b981',
-        fillOpacity: 0.14
-      }).addTo(leafletMapInstance);
-      window.activeDeployedCoverageLayers.push(covPolygon);
-
-      // B. Prominent On-Map Area Header & Dimension Markings (Directly on Map Canvas)
-      const headerMarker = L.marker([spot.lat + 0.0038, spot.lng], {
-        icon: L.divIcon({
-          className: 'onmap-marker-wrap',
-          html: `<div class="onmap-sector-banner"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> 100-CAMERA SURVEILLANCE GRID &bull; ${areaSqKm} SQ.KM (${areaSqM.toLocaleString()} m²) MONITORED</div>`,
-          iconSize: [380, 26],
-          iconAnchor: [190, 13]
-        })
-      }).addTo(leafletMapInstance);
-      window.activeDeployedCoverageLayers.push(headerMarker);
-
-      const dimMarker = L.marker([spot.lat - 0.0041, spot.lng], {
-        icon: L.divIcon({
-          className: 'onmap-marker-wrap',
-          html: `<div class="onmap-dimension-badge">&#9664; ${spanKm} KM HIGH-DENSITY HIGHWAY PERIMETER &bull; 0% BLIND SPOT DEFICIT &#9654;</div>`,
-          iconSize: [340, 22],
-          iconAnchor: [170, 11]
-        })
-      }).addTo(leafletMapInstance);
-      window.activeDeployedCoverageLayers.push(dimMarker);
-
-      // C. Sub-Sector Road Markings with Exact Area Breakdown On-Map
-      const roadSectors = [
-        {
-          name: 'Highway Fast Lanes (NH-147 / SG Highway)',
-          area: '350,000 m²',
-          cams: '30 Cams',
-          coords: [[spot.lat + 0.0035, spot.lng + 0.0006], [spot.lat - 0.0035, spot.lng + 0.0006]],
-          labelCoord: [spot.lat + 0.0022, spot.lng + 0.0006],
-          icon: '🛣️'
-        },
-        {
-          name: 'Overbridge Flyover & Cross-Junction',
-          area: '300,000 m²',
-          cams: '25 Cams',
-          coords: [[spot.lat + 0.0002, spot.lng - 0.0028], [spot.lat + 0.0002, spot.lng + 0.0030]],
-          labelCoord: [spot.lat + 0.0002, spot.lng - 0.0016],
-          icon: '🌉'
-        },
-        {
-          name: 'East Service Roads & Commercial Gates',
-          area: '280,000 m²',
-          cams: '25 Cams',
-          coords: [[spot.lat + 0.0024, spot.lng + 0.0022], [spot.lat - 0.0020, spot.lng + 0.0022]],
-          labelCoord: [spot.lat + 0.0014, spot.lng + 0.0022],
-          icon: '🏬'
-        },
-        {
-          name: 'Perimeter & Railway Ingress Corridor',
-          area: '220,000 m²',
-          cams: '20 Cams',
-          coords: [[spot.lat - 0.0012, spot.lng - 0.0026], [spot.lat - 0.0034, spot.lng + 0.0014]],
-          labelCoord: [spot.lat - 0.0026, spot.lng - 0.0008],
-          icon: '🚆'
-        }
-      ];
-
-      roadSectors.forEach(sec => {
-        // Glowing road polyline
-        const roadLine = L.polyline(sec.coords, {
-          color: '#059669',
-          weight: 6,
-          opacity: 0.65
-        }).addTo(leafletMapInstance);
-        window.activeDeployedCoverageLayers.push(roadLine);
-
-        // Road sector on-map badge
-        const roadLabel = L.marker(sec.labelCoord, {
-          icon: L.divIcon({
-            className: 'onmap-marker-wrap',
-            html: `<div class="onmap-road-label">${sec.icon} ${sec.name}: <strong>${sec.cams}</strong> (${sec.area} Covered)</div>`,
-            iconSize: [280, 20],
-            iconAnchor: [140, 10]
-          })
-        }).addTo(leafletMapInstance);
-        window.activeDeployedCoverageLayers.push(roadLabel);
-      });
-
-      // D. 10 Tactical Distributed Camera Poles with Optical FOV Cones along Roads
-      const poleOffsets = [
-        { latOff: 0.0028, lngOff: 0.0006, name: 'Pole #01 - Northbound Highway 4K ANPR Array', fovTarget: [0.0038, 0.0006], cams: camsPerPole, type: '4K ANPR + Bullet Radar' },
-        { latOff: 0.0020, lngOff: -0.0012, name: 'Pole #02 - North Entry Overbridge 360° PTZ', fovTarget: [0.0010, -0.0020], cams: camsPerPole, type: '360° Optical SpeedDome' },
-        { latOff: 0.0012, lngOff: 0.0020, name: 'Pole #03 - East Industrial Service Ingress', fovTarget: [0.0022, 0.0028], cams: camsPerPole, type: 'Thermal Night-Vision' },
-        { latOff: 0.0005, lngOff: -0.0018, name: 'Pole #04 - West Commercial Bourse Gateway', fovTarget: [0.0005, -0.0028], cams: camsPerPole, type: 'Facial Recognition Dome' },
-        { latOff: 0.0000, lngOff: 0.0000, name: 'Pole #05 - Central Interchange Master Array', fovTarget: [0.0008, 0.0000], cams: camsPerPole, type: 'Multi-Sensor Panoramic Array' },
-        { latOff: -0.0008, lngOff: 0.0014, name: 'Pole #06 - East Highway Exit Ramp Signal Matrix', fovTarget: [-0.0008, 0.0024], cams: camsPerPole, type: 'Traffic Violation Optical' },
-        { latOff: -0.0014, lngOff: -0.0016, name: 'Pole #07 - West Metro Underpass & Pedestrian Corridor', fovTarget: [-0.0024, -0.0022], cams: camsPerPole, type: 'High-Density Biometric Sensor' },
-        { latOff: -0.0019, lngOff: 0.0008, name: 'Pole #08 - Southbound Fast-Lane Multi-Radar', fovTarget: [-0.0030, 0.0008], cams: camsPerPole, type: 'Dual ANPR Radar Speed Sensor' },
-        { latOff: -0.0026, lngOff: -0.0005, name: 'Pole #09 - South Flyover Arterial Intersection', fovTarget: [-0.0034, -0.0012], cams: camsPerPole, type: 'Panoramic SpeedDome' },
-        { latOff: -0.0032, lngOff: 0.0012, name: 'Pole #10 - Outer Perimeter Cargo Bypass Sentry', fovTarget: [-0.0038, 0.0022], cams: camsPerPole, type: 'Heavy Vehicle ANPR Scanner' }
-      ];
-
-      let centralMarker = null;
-
-      poleOffsets.slice(0, poleCount).forEach((p, idx) => {
-        const poleLat = spot.lat + p.latOff;
-        const poleLng = spot.lng + p.lngOff;
-        const isCenter = idx === 4;
-
-        // Optical FOV Cone Polygon on road
-        const fovTargetLat = spot.lat + p.fovTarget[0];
-        const fovTargetLng = spot.lng + p.fovTarget[1];
-        const coneCoords = [
-          [poleLat, poleLng],
-          [fovTargetLat + 0.0004, fovTargetLng - 0.0004],
-          [fovTargetLat - 0.0004, fovTargetLng + 0.0004]
-        ];
-        const fovCone = L.polygon(coneCoords, {
-          color: '#10b981',
-          weight: 1,
-          fillColor: '#10b981',
-          fillOpacity: 0.25
-        }).addTo(leafletMapInstance);
-        window.activeDeployedCoverageLayers.push(fovCone);
-
-        // Tactical Pole Pin
-        const poleIcon = L.divIcon({
-          className: 'tactical-pole-pin',
-          html: `
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-              <div style="width: ${isCenter ? '32px' : '26px'}; height: ${isCenter ? '32px' : '26px'}; border-radius: 50%; background: ${isCenter ? '#059669' : '#2563eb'}; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: ${isCenter ? '13px' : '10px'}; box-shadow: 0 2px 8px rgba(0,0,0,0.35);">
-                <i class="fa-solid fa-video"></i>
-              </div>
-              <span style="font-size: 9px; font-weight: 800; background: #0f172a; color: #ffffff; padding: 1px 4px; border-radius: 3px; margin-top: 2px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.4);">
-                P#0${idx + 1} (${p.cams} Cams)
-              </span>
-            </div>
-          `,
-          iconSize: [60, 42],
-          iconAnchor: [30, 21]
-        });
-
-        const poleMarker = L.marker([poleLat, poleLng], { icon: poleIcon }).addTo(leafletMapInstance);
-
-        poleMarker.bindPopup(`
-          <div style="font-family: var(--font-main); font-size: 12px; min-width: 260px; padding: 4px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-              <span style="background: #10b981; color: #ffffff; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 3px;">
-                POLE #0${idx + 1} OF ${poleCount}
-              </span>
-              <span style="font-size: 10px; color: #64748b; font-weight: 700;">${dist.name}</span>
-            </div>
-            <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 4px;">${p.name}</strong>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; margin-bottom: 6px; font-size: 11px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                <span style="color: #64748b;">GPS Coordinates:</span>
-                <strong style="color: #2563eb; font-family: var(--font-mono);">${poleLat.toFixed(4)}° N, ${poleLng.toFixed(4)}° E</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                <span style="color: #64748b;">Active Cameras on Pole:</span>
-                <strong style="color: #059669; font-weight: 800;">${p.cams} Cameras Online</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                <span style="color: #64748b;">Pole Coverage Area:</span>
-                <strong style="color: #0f172a;">~${Math.round(areaSqM / poleCount).toLocaleString()} m²</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span style="color: #64748b;">Hardware Spec:</span>
-                <strong style="color: #0f172a;">${p.type}</strong>
-              </div>
-            </div>
-            <div style="font-size: 11px; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-              <i class="fa-solid fa-circle-check text-green"></i> 100% Active in Statewide Multi-Agency Grid
-            </div>
-          </div>
-        `);
-
-        if (isCenter) centralMarker = poleMarker;
-        window.activeDeployedCoverageLayers.push(poleMarker);
-      });
-
-      if (centralMarker) centralMarker.openPopup();
-    }
-
-    // 5. Trigger Real-Time Notification Toast
+    // 4. Trigger Real-Time Notification Toast
     showRealtimeAlertToast({
       title: `100-CAMERA SURVEILLANCE ARMED: ${spot.name}`,
-      location: `${dist.name} &bull; Total Area Monitored: ${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)`,
-      camera_id: `+${deployedCount} CAMS ARMED ACROSS ${poleCount} POLES`,
+      location: `${dist.name} &bull; Total Area Monitored: 1.15 sq.km (1,150,000 m²)`,
+      camera_id: `+${deployedCount} NODES ARMED WITH 85m DISTANCE RANGES`,
       kafka_topic: 'nirikshan.infrastructure.100cams.grid'
     });
 
-    // 6. Update Background Data Matrices
+    // 5. Update Background Data Matrices
     await renderGapAnalysis();
   }
 }
