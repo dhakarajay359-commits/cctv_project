@@ -8,7 +8,7 @@
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Leaflet GIS Map CSS -->
@@ -101,14 +101,16 @@
         </nav>
       </div>
 
-      <!-- Sidebar Footer -->
+      <!-- Sidebar Footer (Officer Profile) -->
       <div class="sidebar-footer">
-        <div class="sidebar-status-card">
-          <div class="status-indicator live">
-            <span class="dot"></span>
-            <span class="status-text">80,000+ Nodes Ready</span>
+        <div class="sidebar-user-card" id="sidebarUserCard" title="Inspector General V. R. Jadeja (SUPERADMIN • GJ-POL-001)">
+          <div class="user-avatar-badge">
+            <i class="fa-solid fa-user-shield text-cyan"></i>
           </div>
-          <div class="system-tag">Govt of Gujarat &bull; v2.4</div>
+          <div class="user-info-text">
+            <strong class="user-full-name" id="sidebarUserName">Inspector General V. R. Jadeja</strong>
+            <span class="user-role-badge" id="sidebarUserDept">SUPERADMIN &bull; GJ-POL-001</span>
+          </div>
         </div>
       </div>
     </aside>
@@ -142,14 +144,6 @@
           </div>
 
           <div class="live-clock" id="liveClock">23:07:00 IST</div>
-
-          <div class="user-pill" id="topUserPill">
-            <i class="fa-solid fa-user-shield text-cyan" style="font-size: 1.1rem;"></i>
-            <div>
-              <strong id="topUserName">IG V. R. Jadeja</strong><br/>
-              <span id="topUserDept" style="font-size: 0.68rem; color: var(--text-muted);">State Superadmin</span>
-            </div>
-          </div>
 
           <button class="focus-top-btn" id="topFocusBtn" title="Toggle Focus Mode (Press F)">
             <i class="fa-solid fa-expand"></i> <span>Focus</span>
@@ -241,11 +235,11 @@
         <div class="gis-controls-sidebar">
           <div class="sidebar-header">
             <h3><i class="fa-solid fa-filter"></i> Geospatial Filters</h3>
-            <button class="btn-refresh" id="btnRefreshMap"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button class="btn-refresh" id="btnRefreshMap" title="Refresh Map & Reset All Filters"><i class="fa-solid fa-arrows-rotate"></i></button>
           </div>
 
           <div class="filter-block">
-            <label><i class="fa-solid fa-earth-asia text-cyan"></i> Gujarat Zone &amp; District Matrix:</label>
+            <label><i class="fa-solid fa-location-dot text-cyan"></i> Gujarat Zones &amp; Districts:</label>
             <div class="zone-dropdown-container">
               <button type="button" class="zone-dropdown-btn" id="gisZoneDropdownBtn">
                 <span id="gisZoneDropdownLabel">🌐 Whole Gujarat (All 33 Districts • 80,000+ Nodes)</span>
@@ -395,7 +389,7 @@
         <div class="gis-map-canvas-wrap">
           <div class="map-top-bar">
             <div class="map-mode-indicator">
-              <i class="fa-solid fa-satellite"></i> <strong>Live GIS Surveillance Matrix</strong> &bull; Gujarat Sector
+              <i class="fa-solid fa-map-location-dot text-cyan"></i> <strong>Live GIS Map</strong> &bull; Gujarat Sector
             </div>
             <!-- Editable Cross-Dept Pursuit Input on GIS Map -->
             <div class="map-pursuit-quick-bar">

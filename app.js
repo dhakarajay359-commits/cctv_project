@@ -65,11 +65,17 @@ function initPersonaSwitcher() {
     const roleKey = e.target.value;
     const authRes = await window.apiClient.login(roleKey);
 
-    // Update Topbar User Pill
-    const nameEl = document.getElementById('topUserName');
-    const deptEl = document.getElementById('topUserDept');
+    // Update Sidebar User Profile Card
+    const nameEl = document.getElementById('sidebarUserName') || document.getElementById('topUserName');
+    const deptEl = document.getElementById('sidebarUserDept') || document.getElementById('topUserDept');
+    const roleBadge = `${authRes.user.role.toUpperCase()} \u2022 ${authRes.user.badge}`;
     if (nameEl) nameEl.textContent = authRes.user.name;
-    if (deptEl) deptEl.textContent = `${authRes.user.role.toUpperCase()} \u2022 ${authRes.user.badge}`;
+    if (deptEl) deptEl.textContent = roleBadge;
+
+    const userCard = document.getElementById('sidebarUserCard');
+    if (userCard) {
+      userCard.setAttribute('title', `${authRes.user.name} (${roleBadge})`);
+    }
 
     // Apply Dynamic Role-Based View Navigation Filter
     applyRbacNavigation(authRes.allowed_views);
@@ -482,7 +488,52 @@ async function initGisDashboard() {
     });
   }
 
-  if (btnRefresh) btnRefresh.addEventListener('click', () => updateMap());
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', async () => {
+      const icon = btnRefresh.querySelector('i');
+      if (icon) icon.classList.add('fa-spin');
+      
+      // Reset filter variables and inputs
+      currentDept = 'ALL';
+      currentStatus = 'ALL';
+      currentQuery = '';
+
+      if (deptSelect) deptSelect.value = 'ALL';
+      if (searchInput) searchInput.value = '';
+      stBtns.forEach(b => {
+        if (b.getAttribute('data-st') === 'ALL') {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+
+      if (zoneLabel) {
+        zoneLabel.textContent = '🌐 Whole Gujarat (All 33 Districts • 80,000+ Nodes)';
+      }
+      if (zoneMenu) {
+        zoneMenu.querySelectorAll('.zone-opt-item').forEach(opt => {
+          if (opt.getAttribute('data-value') === 'zone-all') {
+            opt.classList.add('selected');
+          } else {
+            opt.classList.remove('selected');
+          }
+        });
+      }
+
+      // Smoothly re-center map view
+      if (leafletMapInstance) {
+        leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 0.8 });
+      }
+
+      // Reload fresh GIS nodes and district clusters
+      await updateMap();
+
+      setTimeout(() => {
+        if (icon) icon.classList.remove('fa-spin');
+      }, 600);
+    });
+  }
 
   if (btnRenderMapPursuit) {
     btnRenderMapPursuit.addEventListener('click', () => {
@@ -1687,15 +1738,15 @@ window.openDetachedVideoWall = async function() {
   const feedsHtml = activeFeeds.map((cam, idx) => `
     <div style="background: #0d121c; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; position: relative;">
       <div style="padding: 8px 12px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
-        <strong style="color: #38bdf8; font-size: 12px; font-family: monospace;">${cam.id} • ${cam.name}</strong>
+        <strong style="color: #38bdf8; font-size: 12px; font-family: 'Inter', sans-serif;">${cam.id} • ${cam.name}</strong>
         <span style="color: #10b981; font-size: 11px; font-weight: 700;">● LIVE STREAM</span>
       </div>
       <div style="flex: 1; min-height: 280px; position: relative; background: #020617; overflow: hidden;">
         <video src="${sampleVideos[idx] || sampleVideos[0]}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
-        <div style="position: absolute; top: 10px; right: 10px; background: rgba(217, 119, 6, 0.2); border: 1px solid rgba(217, 119, 6, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: monospace; z-index: 5;">
+        <div style="position: absolute; top: 10px; right: 10px; background: rgba(217, 119, 6, 0.2); border: 1px solid rgba(217, 119, 6, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: 'Inter', sans-serif; z-index: 5;">
           25 FPS • 2.4 Mbps
         </div>
-        <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.75); padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #38bdf8; font-family: monospace; z-index: 5;">
+        <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.75); padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #38bdf8; font-family: 'Inter', sans-serif; z-index: 5;">
           NODE #${cam.id} | GPS: ${cam.lat.toFixed(4)}°N, ${cam.lng.toFixed(4)}°E
         </div>
       </div>
@@ -1711,10 +1762,10 @@ window.openDetachedVideoWall = async function() {
       <title>NIRIKSHAN 4K Multi-Monitor Detached Live Video Wall</title>
       <meta charset="UTF-8">
       <base href="${originBase}">
-      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0b0f19; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { background: #0b0f19; color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         header { height: 52px; padding: 0 18px; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; }
         .grid { flex: 1; padding: 12px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; }
       </style>
@@ -1725,7 +1776,7 @@ window.openDetachedVideoWall = async function() {
           <span style="background: #2563eb; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 11px;">4K MULTI-MONITOR</span>
           <strong style="font-size: 13px; letter-spacing: 0.04em;">NIRIKSHAN DETACHED LIVE VIDEO WALL</strong>
         </div>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.25);">
           BANDWIDTH: 4.8 Mbps PEAK • LIVE RELAY
         </div>
       </header>
@@ -1826,7 +1877,7 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   ctx.fillStyle = 'rgba(14, 165, 233, 0.95)';
   ctx.fillRect(vBoxX, vBoxY - 18, 160, 16);
   ctx.fillStyle = '#04101e';
-  ctx.font = 'bold 8px "JetBrains Mono", monospace';
+  ctx.font = 'bold 8px "Inter", sans-serif';
   ctx.fillText('ANPR CAMERA: TARGET MATCH (98.8%)', vBoxX + 4, vBoxY - 6);
 
   // 3. PROMINENT HIGH SECURITY REGISTRATION PLATE (HSRP)
@@ -1857,7 +1908,7 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
 
   // Embossed License Plate Text
   ctx.fillStyle = '#020617';
-  ctx.font = 'bold 10.5px "JetBrains Mono", "Roboto Mono", monospace';
+  ctx.font = 'bold 11px "Inter", sans-serif';
   ctx.fillText(plateText, plateX + 17, plateY + 17);
 
   // Optical Plate Detection Tag
@@ -1868,7 +1919,7 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
   ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
   ctx.fillRect(plateX - 2, plateY - 14, 102, 12);
   ctx.fillStyle = '#04101e';
-  ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 7.5px "Inter", sans-serif';
   ctx.fillText('ANPR OCR: 99.4% CONF', plateX + 2, plateY - 5);
 
   // 4. State-Grade CCTV OSD Camera Header & Radar Speed Telemetry
@@ -1878,18 +1929,18 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
 
   // Top OSD Metadata
   ctx.fillStyle = '#38bdf8';
-  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 8.5px "Inter", sans-serif';
   ctx.fillText(`📹 ${camName} (NODE #4182)`, 10, 17);
 
   ctx.fillStyle = '#f43f5e';
-  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 8.5px "Inter", sans-serif';
   ctx.fillText(`🚨 STATE HOTLIST BOLO MATCH • 80,000+ CCTV GRID`, 360, 17);
 
   // Bottom OSD Telemetry
   const now = new Date();
   const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '8px "JetBrains Mono", monospace';
+  ctx.font = '8px "Inter", sans-serif';
   ctx.fillText(`PTS: ${timeStr} | EXPOSURE: 1/2000s | FPS: 25.0 | SPEED: 81.5 KM/H (RADAR) | GPS: 23.0338°N, 72.5072°E`, 10, 351);
 
   // 5. High-Definition Micro-Crop of the HSRP Plate
@@ -1917,7 +1968,7 @@ function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName
 
   // High-contrast embossed plate text
   pCtx.fillStyle = '#020617';
-  pCtx.font = 'bold 19px "JetBrains Mono", monospace';
+  pCtx.font = 'bold 19px "Inter", sans-serif';
   pCtx.fillText(plateText, 34, 35);
 
   return {
@@ -2013,14 +2064,14 @@ function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 •
   ctx.fillStyle = 'rgba(244, 63, 94, 0.95)';
   ctx.fillRect(fBoxX - 10, fBoxY - 20, 160, 18);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 8.5px "Inter", sans-serif';
   ctx.fillText(`🚨 CCTNS HIT: ${faceName.slice(0, 14)}`, fBoxX - 6, fBoxY - 7);
 
   // Confidence & Biometric Score Label
   ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
   ctx.fillRect(fBoxX - 10, fBoxY + fBoxH + 4, 160, 16);
   ctx.fillStyle = '#00f2fe';
-  ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 7.5px "Inter", sans-serif';
   ctx.fillText(`BIOMETRIC CONF: ${suspectFace.biometric_score_default || 96.8}%`, fBoxX - 6, fBoxY + fBoxH + 15);
 
   // Top OSD Metadata
@@ -2029,18 +2080,18 @@ function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 •
   ctx.fillRect(0, 336, 640, 24);
 
   ctx.fillStyle = '#f43f5e';
-  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 8.5px "Inter", sans-serif';
   ctx.fillText(`🚨 NAFIS / CCTNS RED NOTICE MATCH • FACIAL EMBEDDING VECTOR`, 10, 17);
 
   ctx.fillStyle = '#38bdf8';
-  ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+  ctx.font = 'bold 8.5px "Inter", sans-serif';
   ctx.fillText(`📹 ${camName}`, 360, 17);
 
   // Bottom OSD Telemetry
   const now = new Date();
   const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '8px "JetBrains Mono", monospace';
+  ctx.font = '8px "Inter", sans-serif';
   ctx.fillText(`PTS: ${timeStr} | 512-DIM VECTOR HASH: #0x${Math.random().toString(16).substring(2, 12).toUpperCase()} | GPS: 23.1610°N, 72.6840°E`, 10, 351);
 
   // 3. High-Definition 128x128 Photographic Crop of the Real Face from Video
@@ -2975,7 +3026,7 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', 
           color: #04101e;
           font-size: ${isOrigin || isLatest ? '12px' : '10px'};
           font-weight: 900;
-          font-family: 'JetBrains Mono', monospace;
+          font-family: 'Inter', sans-serif;
         ">${s.step}</div>
       `,
       iconSize: [28, 28],

@@ -33,8 +33,9 @@
   
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-glow: none;
-  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: normal;
 }
 
 * {
@@ -470,52 +471,85 @@ body, body.dark-theme, body.light-theme {
   to { opacity: 1; transform: translateY(-50%) translateX(0); }
 }
 
-/* Sidebar Footer */
+/* Sidebar Footer: Officer User Profile Card */
 .sidebar-footer {
-  padding: 0.6rem 0.3rem;
+  padding: 0.55rem 0.35rem;
   border-top: 1px solid var(--border-color);
-  background: rgba(0, 0, 0, 0.25);
-  transition: padding 0.25s ease;
+  background: #f8fafc;
+  transition: padding 0.25s ease, background 0.2s ease;
 }
 
-.sidebar-status-card {
+.sidebar-user-card {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
   align-items: center;
+  gap: 0.65rem;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 0.35rem 0.35rem;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  cursor: default;
 }
 
-.sidebar-status-card .status-indicator {
-  padding: 0.35rem;
-  border-radius: 50%;
+.sidebar-user-card .user-avatar-badge {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 6px;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-cyan);
+  font-size: 0.95rem;
+  flex-shrink: 0;
 }
 
-.sidebar-status-card .status-text,
-.sidebar-status-card .system-tag {
+.sidebar-user-card .user-info-text {
   display: none;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar-user-card .user-full-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+
+.sidebar-user-card .user-role-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
 }
 
 .app-sidebar:hover .sidebar-footer,
 .app-sidebar.pinned .sidebar-footer {
-  padding: 0.75rem 0.85rem;
+  padding: 0.65rem 0.75rem;
 }
 
-.app-sidebar:hover .sidebar-status-card,
-.app-sidebar.pinned .sidebar-status-card {
-  align-items: stretch;
+.app-sidebar:hover .sidebar-user-card,
+.app-sidebar.pinned .sidebar-user-card {
+  padding: 0.45rem 0.65rem;
 }
 
-.app-sidebar:hover .sidebar-status-card .status-indicator,
-.app-sidebar.pinned .sidebar-status-card .status-indicator {
-  padding: 0.25rem 0.55rem;
-  border-radius: var(--radius-full);
-}
-
-.app-sidebar:hover .sidebar-status-card .status-text,
-.app-sidebar.pinned .sidebar-status-card .status-text,
-.app-sidebar:hover .sidebar-status-card .system-tag,
-.app-sidebar.pinned .sidebar-status-card .system-tag {
-  display: inline;
+.app-sidebar:hover .sidebar-user-card .user-info-text,
+.app-sidebar.pinned .sidebar-user-card .user-info-text {
+  display: flex;
 }
 
 /* =========================================================================
@@ -693,37 +727,54 @@ body, body.dark-theme, body.light-theme {
 }
 
 .status-indicator {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  color: var(--accent-emerald);
-  background: rgba(16, 185, 129, 0.1);
-  padding: 0.35rem 0.7rem;
+  color: #047857;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 0.3rem 0.65rem;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  line-height: 1.2;
 }
 
 .status-indicator .dot {
-  width: 7px;
-  height: 7px;
-  background-color: var(--accent-emerald);
+  width: 6.5px;
+  height: 6.5px;
+  min-width: 6.5px;
+  min-height: 6.5px;
+  background-color: #10b981;
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--accent-emerald);
-  animation: pulse 1.8s infinite;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  animation: pulseBeacon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes pulseBeacon {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.6; }
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
 }
 
 .export-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: #ffffff;
   border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  color: #334155;
   padding: 0.42rem 0.8rem;
   border-radius: var(--radius-sm);
   font-size: 0.76rem;
@@ -732,12 +783,23 @@ body, body.dark-theme, body.light-theme {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+}
+
+.export-btn i {
+  color: #dc2626;
+  font-size: 0.82rem;
 }
 
 .export-btn:hover {
-  background: #1e293b;
-  border-color: var(--accent-cyan);
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  box-shadow: none;
+}
+
+.export-btn:active {
+  background: #e2e8f0;
 }
 
 /* =========================================================================
