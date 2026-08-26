@@ -101,7 +101,7 @@
         </nav>
       </div>
 
-      <!-- Sidebar Footer (Officer Profile) -->
+      <!-- Sidebar Footer (Officer Profile & Role Switcher) -->
       <div class="sidebar-footer">
         <div class="sidebar-user-card" id="sidebarUserCard" title="Inspector General V. R. Jadeja (SUPERADMIN • GJ-POL-001)">
           <div class="user-avatar-badge">
@@ -111,6 +111,16 @@
             <strong class="user-full-name" id="sidebarUserName">Inspector General V. R. Jadeja</strong>
             <span class="user-role-badge" id="sidebarUserDept">SUPERADMIN &bull; GJ-POL-001</span>
           </div>
+        </div>
+
+        <div class="sidebar-persona-wrap">
+          <label class="sidebar-persona-label"><i class="fa-solid fa-id-badge text-cyan"></i> Switch Role:</label>
+          <select id="topbarPersonaSelect" class="custom-select sidebar-persona-select">
+            <option value="superadmin">IG V. R. Jadeja (State Police HQ)</option>
+            <option value="rto_admin">R. K. Vaghela (RTO Commissionerate)</option>
+            <option value="amc_operator">Priya Shah (AMC Smart City CCC)</option>
+            <option value="forest_viewer">D. S. Parmar (Forest &amp; Wildlife)</option>
+          </select>
         </div>
       </div>
     </aside>
@@ -132,17 +142,6 @@
 
         <!-- Header Actions -->
         <div class="header-actions">
-          <!-- Persona Quick-Switcher -->
-          <div class="persona-switcher-wrap">
-            <label class="persona-label">Officer Role:</label>
-            <select id="topbarPersonaSelect" class="custom-select persona-select">
-              <option value="superadmin">IG V. R. Jadeja (State Police HQ - Full Access)</option>
-              <option value="rto_admin">R. K. Vaghela (RTO Commissionerate)</option>
-              <option value="amc_operator">Priya Shah (AMC Smart City CCC)</option>
-              <option value="forest_viewer">D. S. Parmar (Forest &amp; Wildlife Dept)</option>
-            </select>
-          </div>
-
           <div class="live-clock" id="liveClock">23:07:00 IST</div>
 
           <button class="export-btn" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> Export Dossier</button>

@@ -537,6 +537,41 @@ body, body.dark-theme, body.light-theme {
   letter-spacing: 0.02em;
 }
 
+.sidebar-persona-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 0.35rem 0.45rem;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.sidebar-persona-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sidebar-persona-select {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 0.74rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  padding: 0.28rem 0.45rem;
+  border-radius: 4px;
+}
+
 .app-sidebar:hover .sidebar-footer,
 .app-sidebar.pinned .sidebar-footer {
   padding: 0.65rem 0.75rem;
@@ -548,7 +583,9 @@ body, body.dark-theme, body.light-theme {
 }
 
 .app-sidebar:hover .sidebar-user-card .user-info-text,
-.app-sidebar.pinned .sidebar-user-card .user-info-text {
+.app-sidebar.pinned .sidebar-user-card .user-info-text,
+.app-sidebar:hover .sidebar-persona-wrap,
+.app-sidebar.pinned .sidebar-persona-wrap {
   display: flex;
 }
 
