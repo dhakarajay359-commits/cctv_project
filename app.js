@@ -1714,13 +1714,15 @@ function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
   }
 }
 
-// Deploy cameras dynamically, instantly open GIS Map, pin locations with GPS coordinates & trigger coverage notification
+// Deploy cameras dynamically, instantly open GIS Map, pin multi-pole 100-camera array with GPS coordinates & area coverage calculation
+window.activeDeployedCoverageLayers = [];
+
 async function deployCamerasToLocation(districtId, spotId, count = 100) {
   const res = await window.apiClient.deployCamerasToBlindSpot(districtId, spotId, count);
   if (res.status === 'success') {
     const spot = res.spot;
     const dist = res.district;
-    const deployedCount = res.deployed_count;
+    const deployedCount = res.deployed_count || count;
 
     // 1. Instantly Close Modal
     const modal = document.getElementById('districtBlindSpotModal');
@@ -1730,104 +1732,165 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
     const dashBtn = document.querySelector('[data-view="view-dashboard"]');
     if (dashBtn) dashBtn.click();
 
-    // 3. Pin location on GIS Map & fly to it
-    if (leafletMapInstance) {
-      leafletMapInstance.flyTo([spot.lat, spot.lng], 16, { duration: 1.2 });
+    // 3. Calculate Real Multi-Node Area Coverage Metrics
+    const areaSqM = Math.round(deployedCount * 11500); // 100 cams = ~1,150,000 sq.m (1.15 sq.km)
+    const areaSqKm = (areaSqM / 1000000).toFixed(2);
+    const spanKm = (deployedCount * 0.024).toFixed(1); // 2.4 km corridor span
+    const poleCount = Math.max(4, Math.round(deployedCount / 10)); // 10 poles for 100 cams (10 cams/pole)
+    const camsPerPole = Math.round(deployedCount / poleCount);
 
-      // Add Active Surveillance Coverage Zone (Green Radial Circle)
-      L.circle([spot.lat, spot.lng], {
-        radius: 220,
-        color: '#10b981',
-        fillColor: '#10b981',
-        fillOpacity: 0.2,
-        weight: 2,
-        dashArray: '4, 4'
-      }).addTo(leafletMapInstance);
+    // 4. Update and Display Floating 100-Cameras Area Coverage HUD
+    const covHud = document.getElementById('deployedCoverageHud');
+    if (covHud) {
+      document.getElementById('covHudLocation').textContent = `${spot.name} • ${dist.name}`;
+      document.getElementById('covHudNodes').textContent = `${deployedCount} Cameras (${poleCount} Poles • ${camsPerPole} Cams/Pole)`;
+      document.getElementById('covHudArea').textContent = `${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)`;
+      document.getElementById('covHudSpan').textContent = `${spanKm} km Highway Perimeter`;
+      document.getElementById('covHudDeficit').textContent = `0% (100% Full Optical Overlap)`;
+      document.getElementById('covHudGps').textContent = `Anchor: ${spot.lat.toFixed(4)}°N, ${spot.lng.toFixed(4)}°E`;
+      covHud.style.display = 'block';
 
-      // Add Main Tactical Deployed Camera Pin
-      const mainIcon = L.divIcon({
-        className: 'deployed-cam-pin',
-        html: `
-          <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
-            <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(16,185,129,0.35); animation: pulseGreenBeacon 1.8s infinite;"></div>
-            <div style="width: 30px; height: 30px; border-radius: 50%; background: #059669; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 13px; box-shadow: 0 3px 8px rgba(0,0,0,0.35);">
-              <i class="fa-solid fa-video"></i>
-            </div>
-          </div>
-        `,
-        iconSize: [44, 44],
-        iconAnchor: [22, 22]
+      const closeCovBtn = document.getElementById('btnCloseCoverageHud');
+      if (closeCovBtn) {
+        closeCovBtn.onclick = () => { covHud.style.display = 'none'; };
+      }
+    }
+
+    // 5. Clear Previous Custom Coverage Layers & Fly to Location
+    if (window.activeDeployedCoverageLayers && window.activeDeployedCoverageLayers.length) {
+      window.activeDeployedCoverageLayers.forEach(layer => {
+        try { leafletMapInstance.removeLayer(layer); } catch(e) {}
       });
+      window.activeDeployedCoverageLayers = [];
+    }
 
-      const mainMarker = L.marker([spot.lat, spot.lng], { icon: mainIcon }).addTo(leafletMapInstance);
+    if (leafletMapInstance) {
+      leafletMapInstance.flyTo([spot.lat, spot.lng], 15.5, { duration: 1.2 });
 
-      // Sub-pins representing multi-angle intersection nodes
-      const subOffsets = [
-        { latOff: 0.0009, lngOff: 0.0007, label: 'Pole #01 (4K ANPR)' },
-        { latOff: -0.0008, lngOff: 0.0009, label: 'Pole #02 (360° PTZ SpeedDome)' },
-        { latOff: 0.0007, lngOff: -0.0008, label: 'Pole #03 (Thermal Night Sensor)' },
-        { latOff: -0.0008, lngOff: -0.0007, label: 'Pole #04 (Optical Facial Dome)' }
+      // Generate 10 Distributed Tactical Camera Pole Coordinates along Highway & Crossroad
+      const poleOffsets = [
+        { latOff: 0.0028, lngOff: 0.0006, name: 'Pole #01 - Northbound Highway 4K ANPR Array', fov: 180, cams: camsPerPole, type: '4K ANPR + Bullet Radar' },
+        { latOff: 0.0020, lngOff: -0.0012, name: 'Pole #02 - North Entry Overbridge 360° PTZ', fov: 360, cams: camsPerPole, type: '360° Optical SpeedDome' },
+        { latOff: 0.0012, lngOff: 0.0020, name: 'Pole #03 - East Industrial Service Ingress', fov: 90, cams: camsPerPole, type: 'Thermal Night-Vision' },
+        { latOff: 0.0005, lngOff: -0.0018, name: 'Pole #04 - West Commercial Bourse Gateway', fov: 120, cams: camsPerPole, type: 'Facial Recognition Dome' },
+        { latOff: 0.0000, lngOff: 0.0000, name: 'Pole #05 - Central Interchange Master Array', fov: 360, cams: camsPerPole, type: 'Multi-Sensor Panoramic Array' },
+        { latOff: -0.0008, lngOff: 0.0014, name: 'Pole #06 - East Highway Exit Ramp Signal Matrix', fov: 90, cams: camsPerPole, type: 'Traffic Violation Optical' },
+        { latOff: -0.0014, lngOff: -0.0016, name: 'Pole #07 - West Metro Underpass & Pedestrian Corridor', fov: 120, cams: camsPerPole, type: 'High-Density Biometric Sensor' },
+        { latOff: -0.0019, lngOff: 0.0008, name: 'Pole #08 - Southbound Fast-Lane Multi-Radar', fov: 0, cams: camsPerPole, type: 'Dual ANPR Radar Speed Sensor' },
+        { latOff: -0.0026, lngOff: -0.0005, name: 'Pole #09 - South Flyover Arterial Intersection', fov: 360, cams: camsPerPole, type: 'Panoramic SpeedDome' },
+        { latOff: -0.0032, lngOff: 0.0012, name: 'Pole #10 - Outer Perimeter Cargo Bypass Sentry', fov: 90, cams: camsPerPole, type: 'Heavy Vehicle ANPR Scanner' }
       ];
 
-      subOffsets.forEach(offset => {
-        const subIcon = L.divIcon({
-          className: 'sub-node-pin',
+      // Draw Tactical 1.15 sq.km Active Surveillance Coverage Polygon Area
+      const polygonCoords = [
+        [spot.lat + 0.0035, spot.lng - 0.0022],
+        [spot.lat + 0.0035, spot.lng + 0.0026],
+        [spot.lat + 0.0010, spot.lng + 0.0032],
+        [spot.lat - 0.0022, spot.lng + 0.0028],
+        [spot.lat - 0.0038, spot.lng + 0.0018],
+        [spot.lat - 0.0038, spot.lng - 0.0020],
+        [spot.lat - 0.0018, spot.lng - 0.0028],
+        [spot.lat + 0.0012, spot.lng - 0.0026]
+      ];
+
+      const covPolygon = L.polygon(polygonCoords, {
+        color: '#10b981',
+        weight: 2.5,
+        dashArray: '6, 6',
+        fillColor: '#10b981',
+        fillOpacity: 0.18
+      }).addTo(leafletMapInstance);
+
+      covPolygon.bindTooltip(`
+        <div style="font-family: var(--font-main); font-size: 11px; font-weight: 700; color: #047857; text-align: center;">
+          <i class="fa-solid fa-shield-halved"></i> 100-CAMERA SURVEILLANCE GRID<br/>
+          <strong>Total Monitored Area: ${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)</strong>
+        </div>
+      `, { permanent: true, direction: 'center', className: 'coverage-polygon-label' });
+
+      window.activeDeployedCoverageLayers.push(covPolygon);
+
+      // Add All 10 Individual Distributed Camera Poles Across the Grid
+      let centralMarker = null;
+
+      poleOffsets.slice(0, poleCount).forEach((p, idx) => {
+        const poleLat = spot.lat + p.latOff;
+        const poleLng = spot.lng + p.lngOff;
+
+        const isCenter = idx === 4;
+        const poleIcon = L.divIcon({
+          className: 'tactical-pole-pin',
           html: `
-            <div style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);">
-              <i class="fa-solid fa-camera"></i>
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+              <div style="width: ${isCenter ? '32px' : '26px'}; height: ${isCenter ? '32px' : '26px'}; border-radius: 50%; background: ${isCenter ? '#059669' : '#2563eb'}; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: ${isCenter ? '13px' : '10px'}; box-shadow: 0 2px 8px rgba(0,0,0,0.35);">
+                <i class="fa-solid fa-video"></i>
+              </div>
+              <span style="font-size: 9px; font-weight: 800; background: #0f172a; color: #ffffff; padding: 1px 4px; border-radius: 3px; margin-top: 2px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.4);">
+                P#0${idx + 1} (${p.cams} Cams)
+              </span>
             </div>
           `,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9]
+          iconSize: [60, 42],
+          iconAnchor: [30, 21]
         });
-        const subM = L.marker([spot.lat + offset.latOff, spot.lng + offset.lngOff], { icon: subIcon }).addTo(leafletMapInstance);
-        subM.bindTooltip(`${offset.label} &bull; GPS: ${(spot.lat + offset.latOff).toFixed(4)}°N, ${(spot.lng + offset.lngOff).toFixed(4)}°E`, { direction: 'top' });
+
+        const poleMarker = L.marker([poleLat, poleLng], { icon: poleIcon }).addTo(leafletMapInstance);
+
+        poleMarker.bindPopup(`
+          <div style="font-family: var(--font-main); font-size: 12px; min-width: 260px; padding: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="background: #10b981; color: #ffffff; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 3px;">
+                POLE #0${idx + 1} OF ${poleCount}
+              </span>
+              <span style="font-size: 10px; color: #64748b; font-weight: 700;">${dist.name}</span>
+            </div>
+            <strong style="color: #0f172a; font-size: 13px; display: block; margin-bottom: 4px;">${p.name}</strong>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; margin-bottom: 6px; font-size: 11px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <span style="color: #64748b;">GPS Coordinates:</span>
+                <strong style="color: #2563eb; font-family: var(--font-mono);">${poleLat.toFixed(4)}° N, ${poleLng.toFixed(4)}° E</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <span style="color: #64748b;">Active Cameras on Pole:</span>
+                <strong style="color: #059669; font-weight: 800;">${p.cams} Cameras Online</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <span style="color: #64748b;">Pole Coverage Area:</span>
+                <strong style="color: #0f172a;">~${Math.round(areaSqM / poleCount).toLocaleString()} m²</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #64748b;">Hardware Spec:</span>
+                <strong style="color: #0f172a;">${p.type}</strong>
+              </div>
+            </div>
+            <div style="font-size: 11px; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-circle-check text-green"></i> 100% Active in Statewide Multi-Agency Grid
+            </div>
+          </div>
+        `);
+
+        if (isCenter) {
+          centralMarker = poleMarker;
+        }
+
+        window.activeDeployedCoverageLayers.push(poleMarker);
       });
 
-      // Open Rich Installation Confirmation Popup
-      mainMarker.bindPopup(`
-        <div style="font-family: var(--font-main); font-size: 12px; min-width: 270px; padding: 4px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px;">
-            <span style="background: #10b981; color:#ffffff; font-weight:800; font-size:10px; padding:2px 7px; border-radius:3px; text-transform:uppercase;">
-              ✓ ACTIVE SURVEILLANCE ARMED
-            </span>
-            <span style="font-size:10px; color:#64748b; font-weight:700;">${dist.name}</span>
-          </div>
-          <strong style="color: #0f172a; font-size: 13px; display:block; margin-bottom:4px;">${spot.name}</strong>
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:6px; font-size:11px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span style="color:#64748b;">GPS Coordinates:</span>
-              <strong style="color:#2563eb; font-family:var(--font-mono);">${spot.lat.toFixed(4)}° N, ${spot.lng.toFixed(4)}° E</strong>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span style="color:#64748b;">Cameras Installed:</span>
-              <strong style="color:#059669; font-weight:800;">+${deployedCount} Nodes Armed</strong>
-            </div>
-            <div style="display:flex; justify-content:space-between;">
-              <span style="color:#64748b;">Hardware Spec:</span>
-              <strong style="color:#0f172a;">${spot.hardware}</strong>
-            </div>
-          </div>
-          <div style="font-size:11px; color:#047857; font-weight:700; display:flex; align-items:center; gap:4px;">
-            <i class="fa-solid fa-circle-check text-green"></i> Blind spot covered under live statewide surveillance
-          </div>
-        </div>
-      `).openPopup();
+      if (centralMarker) {
+        centralMarker.openPopup();
+      }
     }
 
-    // 4. Trigger Real-Time Notification Toast
+    // 6. Trigger Real-Time Notification Toast
     showRealtimeAlertToast({
-      title: `SURVEILLANCE ACTIVATED: ${spot.name}`,
-      location: `${dist.name} &bull; GPS: ${spot.lat.toFixed(4)}°N, ${spot.lng.toFixed(4)}°E`,
-      camera_id: `+${deployedCount} CAMS ARMED &bull; BLIND SPOT COVERED`,
-      kafka_topic: 'nirikshan.surveillance.blindspot.covered'
+      title: `100-CAMERA SURVEILLANCE ARMED: ${spot.name}`,
+      location: `${dist.name} &bull; Total Area Monitored: ${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)`,
+      camera_id: `+${deployedCount} CAMS ARMED ACROSS ${poleCount} POLES`,
+      kafka_topic: 'nirikshan.infrastructure.100cams.grid'
     });
 
-    // 5. Update Background Data Matrices
+    // 7. Update Background Data Matrices without wiping active coverage layers
     await renderGapAnalysis();
-    if (typeof updateMap === 'function') {
-      await updateMap();
-    }
   }
 }
 

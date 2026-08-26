@@ -480,6 +480,43 @@
             </div>
           </div>
 
+          <!-- Floating 100-Cameras Area Coverage & Installation Matrix HUD -->
+          <div class="deployed-coverage-hud" id="deployedCoverageHud" style="display: none;">
+            <div class="hud-top" style="background: #ffffff; border-bottom: 1px solid var(--border-color); padding: 0.6rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="hud-live-pill" style="background: rgba(16,185,129,0.12); color: #059669; border: 1px solid #10b981; font-weight: 800; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px;">
+                  <i class="fa-solid fa-circle-check"></i> 100-CAMERA GRID ARMED
+                </span>
+                <strong id="covHudLocation" style="color: #0f172a; font-size: 0.85rem; font-weight: 800;">SG Highway &amp; SP Ring Road Interchange</strong>
+              </div>
+              <button class="hud-close-btn" id="btnCloseCoverageHud" style="cursor: pointer; background: transparent; border: none; font-size: 1.2rem; line-height: 1; color: #64748b;">&times;</button>
+            </div>
+            <div class="hud-body" style="padding: 0.75rem 0.85rem; background: #ffffff;">
+              <div class="hud-stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 0.6rem;">
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 0.45rem 0.6rem; border-radius: 4px;">
+                  <span style="font-size: 0.65rem; color: #64748b; font-weight: 700; display: block;">NODES DEPLOYED:</span>
+                  <strong style="color: #059669; font-size: 0.95rem; font-weight: 800;" id="covHudNodes">100 Cameras</strong>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 0.45rem 0.6rem; border-radius: 4px;">
+                  <span style="font-size: 0.65rem; color: #64748b; font-weight: 700; display: block;">AREA MONITORED:</span>
+                  <strong style="color: #2563eb; font-size: 0.95rem; font-weight: 800;" id="covHudArea">1.15 sq.km (1,150,000 m²)</strong>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 0.45rem 0.6rem; border-radius: 4px;">
+                  <span style="font-size: 0.65rem; color: #64748b; font-weight: 700; display: block;">CORRIDOR SPAN:</span>
+                  <strong style="color: #d97706; font-size: 0.95rem; font-weight: 800;" id="covHudSpan">2.4 km Highway Perimeter</strong>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); padding: 0.45rem 0.6rem; border-radius: 4px;">
+                  <span style="font-size: 0.65rem; color: #64748b; font-weight: 700; display: block;">BLIND SPOT DEFICIT:</span>
+                  <strong style="color: #059669; font-size: 0.95rem; font-weight: 800;" id="covHudDeficit">0% (100% Full Overlap)</strong>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 0.45rem 0.65rem; font-size: 0.72rem; color: #166534;">
+                <span><i class="fa-solid fa-tower-broadcast"></i> <strong>10 Tactical Multi-Camera Poles (10 Cams/Pole)</strong> covering highway fast-lanes, flyover, ramps, and service roads.</span>
+                <span style="font-family: var(--font-mono); font-weight: 700; color: #047857;" id="covHudGps">23.1147°N, 72.5372°E</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Real Leaflet Map Container -->
           <div id="leafletMap" class="leaflet-container-view"></div>
         </div>
