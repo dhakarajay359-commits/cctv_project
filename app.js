@@ -1714,7 +1714,7 @@ function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
   }
 }
 
-// Deploy cameras dynamically, instantly open GIS Map, pin multi-pole 100-camera array with GPS coordinates & area coverage calculation
+// Deploy cameras dynamically, instantly open GIS Map, pin multi-pole 100-camera array with on-map markings showing which areas & how much area is covered
 window.activeDeployedCoverageLayers = [];
 
 async function deployCamerasToLocation(districtId, spotId, count = 100) {
@@ -1739,24 +1739,7 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
     const poleCount = Math.max(4, Math.round(deployedCount / 10)); // 10 poles for 100 cams (10 cams/pole)
     const camsPerPole = Math.round(deployedCount / poleCount);
 
-    // 4. Update and Display Floating 100-Cameras Area Coverage HUD
-    const covHud = document.getElementById('deployedCoverageHud');
-    if (covHud) {
-      document.getElementById('covHudLocation').textContent = `${spot.name} • ${dist.name}`;
-      document.getElementById('covHudNodes').textContent = `${deployedCount} Cameras (${poleCount} Poles • ${camsPerPole} Cams/Pole)`;
-      document.getElementById('covHudArea').textContent = `${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)`;
-      document.getElementById('covHudSpan').textContent = `${spanKm} km Highway Perimeter`;
-      document.getElementById('covHudDeficit').textContent = `0% (100% Full Optical Overlap)`;
-      document.getElementById('covHudGps').textContent = `Anchor: ${spot.lat.toFixed(4)}°N, ${spot.lng.toFixed(4)}°E`;
-      covHud.style.display = 'block';
-
-      const closeCovBtn = document.getElementById('btnCloseCoverageHud');
-      if (closeCovBtn) {
-        closeCovBtn.onclick = () => { covHud.style.display = 'none'; };
-      }
-    }
-
-    // 5. Clear Previous Custom Coverage Layers & Fly to Location
+    // 4. Clear Previous Custom Coverage Layers & Fly to Location
     if (window.activeDeployedCoverageLayers && window.activeDeployedCoverageLayers.length) {
       window.activeDeployedCoverageLayers.forEach(layer => {
         try { leafletMapInstance.removeLayer(layer); } catch(e) {}
@@ -1767,30 +1750,16 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
     if (leafletMapInstance) {
       leafletMapInstance.flyTo([spot.lat, spot.lng], 15.5, { duration: 1.2 });
 
-      // Generate 10 Distributed Tactical Camera Pole Coordinates along Highway & Crossroad
-      const poleOffsets = [
-        { latOff: 0.0028, lngOff: 0.0006, name: 'Pole #01 - Northbound Highway 4K ANPR Array', fov: 180, cams: camsPerPole, type: '4K ANPR + Bullet Radar' },
-        { latOff: 0.0020, lngOff: -0.0012, name: 'Pole #02 - North Entry Overbridge 360° PTZ', fov: 360, cams: camsPerPole, type: '360° Optical SpeedDome' },
-        { latOff: 0.0012, lngOff: 0.0020, name: 'Pole #03 - East Industrial Service Ingress', fov: 90, cams: camsPerPole, type: 'Thermal Night-Vision' },
-        { latOff: 0.0005, lngOff: -0.0018, name: 'Pole #04 - West Commercial Bourse Gateway', fov: 120, cams: camsPerPole, type: 'Facial Recognition Dome' },
-        { latOff: 0.0000, lngOff: 0.0000, name: 'Pole #05 - Central Interchange Master Array', fov: 360, cams: camsPerPole, type: 'Multi-Sensor Panoramic Array' },
-        { latOff: -0.0008, lngOff: 0.0014, name: 'Pole #06 - East Highway Exit Ramp Signal Matrix', fov: 90, cams: camsPerPole, type: 'Traffic Violation Optical' },
-        { latOff: -0.0014, lngOff: -0.0016, name: 'Pole #07 - West Metro Underpass & Pedestrian Corridor', fov: 120, cams: camsPerPole, type: 'High-Density Biometric Sensor' },
-        { latOff: -0.0019, lngOff: 0.0008, name: 'Pole #08 - Southbound Fast-Lane Multi-Radar', fov: 0, cams: camsPerPole, type: 'Dual ANPR Radar Speed Sensor' },
-        { latOff: -0.0026, lngOff: -0.0005, name: 'Pole #09 - South Flyover Arterial Intersection', fov: 360, cams: camsPerPole, type: 'Panoramic SpeedDome' },
-        { latOff: -0.0032, lngOff: 0.0012, name: 'Pole #10 - Outer Perimeter Cargo Bypass Sentry', fov: 90, cams: camsPerPole, type: 'Heavy Vehicle ANPR Scanner' }
-      ];
-
-      // Draw Tactical 1.15 sq.km Active Surveillance Coverage Polygon Area
+      // A. Master Surveillance Coverage Boundary Polygon (1.15 sq.km)
       const polygonCoords = [
-        [spot.lat + 0.0035, spot.lng - 0.0022],
-        [spot.lat + 0.0035, spot.lng + 0.0026],
-        [spot.lat + 0.0010, spot.lng + 0.0032],
-        [spot.lat - 0.0022, spot.lng + 0.0028],
-        [spot.lat - 0.0038, spot.lng + 0.0018],
-        [spot.lat - 0.0038, spot.lng - 0.0020],
-        [spot.lat - 0.0018, spot.lng - 0.0028],
-        [spot.lat + 0.0012, spot.lng - 0.0026]
+        [spot.lat + 0.0035, spot.lng - 0.0024],
+        [spot.lat + 0.0035, spot.lng + 0.0028],
+        [spot.lat + 0.0010, spot.lng + 0.0034],
+        [spot.lat - 0.0022, spot.lng + 0.0030],
+        [spot.lat - 0.0038, spot.lng + 0.0020],
+        [spot.lat - 0.0038, spot.lng - 0.0022],
+        [spot.lat - 0.0018, spot.lng - 0.0030],
+        [spot.lat + 0.0012, spot.lng - 0.0028]
       ];
 
       const covPolygon = L.polygon(polygonCoords, {
@@ -1798,26 +1767,126 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
         weight: 2.5,
         dashArray: '6, 6',
         fillColor: '#10b981',
-        fillOpacity: 0.18
+        fillOpacity: 0.14
       }).addTo(leafletMapInstance);
-
-      covPolygon.bindTooltip(`
-        <div style="font-family: var(--font-main); font-size: 11px; font-weight: 700; color: #047857; text-align: center;">
-          <i class="fa-solid fa-shield-halved"></i> 100-CAMERA SURVEILLANCE GRID<br/>
-          <strong>Total Monitored Area: ${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)</strong>
-        </div>
-      `, { permanent: true, direction: 'center', className: 'coverage-polygon-label' });
-
       window.activeDeployedCoverageLayers.push(covPolygon);
 
-      // Add All 10 Individual Distributed Camera Poles Across the Grid
+      // B. Prominent On-Map Area Header & Dimension Markings (Directly on Map Canvas)
+      const headerMarker = L.marker([spot.lat + 0.0038, spot.lng], {
+        icon: L.divIcon({
+          className: 'onmap-marker-wrap',
+          html: `<div class="onmap-sector-banner"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> 100-CAMERA SURVEILLANCE GRID &bull; ${areaSqKm} SQ.KM (${areaSqM.toLocaleString()} m²) MONITORED</div>`,
+          iconSize: [380, 26],
+          iconAnchor: [190, 13]
+        })
+      }).addTo(leafletMapInstance);
+      window.activeDeployedCoverageLayers.push(headerMarker);
+
+      const dimMarker = L.marker([spot.lat - 0.0041, spot.lng], {
+        icon: L.divIcon({
+          className: 'onmap-marker-wrap',
+          html: `<div class="onmap-dimension-badge">&#9664; ${spanKm} KM HIGH-DENSITY HIGHWAY PERIMETER &bull; 0% BLIND SPOT DEFICIT &#9654;</div>`,
+          iconSize: [340, 22],
+          iconAnchor: [170, 11]
+        })
+      }).addTo(leafletMapInstance);
+      window.activeDeployedCoverageLayers.push(dimMarker);
+
+      // C. Sub-Sector Road Markings with Exact Area Breakdown On-Map
+      const roadSectors = [
+        {
+          name: 'Highway Fast Lanes (NH-147 / SG Highway)',
+          area: '350,000 m²',
+          cams: '30 Cams',
+          coords: [[spot.lat + 0.0035, spot.lng + 0.0006], [spot.lat - 0.0035, spot.lng + 0.0006]],
+          labelCoord: [spot.lat + 0.0022, spot.lng + 0.0006],
+          icon: '🛣️'
+        },
+        {
+          name: 'Overbridge Flyover & Cross-Junction',
+          area: '300,000 m²',
+          cams: '25 Cams',
+          coords: [[spot.lat + 0.0002, spot.lng - 0.0028], [spot.lat + 0.0002, spot.lng + 0.0030]],
+          labelCoord: [spot.lat + 0.0002, spot.lng - 0.0016],
+          icon: '🌉'
+        },
+        {
+          name: 'East Service Roads & Commercial Gates',
+          area: '280,000 m²',
+          cams: '25 Cams',
+          coords: [[spot.lat + 0.0024, spot.lng + 0.0022], [spot.lat - 0.0020, spot.lng + 0.0022]],
+          labelCoord: [spot.lat + 0.0014, spot.lng + 0.0022],
+          icon: '🏬'
+        },
+        {
+          name: 'Perimeter & Railway Ingress Corridor',
+          area: '220,000 m²',
+          cams: '20 Cams',
+          coords: [[spot.lat - 0.0012, spot.lng - 0.0026], [spot.lat - 0.0034, spot.lng + 0.0014]],
+          labelCoord: [spot.lat - 0.0026, spot.lng - 0.0008],
+          icon: '🚆'
+        }
+      ];
+
+      roadSectors.forEach(sec => {
+        // Glowing road polyline
+        const roadLine = L.polyline(sec.coords, {
+          color: '#059669',
+          weight: 6,
+          opacity: 0.65
+        }).addTo(leafletMapInstance);
+        window.activeDeployedCoverageLayers.push(roadLine);
+
+        // Road sector on-map badge
+        const roadLabel = L.marker(sec.labelCoord, {
+          icon: L.divIcon({
+            className: 'onmap-marker-wrap',
+            html: `<div class="onmap-road-label">${sec.icon} ${sec.name}: <strong>${sec.cams}</strong> (${sec.area} Covered)</div>`,
+            iconSize: [280, 20],
+            iconAnchor: [140, 10]
+          })
+        }).addTo(leafletMapInstance);
+        window.activeDeployedCoverageLayers.push(roadLabel);
+      });
+
+      // D. 10 Tactical Distributed Camera Poles with Optical FOV Cones along Roads
+      const poleOffsets = [
+        { latOff: 0.0028, lngOff: 0.0006, name: 'Pole #01 - Northbound Highway 4K ANPR Array', fovTarget: [0.0038, 0.0006], cams: camsPerPole, type: '4K ANPR + Bullet Radar' },
+        { latOff: 0.0020, lngOff: -0.0012, name: 'Pole #02 - North Entry Overbridge 360° PTZ', fovTarget: [0.0010, -0.0020], cams: camsPerPole, type: '360° Optical SpeedDome' },
+        { latOff: 0.0012, lngOff: 0.0020, name: 'Pole #03 - East Industrial Service Ingress', fovTarget: [0.0022, 0.0028], cams: camsPerPole, type: 'Thermal Night-Vision' },
+        { latOff: 0.0005, lngOff: -0.0018, name: 'Pole #04 - West Commercial Bourse Gateway', fovTarget: [0.0005, -0.0028], cams: camsPerPole, type: 'Facial Recognition Dome' },
+        { latOff: 0.0000, lngOff: 0.0000, name: 'Pole #05 - Central Interchange Master Array', fovTarget: [0.0008, 0.0000], cams: camsPerPole, type: 'Multi-Sensor Panoramic Array' },
+        { latOff: -0.0008, lngOff: 0.0014, name: 'Pole #06 - East Highway Exit Ramp Signal Matrix', fovTarget: [-0.0008, 0.0024], cams: camsPerPole, type: 'Traffic Violation Optical' },
+        { latOff: -0.0014, lngOff: -0.0016, name: 'Pole #07 - West Metro Underpass & Pedestrian Corridor', fovTarget: [-0.0024, -0.0022], cams: camsPerPole, type: 'High-Density Biometric Sensor' },
+        { latOff: -0.0019, lngOff: 0.0008, name: 'Pole #08 - Southbound Fast-Lane Multi-Radar', fovTarget: [-0.0030, 0.0008], cams: camsPerPole, type: 'Dual ANPR Radar Speed Sensor' },
+        { latOff: -0.0026, lngOff: -0.0005, name: 'Pole #09 - South Flyover Arterial Intersection', fovTarget: [-0.0034, -0.0012], cams: camsPerPole, type: 'Panoramic SpeedDome' },
+        { latOff: -0.0032, lngOff: 0.0012, name: 'Pole #10 - Outer Perimeter Cargo Bypass Sentry', fovTarget: [-0.0038, 0.0022], cams: camsPerPole, type: 'Heavy Vehicle ANPR Scanner' }
+      ];
+
       let centralMarker = null;
 
       poleOffsets.slice(0, poleCount).forEach((p, idx) => {
         const poleLat = spot.lat + p.latOff;
         const poleLng = spot.lng + p.lngOff;
-
         const isCenter = idx === 4;
+
+        // Optical FOV Cone Polygon on road
+        const fovTargetLat = spot.lat + p.fovTarget[0];
+        const fovTargetLng = spot.lng + p.fovTarget[1];
+        const coneCoords = [
+          [poleLat, poleLng],
+          [fovTargetLat + 0.0004, fovTargetLng - 0.0004],
+          [fovTargetLat - 0.0004, fovTargetLng + 0.0004]
+        ];
+        const fovCone = L.polygon(coneCoords, {
+          color: '#10b981',
+          weight: 1,
+          fillColor: '#10b981',
+          fillOpacity: 0.25
+        }).addTo(leafletMapInstance);
+        window.activeDeployedCoverageLayers.push(fovCone);
+
+        // Tactical Pole Pin
         const poleIcon = L.divIcon({
           className: 'tactical-pole-pin',
           html: `
@@ -1869,19 +1938,14 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
           </div>
         `);
 
-        if (isCenter) {
-          centralMarker = poleMarker;
-        }
-
+        if (isCenter) centralMarker = poleMarker;
         window.activeDeployedCoverageLayers.push(poleMarker);
       });
 
-      if (centralMarker) {
-        centralMarker.openPopup();
-      }
+      if (centralMarker) centralMarker.openPopup();
     }
 
-    // 6. Trigger Real-Time Notification Toast
+    // 5. Trigger Real-Time Notification Toast
     showRealtimeAlertToast({
       title: `100-CAMERA SURVEILLANCE ARMED: ${spot.name}`,
       location: `${dist.name} &bull; Total Area Monitored: ${areaSqKm} sq.km (${areaSqM.toLocaleString()} m²)`,
@@ -1889,7 +1953,7 @@ async function deployCamerasToLocation(districtId, spotId, count = 100) {
       kafka_topic: 'nirikshan.infrastructure.100cams.grid'
     });
 
-    // 7. Update Background Data Matrices without wiping active coverage layers
+    // 6. Update Background Data Matrices
     await renderGapAnalysis();
   }
 }
