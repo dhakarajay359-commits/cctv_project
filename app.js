@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAdminView();
   initBandwidthCalculator();
   initModalHandlers();
+  initBlindSpotModal();
 });
 
 /* =========================================================================
@@ -1490,6 +1491,7 @@ async function renderGapAnalysis() {
   report.district_breakdown.forEach(dist => {
     const card = document.createElement('div');
     card.className = 'district-gap-card';
+    card.style.cursor = 'pointer';
 
     let tagClass = 'optimal';
     if (dist.gap_status.includes('Moderate')) tagClass = 'moderate';
@@ -1519,9 +1521,13 @@ async function renderGapAnalysis() {
           <label>Density / sq.km:</label>
           <span>${dist.density_per_sqkm} cams/km²</span>
         </div>
-        <div>
-          <label>Blind-Spot Gap:</label>
-          <span style="color: var(--accent-rose);">+${dist.gap_cams_needed.toLocaleString()} Needed</span>
+        <div class="blindspot-gap-clickable" title="Click to view exact locations & camera quantities needed to cover blind spots">
+          <label style="color: var(--accent-rose); display:flex; align-items:center; gap:3px;">
+            Blind-Spot Gap: <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i>
+          </label>
+          <span style="color: var(--accent-rose); font-weight:800; text-decoration: underline; text-underline-offset: 2px;">
+            +${dist.gap_cams_needed.toLocaleString()} Needed
+          </span>
         </div>
         <div>
           <label>Est. Budget Grant:</label>
@@ -1529,8 +1535,219 @@ async function renderGapAnalysis() {
         </div>
       </div>
     `;
+
+    card.addEventListener('click', (e) => {
+      openDistrictBlindSpotModal(dist.id);
+    });
+
     container.appendChild(card);
   });
+}
+
+// Interactive District Blind-Spot Resolution & Installation Modal
+let activeBlindSpotDistrictId = null;
+
+async function openDistrictBlindSpotModal(districtId) {
+  activeBlindSpotDistrictId = districtId;
+  const modal = document.getElementById('districtBlindSpotModal');
+  if (!modal) return;
+
+  const districts = await window.apiClient.getDistricts();
+  const dist = districts.find(d => d.id === districtId);
+  if (!dist) return;
+
+  const spots = await window.apiClient.getDistrictBlindSpots(districtId);
+
+  // Update Header & Metrics
+  document.getElementById('blindSpotModalTitle').textContent = `${dist.name} • Blind-Spot Resolution Blueprint`;
+  document.getElementById('bsModalTotalGap').textContent = `+${dist.gap_cams_needed.toLocaleString()} Needed`;
+  document.getElementById('bsModalCoverage').textContent = `${dist.coverage_score}%`;
+  document.getElementById('bsModalBudget').textContent = `₹${((dist.gap_cams_needed * 25000) / 10000000).toFixed(2)} Cr`;
+  document.getElementById('bsModalHotspotsCount').textContent = `${spots.length} Target Sectors`;
+
+  // Render Locations List
+  const listContainer = document.getElementById('blindSpotLocationsList');
+  if (listContainer) {
+    listContainer.innerHTML = '';
+
+    if (spots.length === 0 || dist.gap_cams_needed === 0) {
+      listContainer.innerHTML = `
+        <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: var(--radius-sm); padding: 1.5rem; text-align: center;">
+          <i class="fa-solid fa-circle-check text-green" style="font-size: 1.8rem; margin-bottom: 0.5rem;"></i>
+          <h4 style="color: #047857; font-size: 0.95rem; font-weight: 800;">All Identified Blind Spots in ${dist.name} are Fully Covered!</h4>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem;">Camera density target (${dist.target_cams.toLocaleString()} nodes) is 100% satisfied.</p>
+        </div>
+      `;
+    } else {
+      spots.forEach(spot => {
+        const spotCard = document.createElement('div');
+        spotCard.className = 'blind-spot-row-card';
+        spotCard.style.cssText = `
+          background: #f8fafc;
+          border: 1px solid var(--border-color);
+          border-left: 4px solid ${spot.priority === 'CRITICAL' ? 'var(--accent-rose)' : (spot.priority === 'HIGH' ? 'var(--accent-amber)' : 'var(--accent-cyan)')};
+          border-radius: var(--radius-sm);
+          padding: 0.9rem 1.1rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+          transition: all 0.15s ease;
+        `;
+
+        spotCard.innerHTML = `
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <strong style="font-size: 0.85rem; color: #0f172a;">${spot.name}</strong>
+              <span style="font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: ${spot.priority === 'CRITICAL' ? 'rgba(244,63,94,0.12)' : 'rgba(217,119,6,0.12)'}; color: ${spot.priority === 'CRITICAL' ? 'var(--accent-rose)' : 'var(--accent-amber)'};">
+                ${spot.priority}
+              </span>
+              <span style="font-size: 0.68rem; color: var(--text-muted);">${spot.category}</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, auto); gap: 1rem; margin-top: 0.45rem; font-size: 0.72rem; color: #475569;">
+              <div>
+                <span style="color: var(--text-muted);">Required Spec:</span>
+                <strong style="color: #0f172a;">${spot.hardware}</strong>
+              </div>
+              <div>
+                <span style="color: var(--text-muted);">Uncovered Area:</span>
+                <strong style="color: #0f172a;">${spot.radius}</strong>
+              </div>
+              <div>
+                <span style="color: var(--text-muted);">Est. Placement Cost:</span>
+                <strong style="color: #d97706;">₹${spot.est_cost_lakhs} L</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; min-width: 160px;">
+            <div style="text-align: right;">
+              <span style="font-size: 0.68rem; color: var(--text-muted); display: block;">Cameras Needed:</span>
+              <strong style="font-size: 1.15rem; color: var(--accent-rose); font-weight: 800;">
+                +${spot.cams_needed.toLocaleString()} Cams
+              </strong>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem;">
+              <button class="action-btn" onclick="plotBlindSpotLocationOnMap(${spot.lat}, ${spot.lng}, '${spot.name.replace(/'/g, "\\'")}', ${spot.cams_needed}, '${dist.name}')" title="Fly to exact location on GIS Map" style="padding: 0.3rem 0.6rem; font-size: 0.72rem;">
+                <i class="fa-solid fa-map-location-dot text-cyan"></i> Plot on Map
+              </button>
+              <button class="action-btn primary" onclick="deployCamerasToLocation('${dist.id}', '${spot.id}', ${Math.min(spot.cams_needed, 100)})" title="Install batch of cameras to this blind spot" style="padding: 0.3rem 0.65rem; font-size: 0.72rem; background: #2563eb; color: #ffffff;">
+                <i class="fa-solid fa-bolt"></i> Deploy ${Math.min(spot.cams_needed, 100)} Cams
+              </button>
+            </div>
+          </div>
+        `;
+        listContainer.appendChild(spotCard);
+      });
+    }
+  }
+
+  modal.classList.add('open');
+}
+
+// Fly to specific blind-spot location on the GIS Map & show interactive marker
+function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
+  const modal = document.getElementById('districtBlindSpotModal');
+  if (modal) modal.classList.remove('open');
+
+  // Switch to GIS Dashboard
+  const dashBtn = document.querySelector('[data-view="view-dashboard"]');
+  if (dashBtn) dashBtn.click();
+
+  if (leafletMapInstance) {
+    leafletMapInstance.flyTo([lat, lng], 15, { duration: 1.2 });
+
+    // Drop a tactical flashing blind spot marker
+    const icon = L.divIcon({
+      className: 'blind-spot-pulse-marker',
+      html: `
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+          <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(220,38,38,0.25); animation: pulseBeacon 1.5s infinite;"></div>
+          <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
+            <i class="fa-solid fa-video-slash"></i>
+          </div>
+        </div>
+      `,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+
+    const marker = L.marker([lat, lng], { icon }).addTo(leafletMapInstance);
+    marker.bindPopup(`
+      <div style="font-family: var(--font-main); font-size: 12px; min-width: 240px; padding: 4px;">
+        <div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;">
+          <span style="background: rgba(220,38,38,0.15); color:#dc2626; font-weight:800; font-size:10px; padding:2px 6px; border-radius:3px;">
+            IDENTIFIED BLIND SPOT
+          </span>
+          <strong style="color: #0f172a; font-size: 11px;">${distName}</strong>
+        </div>
+        <strong style="color: #0f172a; font-size: 13px; display:block; margin-bottom:4px;">${name}</strong>
+        <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
+          Cameras Required: <strong style="color: #dc2626;">+${camsNeeded} Cams</strong>
+        </div>
+        <button onclick="window.deployCamerasToLocation('${activeBlindSpotDistrictId || 'dist-ahmedabad'}', '', 50)" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">
+          <i class="fa-solid fa-bolt"></i> Fast-Track Install Cameras Here
+        </button>
+      </div>
+    `).openPopup();
+  }
+}
+
+// Deploy cameras dynamically to reduce the blind spot gap
+async function deployCamerasToLocation(districtId, spotId, count = 100) {
+  const res = await window.apiClient.deployCamerasToBlindSpot(districtId, spotId, count);
+  if (res.status === 'success') {
+    // Re-render district blind spots modal
+    await openDistrictBlindSpotModal(districtId);
+
+    // Re-render Gap Analysis Grid
+    await renderGapAnalysis();
+
+    // Re-render GIS nodes if on dashboard
+    if (typeof updateMap === 'function') {
+      await updateMap();
+    }
+  }
+}
+
+// Expose globally for HTML onclick triggers
+window.openDistrictBlindSpotModal = openDistrictBlindSpotModal;
+window.plotBlindSpotLocationOnMap = plotBlindSpotLocationOnMap;
+window.deployCamerasToLocation = deployCamerasToLocation;
+
+// Initialize Blind Spot Modal Event Listeners
+function initBlindSpotModal() {
+  const modal = document.getElementById('districtBlindSpotModal');
+  const closeBtn = document.getElementById('closeBlindSpotModal');
+  const closeFooterBtn = document.getElementById('btnCloseBlindSpotModalFooter');
+  const form = document.getElementById('addCustomBlindSpotForm');
+
+  if (closeBtn) closeBtn.addEventListener('click', () => modal?.classList.remove('open'));
+  if (closeFooterBtn) closeFooterBtn.addEventListener('click', () => modal?.classList.remove('open'));
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!activeBlindSpotDistrictId) return;
+
+      const name = document.getElementById('customSpotName')?.value;
+      const category = document.getElementById('customSpotCategory')?.value;
+      const camsNeeded = parseInt(document.getElementById('customSpotCams')?.value || 100, 10);
+      const hardware = document.getElementById('customSpotHardware')?.value;
+      const lat = parseFloat(document.getElementById('customSpotLat')?.value || 23.03);
+      const lng = parseFloat(document.getElementById('customSpotLng')?.value || 72.58);
+
+      await window.apiClient.addCustomBlindSpot(activeBlindSpotDistrictId, {
+        name, category, cams_needed: camsNeeded, hardware, lat, lng
+      });
+
+      form.reset();
+      await openDistrictBlindSpotModal(activeBlindSpotDistrictId);
+      await renderGapAnalysis();
+    });
+  }
 }
 
 // Bulk CSV Import Modal & Parsing

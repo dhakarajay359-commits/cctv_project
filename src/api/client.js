@@ -1127,6 +1127,177 @@ class NirikshanApiClient {
     };
   }
 
+  // Retrieve Dynamic Specific Blind-Spot Locations & Required Camera Quantities
+  async getDistrictBlindSpots(districtIdOrName) {
+    const dist = this.districts.find(d => d.id === districtIdOrName || d.name.toLowerCase() === districtIdOrName.toLowerCase() || d.name.toLowerCase().includes(districtIdOrName.toLowerCase()));
+    if (!dist) return [];
+
+    if (!this.districtBlindSpots) {
+      this.districtBlindSpots = {};
+    }
+
+    if (!this.districtBlindSpots[dist.id]) {
+      // Initialize district specific blind spots based on real infrastructure & current gap
+      this.districtBlindSpots[dist.id] = this._generateDistrictBlindSpots(dist);
+    }
+
+    // Ensure camera counts and remaining gaps stay dynamically aligned with dist.gap_cams_needed
+    return this.districtBlindSpots[dist.id];
+  }
+
+  _generateDistrictBlindSpots(dist) {
+    const dName = dist.name.split(' (')[0];
+    const totalGap = dist.gap_cams_needed;
+    
+    // District-specific presets for Gujarat key districts
+    const presets = {
+      'dist-ahmedabad': [
+        { id: 'spot-amd-1', name: 'SG Highway & SP Ring Road Interchange (Gota - Vaishnodevi Blind Curve)', category: 'Highway Interchange', share: 0.26, lat: 23.1147, lng: 72.5372, hardware: '4K ANPR + Dual Optical PTZ', radius: '850m Unmonitored', priority: 'CRITICAL' },
+        { id: 'spot-amd-2', name: 'Narol - Vatva GIDC Industrial Chemical Corridor Chokepoint', category: 'Industrial Freight', share: 0.23, lat: 22.9734, lng: 72.5931, hardware: 'Thermal Infrared + Night-Dome', radius: '1.2 km Corridor', priority: 'HIGH' },
+        { id: 'spot-amd-3', name: 'Sabarmati Riverfront Promenade Phase-2 (Subhash Bridge to Camp)', category: 'Waterfront / Dark Zone', share: 0.18, lat: 23.0588, lng: 72.5830, hardware: 'Panoramic 360° Optical Dome', radius: '600m Promenade', priority: 'HIGH' },
+        { id: 'spot-amd-4', name: 'Kalupur Central Railway Station & Sarangpur Gateway Bus Arterial', category: 'Transit Hub', share: 0.20, lat: 23.0232, lng: 72.5995, hardware: 'High-Density Facial Recognition', radius: '450m Chokepoint', priority: 'CRITICAL' },
+        { id: 'spot-amd-5', name: 'S.P. Ring Road Nikol - Odhav Cargo Bypass Exit', category: 'Bypass Arterial', share: 0.13, lat: 23.0385, lng: 72.6710, hardware: 'Multi-Lane ANPR Radar Sensor', radius: '900m Highway Entry', priority: 'MEDIUM' }
+      ],
+      'dist-surat': [
+        { id: 'spot-srt-1', name: 'Varachha Diamond Bourse & Mini-Bazaar Underpass Intersection', category: 'Commercial Hub', share: 0.32, lat: 21.2185, lng: 72.8540, hardware: '4K Multi-Sensor Optical', radius: '550m Chokepoint', priority: 'CRITICAL' },
+        { id: 'spot-srt-2', name: 'Hazira Industrial Port Expressway & Heavy Cargo Checkpost', category: 'Port & Highway', share: 0.28, lat: 21.1210, lng: 72.6750, hardware: 'Heavy Vehicle ANPR + Thermal', radius: '1.5 km Port Lane', priority: 'HIGH' },
+        { id: 'spot-srt-3', name: 'Ring Road Millennium Textile Market Gate #4 Arterial', category: 'Transit & Commercial', share: 0.24, lat: 21.1890, lng: 72.8420, hardware: 'Facial Recognition Dome', radius: '400m Street', priority: 'HIGH' },
+        { id: 'spot-srt-4', name: 'Dumas Coastal Road & Airport Blind Turn Junction', category: 'Coastal Corridor', share: 0.16, lat: 21.1340, lng: 72.7480, hardware: '360° PTZ SpeedDome', radius: '800m Dark Curve', priority: 'MEDIUM' }
+      ],
+      'dist-dahod': [
+        { id: 'spot-dhd-1', name: 'NH-47 Interstate Border Toll Checkpost (MP-Gujarat Entry)', category: 'Interstate Border', share: 0.30, lat: 22.8400, lng: 74.2580, hardware: 'ANPR Bullet + Vehicle Scanner', radius: '2.0 km Checkpost', priority: 'CRITICAL' },
+        { id: 'spot-dhd-2', name: 'Jhalod Tribal Forest Transit Bypass (Unmonitored Highway)', category: 'Forest Dark Corridor', share: 0.28, lat: 23.0900, lng: 74.1500, hardware: 'Solar-Powered Night Vision PTZ', radius: '3.5 km Forest Stretch', priority: 'CRITICAL' },
+        { id: 'spot-dhd-3', name: 'Garbada - MP Border Secondary Infiltration Corridor', category: 'Border Arterial', share: 0.24, lat: 22.7100, lng: 74.3200, hardware: 'Wireless Optical Sentry', radius: '1.8 km Rural Pass', priority: 'HIGH' },
+        { id: 'spot-dhd-4', name: 'Dahod Railway Junction Goods Yard & North Exit', category: 'Railway Freight', share: 0.18, lat: 22.8350, lng: 74.2480, hardware: 'Multi-Sensor Dome', radius: '650m Freight Yard', priority: 'HIGH' }
+      ],
+      'dist-banaskantha': [
+        { id: 'spot-bk-1', name: 'Tharad - Rajasthan Interstate Border Corridor', category: 'Interstate Border', share: 0.35, lat: 24.3900, lng: 71.6200, hardware: 'Heavy Radar ANPR', radius: '2.5 km Border Line', priority: 'CRITICAL' },
+        { id: 'spot-bk-2', name: 'Ambaji Pilgrimage Temple Hill Road & Ghat Corridor', category: 'Pilgrimage Transit', share: 0.26, lat: 24.3300, lng: 72.8500, hardware: 'Crowd Density Panoramic Dome', radius: '1.2 km Hill Pass', priority: 'HIGH' },
+        { id: 'spot-bk-3', name: 'Palanpur Highway Bypass & Deesa Crossroad Chokepoint', category: 'Highway Intersection', share: 0.23, lat: 24.1700, lng: 72.4300, hardware: '4K SpeedDome PTZ', radius: '800m Intersection', priority: 'HIGH' },
+        { id: 'spot-bk-4', name: 'Dantiwada Dam Reservoir Perimeter Dark Zone', category: 'Critical Infrastructure', share: 0.16, lat: 24.3200, lng: 72.3300, hardware: 'Thermal Perimeter Sensor', radius: '1.4 km Perimeter', priority: 'MEDIUM' }
+      ],
+      'dist-vadodara': [
+        { id: 'spot-brd-1', name: 'Sayajigunj Station Circle & Alkapuri Underpass Chokepoint', category: 'Transit Hub', share: 0.32, lat: 22.3100, lng: 73.1800, hardware: 'Facial Recognition Optical', radius: '500m Hub', priority: 'HIGH' },
+        { id: 'spot-brd-2', name: 'Makarpura GIDC Industrial Freight Checkpost', category: 'Industrial Freight', share: 0.28, lat: 22.2500, lng: 73.1900, hardware: 'ANPR Traffic Bullet', radius: '950m Estate', priority: 'HIGH' },
+        { id: 'spot-brd-3', name: 'National Highway 48 Golden Chokdi Interchange', category: 'Highway Interchange', share: 0.25, lat: 22.3600, lng: 73.2300, hardware: '4K Dual Optical PTZ', radius: '1.1 km Interchange', priority: 'CRITICAL' },
+        { id: 'spot-brd-4', name: 'Ajwa Road Outer Ring Road Blind Intersection', category: 'Urban Outskirts', share: 0.15, lat: 22.3050, lng: 73.2500, hardware: 'Wide-Angle Night Dome', radius: '650m Turn', priority: 'MEDIUM' }
+      ],
+      'dist-rajkot': [
+        { id: 'spot-rjt-1', name: '150 Feet Ring Road Madhapar Crossroad', category: 'Highway Intersection', share: 0.34, lat: 22.3200, lng: 70.7800, hardware: 'ANPR Multi-Lane Radar', radius: '900m Circle', priority: 'CRITICAL' },
+        { id: 'spot-rjt-2', name: 'Aji GIDC Industrial Goods Freight Exit', category: 'Industrial Freight', share: 0.28, lat: 22.2700, lng: 70.8300, hardware: 'Thermal + Bullet Optical', radius: '1.1 km GIDC Lane', priority: 'HIGH' },
+        { id: 'spot-rjt-3', name: 'Kuvadva Road AIIMS Hospital Highway Corridor', category: 'Institutional Transit', share: 0.22, lat: 22.3400, lng: 70.8600, hardware: 'High-Res Optical PTZ', radius: '800m Highway', priority: 'HIGH' },
+        { id: 'spot-rjt-4', name: 'Gondal Road City Gateway & Bypass', category: 'City Gateway', share: 0.16, lat: 22.2600, lng: 70.7900, hardware: '360° Dome Sensor', radius: '600m Chokepoint', priority: 'MEDIUM' }
+      ]
+    };
+
+    const spotTemplates = presets[dist.id] || [
+      { id: `spot-${dist.id}-1`, name: `${dName} National/State Highway Junction & Bypass`, category: 'Highway Intersection', share: 0.35, lat: (dist.lat || 22.5) + 0.025, lng: (dist.lng || 71.5) + 0.020, hardware: '4K ANPR + Dual Optical PTZ', radius: '1.1 km Highway', priority: 'CRITICAL' },
+      { id: `spot-${dist.id}-2`, name: `${dName} Central Market & Transit Chokepoint`, category: 'Commercial & Transit', share: 0.28, lat: (dist.lat || 22.5) - 0.015, lng: (dist.lng || 71.5) - 0.015, hardware: 'Facial Recognition Optical Dome', radius: '550m Market', priority: 'HIGH' },
+      { id: `spot-${dist.id}-3`, name: `${dName} Industrial GIDC / Freight Corridor`, category: 'Industrial Freight', share: 0.22, lat: (dist.lat || 22.5) + 0.035, lng: (dist.lng || 71.5) - 0.030, hardware: 'Thermal Long-Range Bullet', radius: '1.4 km GIDC', priority: 'HIGH' },
+      { id: `spot-${dist.id}-4`, name: `${dName} Outer Perimeter Dark Zone & Entry Point`, category: 'Perimeter Checkpost', share: 0.15, lat: (dist.lat || 22.5) - 0.030, lng: (dist.lng || 71.5) + 0.035, hardware: '360° SpeedDome PTZ', radius: '850m Outskirts', priority: 'MEDIUM' }
+    ];
+
+    let allocated = 0;
+    return spotTemplates.map((template, idx) => {
+      let camsNeeded = Math.round(totalGap * template.share);
+      if (idx === spotTemplates.length - 1) {
+        camsNeeded = Math.max(0, totalGap - allocated);
+      } else {
+        allocated += camsNeeded;
+      }
+      return {
+        ...template,
+        district_id: dist.id,
+        district_name: dist.name,
+        target_cams: camsNeeded,
+        installed_cams: 0,
+        cams_needed: camsNeeded,
+        est_cost_lakhs: parseFloat(((camsNeeded * 25000) / 100000).toFixed(1)),
+        status: camsNeeded > 0 ? 'Pending Deployment' : 'Fully Covered'
+      };
+    });
+  }
+
+  // Fast-Track Deploy Cameras to a Specific Blind Spot Location
+  async deployCamerasToBlindSpot(districtId, spotId, count = 100) {
+    const dist = this.districts.find(d => d.id === districtId);
+    if (!dist) return { status: 'error', message: 'District not found' };
+
+    const spots = await this.getDistrictBlindSpots(districtId);
+    const spot = spots.find(s => s.id === spotId);
+    if (!spot) return { status: 'error', message: 'Blind spot location not found' };
+
+    const actualDeploy = Math.min(count, spot.cams_needed);
+    spot.installed_cams += actualDeploy;
+    spot.cams_needed = Math.max(0, spot.target_cams - spot.installed_cams);
+    spot.est_cost_lakhs = parseFloat(((spot.cams_needed * 25000) / 100000).toFixed(1));
+    spot.status = spot.cams_needed === 0 ? 'Fully Covered' : 'Partially Installed';
+
+    // Update District Totals Live
+    dist.total_cams = Math.min(dist.target_cams, dist.total_cams + actualDeploy);
+    dist.gap_cams_needed = Math.max(0, dist.target_cams - dist.total_cams);
+    dist.coverage_score = Math.min(100, parseFloat(((dist.total_cams / dist.target_cams) * 100).toFixed(1)));
+    dist.gap_status = dist.coverage_score >= 90 ? 'Optimal' : (dist.coverage_score >= 70 ? 'Moderate Gap' : (dist.coverage_score >= 50 ? 'High Gap' : 'Critical Gap'));
+
+    // Register a sample master node into live registry
+    const newCam = await this.createCamera({
+      district: dist.name,
+      department_id: this.activeUser.department_id,
+      name: `${spot.name} - Node #01`,
+      lat: spot.lat,
+      lng: spot.lng,
+      type: 'ip',
+      vendor: spot.hardware,
+      fov_angle: 120,
+      direction: 'Intersection Panoramic'
+    });
+
+    this.logAudit('BLIND_SPOT_CAMERAS_DEPLOYED', `Deployed ${actualDeploy} cameras to ${spot.name} in ${dist.name}. Remaining gap: ${dist.gap_cams_needed}`);
+
+    return {
+      status: 'success',
+      deployed_count: actualDeploy,
+      spot,
+      district: dist,
+      new_camera: newCam
+    };
+  }
+
+  // Add Custom User-Identified Blind Spot Location Dynamically
+  async addCustomBlindSpot(districtId, spotData) {
+    const dist = this.districts.find(d => d.id === districtId);
+    if (!dist) return { status: 'error', message: 'District not found' };
+
+    const spots = await this.getDistrictBlindSpots(districtId);
+    const camsReq = parseInt(spotData.cams_needed || 100, 10);
+    const newSpot = {
+      id: `spot-custom-${Date.now()}`,
+      district_id: dist.id,
+      district_name: dist.name,
+      name: spotData.name,
+      category: spotData.category || 'Identified Blind Spot',
+      lat: parseFloat(spotData.lat || dist.lat || 22.8),
+      lng: parseFloat(spotData.lng || dist.lng || 71.5),
+      hardware: spotData.hardware || '4K Optical ANPR + PTZ',
+      radius: spotData.radius || '750m Unmonitored',
+      priority: spotData.priority || 'HIGH',
+      target_cams: camsReq,
+      installed_cams: 0,
+      cams_needed: camsReq,
+      est_cost_lakhs: parseFloat(((camsReq * 25000) / 100000).toFixed(1)),
+      status: 'Pending Deployment'
+    };
+
+    spots.push(newSpot);
+    dist.target_cams += camsReq;
+    dist.gap_cams_needed = Math.max(0, dist.target_cams - dist.total_cams);
+    dist.coverage_score = Math.min(100, parseFloat(((dist.total_cams / dist.target_cams) * 100).toFixed(1)));
+    dist.gap_status = dist.coverage_score >= 90 ? 'Optimal' : (dist.coverage_score >= 70 ? 'Moderate Gap' : (dist.coverage_score >= 50 ? 'High Gap' : 'Critical Gap'));
+
+    this.logAudit('CUSTOM_BLIND_SPOT_REGISTERED', `${newSpot.name} (+${camsReq} cams) added to ${dist.name}`);
+    return { status: 'success', spot: newSpot, district: dist };
+  }
+
   async getCameras(filterDept = 'ALL', filterStatus = 'ALL', searchQuery = '', filterDistrict = 'ALL') {
     let result = this.cameras;
 
@@ -1331,6 +1502,16 @@ class NirikshanApiClient {
     };
 
     this.cameras.push(newCam);
+
+    // Dynamically update district camera totals and reduce gap
+    const dist = this.districts.find(d => d.name === newCam.district || d.id === newCam.district || newCam.district.includes(d.name.split(' (')[0]));
+    if (dist) {
+      dist.total_cams = Math.min(dist.target_cams, dist.total_cams + 1);
+      dist.gap_cams_needed = Math.max(0, dist.target_cams - dist.total_cams);
+      dist.coverage_score = Math.min(100, parseFloat(((dist.total_cams / dist.target_cams) * 100).toFixed(1)));
+      dist.gap_status = dist.coverage_score >= 90 ? 'Optimal' : (dist.coverage_score >= 70 ? 'Moderate Gap' : (dist.coverage_score >= 50 ? 'High Gap' : 'Critical Gap'));
+    }
+
     this.logAudit('CAMERA_ONBOARD_CREATED', newCam.id);
     return newCam;
   }
@@ -1339,6 +1520,13 @@ class NirikshanApiClient {
     const idx = this.cameras.findIndex(c => c.id === id);
     if (idx !== -1) {
       const removed = this.cameras.splice(idx, 1)[0];
+      const dist = this.districts.find(d => d.name === removed.district || d.id === removed.district || (removed.district && removed.district.includes(d.name.split(' (')[0])));
+      if (dist) {
+        dist.total_cams = Math.max(0, dist.total_cams - 1);
+        dist.gap_cams_needed = Math.max(0, dist.target_cams - dist.total_cams);
+        dist.coverage_score = Math.min(100, parseFloat(((dist.total_cams / dist.target_cams) * 100).toFixed(1)));
+        dist.gap_status = dist.coverage_score >= 90 ? 'Optimal' : (dist.coverage_score >= 70 ? 'Moderate Gap' : (dist.coverage_score >= 50 ? 'High Gap' : 'Critical Gap'));
+      }
       this.logAudit('CAMERA_DECOMMISSIONED_DELETED', `${removed.id} (${removed.name})`);
       return { status: 'success', deleted: removed };
     }
@@ -1357,21 +1545,31 @@ class NirikshanApiClient {
         lat: parseFloat(row.lat),
         lng: parseFloat(row.lng),
         type: row.type || 'ip',
-        vendor: row.vendor || 'ONVIF Auto-Discovered',
-        status: row.status || 'online',
-        storage_type: row.storage_type || 'edge_nvr',
+        vendor: row.vendor || 'Generic ONVIF IP',
+        status: 'online',
+        storage_type: 'edge_nvr',
         retention_days: parseInt(row.retention_days || 15, 10),
         onboarded_at: new Date().toISOString(),
-        stream_url: `webrtc://edge-auto.nirikshan.gov.in/live/${row.id || 'stream'}`,
-        fov_angle: parseInt(row.fov_angle || 90, 10),
-        direction: row.direction || 'Surveillance View',
-        resolution: row.resolution || '1080p',
+        stream_url: `webrtc://edge-${Math.floor(100 + Math.random() * 900)}.nirikshan.gov.in/live/stream1`,
+        fov_angle: 90,
+        direction: 'Road View',
+        resolution: '1080p',
         health_history: [
-          { time: '12:00', ping_ms: 22, status: 'online' }
+          { time: '06:00', ping_ms: 20, status: 'online' },
+          { time: '12:00', ping_ms: 22, status: 'online' },
+          { time: '17:30', ping_ms: 21, status: 'online' }
         ]
       };
       this.cameras.push(cam);
       imported.push(cam);
+
+      const dist = this.districts.find(d => d.name === cam.district || d.id === cam.district || (cam.district && cam.district.includes(d.name.split(' (')[0])));
+      if (dist) {
+        dist.total_cams = Math.min(dist.target_cams, dist.total_cams + 1);
+        dist.gap_cams_needed = Math.max(0, dist.target_cams - dist.total_cams);
+        dist.coverage_score = Math.min(100, parseFloat(((dist.total_cams / dist.target_cams) * 100).toFixed(1)));
+        dist.gap_status = dist.coverage_score >= 90 ? 'Optimal' : (dist.coverage_score >= 70 ? 'Moderate Gap' : (dist.coverage_score >= 50 ? 'High Gap' : 'Critical Gap'));
+      }
     });
 
     this.logAudit('CAMERA_BULK_IMPORT', `${imported.length} Cameras Ingested`);
