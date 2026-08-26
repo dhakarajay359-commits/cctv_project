@@ -1099,9 +1099,9 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
         const distTag = L.marker([cam.lat - 0.0009, cam.lng], {
           icon: L.divIcon({
             className: 'onmap-marker-wrap',
-            html: `<div class="onmap-dimension-badge" style="font-size: 8.5px; padding: 1px 5px;">📏 110m Coverage Distance (~38,000 m²)</div>`,
-            iconSize: [180, 16],
-            iconAnchor: [90, 8]
+            html: `<div class="onmap-dimension-badge" style="font-size: 8.5px; padding: 1px 5px; background: #0f172a; color: #38bdf8; border-color: #38bdf8;">📹 1 Camera: 110m Radius (~38,000 m² Coverage)</div>`,
+            iconSize: [220, 16],
+            iconAnchor: [110, 8]
           })
         }).addTo(leafletMapInstance);
         leafletMarkers.push(distTag);
