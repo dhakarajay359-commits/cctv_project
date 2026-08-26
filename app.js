@@ -1633,9 +1633,15 @@ async function openDistrictBlindSpotModal(districtId) {
               <button class="action-btn" onclick="plotBlindSpotLocationOnMap(${spot.lat}, ${spot.lng}, '${spot.name.replace(/'/g, "\\'")}', ${spot.cams_needed}, '${dist.name}')" title="Fly to exact location on GIS Map" style="padding: 0.3rem 0.6rem; font-size: 0.72rem;">
                 <i class="fa-solid fa-map-location-dot text-cyan"></i> Plot on Map
               </button>
-              <button class="action-btn primary" onclick="deployCamerasToLocation('${dist.id}', '${spot.id}', ${Math.min(spot.cams_needed, 100)})" title="Install batch of cameras to this blind spot" style="padding: 0.3rem 0.65rem; font-size: 0.72rem; background: #2563eb; color: #ffffff;">
-                <i class="fa-solid fa-bolt"></i> Deploy ${Math.min(spot.cams_needed, 100)} Cams
-              </button>
+              ${spot.cams_needed === 0 ? `
+                <button class="action-btn" disabled style="padding: 0.3rem 0.65rem; font-size: 0.72rem; background: rgba(16,185,129,0.12); color: #059669; border: 1px solid #10b981; font-weight: 700; cursor: default;">
+                  <i class="fa-solid fa-circle-check text-green"></i> Covered Under Surveillance
+                </button>
+              ` : `
+                <button class="action-btn primary" onclick="deployCamerasToLocation('${dist.id}', '${spot.id}', ${Math.min(spot.cams_needed, 100)})" title="Install cameras and pin on GIS Map" style="padding: 0.3rem 0.65rem; font-size: 0.72rem; background: #2563eb; color: #ffffff;">
+                  <i class="fa-solid fa-bolt"></i> Deploy ${Math.min(spot.cams_needed, 100)} Cams &amp; Pin
+                </button>
+              `}
             </div>
           </div>
         `;
@@ -1657,14 +1663,14 @@ function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
   if (dashBtn) dashBtn.click();
 
   if (leafletMapInstance) {
-    leafletMapInstance.flyTo([lat, lng], 15, { duration: 1.2 });
+    leafletMapInstance.flyTo([lat, lng], 16, { duration: 1.2 });
 
     // Drop a tactical flashing blind spot marker
     const icon = L.divIcon({
       className: 'blind-spot-pulse-marker',
       html: `
         <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-          <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(220,38,38,0.25); animation: pulseBeacon 1.5s infinite;"></div>
+          <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(220,38,38,0.25); animation: pulseRedBeacon 1.5s infinite;"></div>
           <div style="width: 24px; height: 24px; border-radius: 50%; background: #dc2626; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
             <i class="fa-solid fa-video-slash"></i>
           </div>
@@ -1676,36 +1682,149 @@ function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
 
     const marker = L.marker([lat, lng], { icon }).addTo(leafletMapInstance);
     marker.bindPopup(`
-      <div style="font-family: var(--font-main); font-size: 12px; min-width: 240px; padding: 4px;">
+      <div style="font-family: var(--font-main); font-size: 12px; min-width: 250px; padding: 4px;">
         <div style="display:flex; align-items:center; gap:5px; margin-bottom:4px;">
           <span style="background: rgba(220,38,38,0.15); color:#dc2626; font-weight:800; font-size:10px; padding:2px 6px; border-radius:3px;">
-            IDENTIFIED BLIND SPOT
+            ${camsNeeded === 0 ? 'COVERED ZONE' : 'IDENTIFIED BLIND SPOT'}
           </span>
           <strong style="color: #0f172a; font-size: 11px;">${distName}</strong>
         </div>
         <strong style="color: #0f172a; font-size: 13px; display:block; margin-bottom:4px;">${name}</strong>
-        <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
-          Cameras Required: <strong style="color: #dc2626;">+${camsNeeded} Cams</strong>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:5px; margin-bottom:6px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <span style="color:#64748b;">GPS Coordinates:</span>
+            <strong style="color:#2563eb; font-family:var(--font-mono);">${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:#64748b;">Cameras Required:</span>
+            <strong style="color: ${camsNeeded > 0 ? '#dc2626' : '#059669'};">${camsNeeded > 0 ? `+${camsNeeded} Cams Needed` : '✓ Fully Covered'}</strong>
+          </div>
         </div>
-        <button onclick="window.deployCamerasToLocation('${activeBlindSpotDistrictId || 'dist-ahmedabad'}', '', 50)" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">
-          <i class="fa-solid fa-bolt"></i> Fast-Track Install Cameras Here
-        </button>
+        ${camsNeeded > 0 ? `
+          <button onclick="window.deployCamerasToLocation('${activeBlindSpotDistrictId || 'dist-ahmedabad'}', '', 50)" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; font-weight:700; cursor:pointer;">
+            <i class="fa-solid fa-bolt"></i> Deploy Cameras &amp; Pin on GIS Map
+          </button>
+        ` : `
+          <div style="font-size:11px; color:#059669; font-weight:700; text-align:center;">
+            <i class="fa-solid fa-circle-check"></i> Zone Active Under Surveillance
+          </div>
+        `}
       </div>
     `).openPopup();
   }
 }
 
-// Deploy cameras dynamically to reduce the blind spot gap
+// Deploy cameras dynamically, instantly open GIS Map, pin locations with GPS coordinates & trigger coverage notification
 async function deployCamerasToLocation(districtId, spotId, count = 100) {
   const res = await window.apiClient.deployCamerasToBlindSpot(districtId, spotId, count);
   if (res.status === 'success') {
-    // Re-render district blind spots modal
-    await openDistrictBlindSpotModal(districtId);
+    const spot = res.spot;
+    const dist = res.district;
+    const deployedCount = res.deployed_count;
 
-    // Re-render Gap Analysis Grid
+    // 1. Instantly Close Modal
+    const modal = document.getElementById('districtBlindSpotModal');
+    if (modal) modal.classList.remove('open');
+
+    // 2. Instantly Switch to GIS Map Dashboard View
+    const dashBtn = document.querySelector('[data-view="view-dashboard"]');
+    if (dashBtn) dashBtn.click();
+
+    // 3. Pin location on GIS Map & fly to it
+    if (leafletMapInstance) {
+      leafletMapInstance.flyTo([spot.lat, spot.lng], 16, { duration: 1.2 });
+
+      // Add Active Surveillance Coverage Zone (Green Radial Circle)
+      L.circle([spot.lat, spot.lng], {
+        radius: 220,
+        color: '#10b981',
+        fillColor: '#10b981',
+        fillOpacity: 0.2,
+        weight: 2,
+        dashArray: '4, 4'
+      }).addTo(leafletMapInstance);
+
+      // Add Main Tactical Deployed Camera Pin
+      const mainIcon = L.divIcon({
+        className: 'deployed-cam-pin',
+        html: `
+          <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">
+            <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background: rgba(16,185,129,0.35); animation: pulseGreenBeacon 1.8s infinite;"></div>
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: #059669; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 13px; box-shadow: 0 3px 8px rgba(0,0,0,0.35);">
+              <i class="fa-solid fa-video"></i>
+            </div>
+          </div>
+        `,
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+      });
+
+      const mainMarker = L.marker([spot.lat, spot.lng], { icon: mainIcon }).addTo(leafletMapInstance);
+
+      // Sub-pins representing multi-angle intersection nodes
+      const subOffsets = [
+        { latOff: 0.0009, lngOff: 0.0007, label: 'Pole #01 (4K ANPR)' },
+        { latOff: -0.0008, lngOff: 0.0009, label: 'Pole #02 (360° PTZ SpeedDome)' },
+        { latOff: 0.0007, lngOff: -0.0008, label: 'Pole #03 (Thermal Night Sensor)' },
+        { latOff: -0.0008, lngOff: -0.0007, label: 'Pole #04 (Optical Facial Dome)' }
+      ];
+
+      subOffsets.forEach(offset => {
+        const subIcon = L.divIcon({
+          className: 'sub-node-pin',
+          html: `
+            <div style="width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);">
+              <i class="fa-solid fa-camera"></i>
+            </div>
+          `,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+        const subM = L.marker([spot.lat + offset.latOff, spot.lng + offset.lngOff], { icon: subIcon }).addTo(leafletMapInstance);
+        subM.bindTooltip(`${offset.label} &bull; GPS: ${(spot.lat + offset.latOff).toFixed(4)}°N, ${(spot.lng + offset.lngOff).toFixed(4)}°E`, { direction: 'top' });
+      });
+
+      // Open Rich Installation Confirmation Popup
+      mainMarker.bindPopup(`
+        <div style="font-family: var(--font-main); font-size: 12px; min-width: 270px; padding: 4px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px;">
+            <span style="background: #10b981; color:#ffffff; font-weight:800; font-size:10px; padding:2px 7px; border-radius:3px; text-transform:uppercase;">
+              ✓ ACTIVE SURVEILLANCE ARMED
+            </span>
+            <span style="font-size:10px; color:#64748b; font-weight:700;">${dist.name}</span>
+          </div>
+          <strong style="color: #0f172a; font-size: 13px; display:block; margin-bottom:4px;">${spot.name}</strong>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:6px; margin-bottom:6px; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span style="color:#64748b;">GPS Coordinates:</span>
+              <strong style="color:#2563eb; font-family:var(--font-mono);">${spot.lat.toFixed(4)}° N, ${spot.lng.toFixed(4)}° E</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span style="color:#64748b;">Cameras Installed:</span>
+              <strong style="color:#059669; font-weight:800;">+${deployedCount} Nodes Armed</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#64748b;">Hardware Spec:</span>
+              <strong style="color:#0f172a;">${spot.hardware}</strong>
+            </div>
+          </div>
+          <div style="font-size:11px; color:#047857; font-weight:700; display:flex; align-items:center; gap:4px;">
+            <i class="fa-solid fa-circle-check text-green"></i> Blind spot covered under live statewide surveillance
+          </div>
+        </div>
+      `).openPopup();
+    }
+
+    // 4. Trigger Real-Time Notification Toast
+    showRealtimeAlertToast({
+      title: `SURVEILLANCE ACTIVATED: ${spot.name}`,
+      location: `${dist.name} &bull; GPS: ${spot.lat.toFixed(4)}°N, ${spot.lng.toFixed(4)}°E`,
+      camera_id: `+${deployedCount} CAMS ARMED &bull; BLIND SPOT COVERED`,
+      kafka_topic: 'nirikshan.surveillance.blindspot.covered'
+    });
+
+    // 5. Update Background Data Matrices
     await renderGapAnalysis();
-
-    // Re-render GIS nodes if on dashboard
     if (typeof updateMap === 'function') {
       await updateMap();
     }
