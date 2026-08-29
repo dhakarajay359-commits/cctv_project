@@ -5158,7 +5158,7 @@ async function initIntegrationView() {
           <div class="res-item"><label>Make / Model:</label> <span>${d.vehicle_make_model}</span></div>
           <div class="res-item"><label>RTO Authority:</label> <span>${d.rto_office}</span></div>
           <div class="res-item"><label>Chassis Serial:</label> <span>${d.chassis_no || 'N/A'}</span></div>
-          ${d.fir_no ? `<div class="res-item"><label>FIR Case Reference:</label> <span class="text-rose">${d.fir_no} &bull; ${d.crime_section}</span></div>` : ''}
+          ${d.fir_no ? `<div class="res-item" style="grid-column: 1 / -1;"><label>FIR Case Reference:</label> <span class="text-rose">${d.fir_no} &bull; ${d.crime_section}</span></div>` : ''}
         </div>
       `;
     });
@@ -5182,7 +5182,7 @@ async function initIntegrationView() {
             <div class="res-item"><label>CCTNS Case ID:</label> <span class="text-cyan">${d.cctns_id}</span></div>
             <div class="res-item"><label>Warrant Status:</label> <span class="text-rose">${d.status} &bull; ${d.warrant_type}</span></div>
             <div class="res-item"><label>Issuing Court:</label> <span>${d.issuing_court}</span></div>
-            <div class="res-item"><label>Criminal Charges:</label> <span>${d.charges}</span></div>
+            <div class="res-item" style="grid-column: 1 / -1;"><label>Criminal Charges:</label> <span>${d.charges}</span></div>
             <div class="res-item"><label>State Bounty / Reward:</label> <span class="text-amber">₹${d.reward_inr.toLocaleString()}</span></div>
           </div>
         `;
