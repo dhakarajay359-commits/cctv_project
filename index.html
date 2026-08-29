@@ -18,7 +18,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=2.5.9">
+  <link rel="stylesheet" href="style.css?v=2.6.1">
 </head>
 <body class="dark-theme">
   <div class="app-layout" id="appLayout">
@@ -1192,20 +1192,76 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <button class="close-modal-btn" id="closeClipModal">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="clip-player-sim">
-            <div class="clip-watermark" id="clipWatermark">CAM-GJ-0101 &bull; 2026-08-21 17:42:10 IST</div>
-            <div class="clip-bbox-overlay" id="clipBboxOverlay">
-              <span class="bbox-tag" id="clipBboxTag">ANPR: GJ-01-AB-1234 (99.2%)</span>
+          <div class="clip-player-sim" id="clipPlayerContainer">
+            <!-- Real HTML5 CCTV Surveillance Video -->
+            <video id="clipVideoPlayer" playsinline loop muted autoplay></video>
+            
+            <!-- CCTV OSD Overlay (Top Left: REC Indicator, Camera ID, Live Timestamp) -->
+            <div class="clip-watermark" id="clipWatermark">
+              <span class="cctv-rec-indicator"><span class="cctv-rec-dot"></span> REC</span>
+              <span id="clipOsdCamText">CAM-GJ-0102 &bull; 2026-08-29 10:08:46 IST</span>
             </div>
-            <div class="clip-sim-center">
-              <i class="fa-solid fa-play-circle" style="font-size: 3.5rem; color: var(--accent-cyan);"></i>
-              <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #ffffff;">Streaming Forensic Buffer from Edge NVR (15-Day Ring Buffer)</p>
-              <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Offset: 00:14:22 &bull; Cryptographic Hash: #SHA256-VALID</span>
+
+            <!-- CCTV Telemetry Overlay (Top Right: Stream Specs) -->
+            <div class="clip-telemetry" id="clipTelemetry">
+              <span>1080P @ 30FPS</span> &bull; <span>H.265</span> &bull; <span style="color:#10b981; font-weight:700;">NVR-RING-04</span>
+            </div>
+
+            <!-- Forensic AI Target Bounding Box -->
+            <div class="clip-bbox-overlay" id="clipBboxOverlay">
+              <div class="bbox-corner tl"></div>
+              <div class="bbox-corner tr"></div>
+              <div class="bbox-corner bl"></div>
+              <div class="bbox-corner br"></div>
+              <span class="bbox-tag" id="clipBboxTag">FACE: Vikram P. (Alias: Vicky) (94%)</span>
             </div>
           </div>
+
+          <!-- Interactive Playback Scrub Bar & Controls -->
           <div class="clip-scrub-bar">
-            <div class="scrub-progress" style="width: 45%;"></div>
-            <span class="scrub-time">00:14:22 / 00:30:00</span>
+            <button type="button" class="player-ctrl-btn" id="clipPlayPauseBtn" title="Play / Pause">
+              <i class="fa-solid fa-pause"></i>
+            </button>
+            <button type="button" class="player-ctrl-btn" id="clipRewindBtn" title="Rewind 5s">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button type="button" class="player-ctrl-btn" id="clipForwardBtn" title="Forward 5s">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            
+            <!-- Scrubber Slider -->
+            <div class="scrub-slider-wrap" style="flex: 1; display: flex; align-items: center;">
+              <input type="range" class="cctv-scrubber-range" id="clipScrubber" min="0" max="100" value="0" step="0.1" style="width: 100%;">
+            </div>
+
+            <span class="scrub-time" id="clipTimeDisplay">00:00 / 00:00</span>
+
+            <!-- Playback Speed -->
+            <button type="button" class="player-ctrl-btn speed-btn" id="clipSpeedBtn" title="Change Playback Speed">1.0x</button>
+            <!-- Mute / Unmute -->
+            <button type="button" class="player-ctrl-btn" id="clipMuteBtn" title="Mute / Unmute Audio">
+              <i class="fa-solid fa-volume-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Forensic Evidence Metadata Dossier Card -->
+          <div class="forensic-meta-card">
+            <div class="meta-item">
+              <span class="meta-label"><i class="fa-solid fa-crosshairs"></i> Target Identified</span>
+              <span class="meta-val" id="clipMetaTarget">Vikram P. (Alias: Vicky)</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label"><i class="fa-solid fa-microchip"></i> AI Confidence</span>
+              <span class="meta-val text-emerald" id="clipMetaConfidence" style="color:#059669;">94.2% Similarity</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label"><i class="fa-solid fa-server"></i> NVR Edge Storage</span>
+              <span class="meta-val" id="clipMetaStorage">15-Day Rolling Ring Buffer</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label"><i class="fa-solid fa-fingerprint"></i> Tamper Seal</span>
+              <span class="meta-val text-mono" id="clipMetaHash" style="font-size:0.72rem; color:#64748b;">#SHA256-VALID-65B</span>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -2377,6 +2433,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
   <script src="src/api/client.js"></script>
-  <script src="app.js?v=2.6.0"></script>
+  <script src="app.js?v=2.6.1"></script>
 </body>
 </html>

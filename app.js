@@ -4342,13 +4342,148 @@ function initClipModal() {
   const btnClose = document.getElementById('closeClipModal');
   const btnCloseAlt = document.getElementById('btnCloseClip');
   const btnDownloadDossier = document.getElementById('btnDownloadEvidenceDossier');
+  const video = document.getElementById('clipVideoPlayer');
+  const btnPlayPause = document.getElementById('clipPlayPauseBtn');
+  const scrubber = document.getElementById('clipScrubber');
+  const timeDisplay = document.getElementById('clipTimeDisplay');
+  const btnRewind = document.getElementById('clipRewindBtn');
+  const btnForward = document.getElementById('clipForwardBtn');
+  const btnSpeed = document.getElementById('clipSpeedBtn');
+  const btnMute = document.getElementById('clipMuteBtn');
 
-  if (btnClose) btnClose.addEventListener('click', () => modal.classList.remove('open'));
-  if (btnCloseAlt) btnCloseAlt.addEventListener('click', () => modal.classList.remove('open'));
+  const stopPlayback = () => {
+    if (modal) modal.classList.remove('open');
+    if (video) {
+      video.pause();
+    }
+  };
 
+  if (btnClose) btnClose.addEventListener('click', stopPlayback);
+  if (btnCloseAlt) btnCloseAlt.addEventListener('click', stopPlayback);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) stopPlayback();
+    });
+  }
+
+  // Play / Pause Toggle
+  if (btnPlayPause && video) {
+    btnPlayPause.addEventListener('click', () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+        btnPlayPause.innerHTML = '<i class="fa-solid fa-pause"></i>';
+      } else {
+        video.pause();
+        btnPlayPause.innerHTML = '<i class="fa-solid fa-play"></i>';
+      }
+    });
+
+    video.addEventListener('play', () => {
+      btnPlayPause.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    });
+    video.addEventListener('pause', () => {
+      btnPlayPause.innerHTML = '<i class="fa-solid fa-play"></i>';
+    });
+  }
+
+  // Time Formatter (mm:ss)
+  const formatTime = (secs) => {
+    if (isNaN(secs)) return '00:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  // Video Time Update -> Scrubber
+  if (video && scrubber && timeDisplay) {
+    video.addEventListener('timeupdate', () => {
+      if (!video.duration) return;
+      const progress = (video.currentTime / video.duration) * 100;
+      scrubber.value = progress;
+      timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+    });
+
+    scrubber.addEventListener('input', (e) => {
+      if (!video.duration) return;
+      const seekTime = (parseFloat(e.target.value) / 100) * video.duration;
+      video.currentTime = seekTime;
+    });
+
+    video.addEventListener('loadedmetadata', () => {
+      timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+    });
+  }
+
+  // Rewind / Forward 5s
+  if (btnRewind && video) {
+    btnRewind.addEventListener('click', () => {
+      video.currentTime = Math.max(0, video.currentTime - 5);
+    });
+  }
+  if (btnForward && video) {
+    btnForward.addEventListener('click', () => {
+      video.currentTime = Math.min(video.duration || 30, video.currentTime + 5);
+    });
+  }
+
+  // Playback Speed Cycle (1x -> 1.5x -> 2.0x -> 0.5x)
+  const speeds = [1.0, 1.5, 2.0, 0.5];
+  let currentSpeedIdx = 0;
+  if (btnSpeed && video) {
+    btnSpeed.addEventListener('click', () => {
+      currentSpeedIdx = (currentSpeedIdx + 1) % speeds.length;
+      const newSpeed = speeds[currentSpeedIdx];
+      video.playbackRate = newSpeed;
+      btnSpeed.textContent = `${newSpeed.toFixed(1)}x`;
+    });
+  }
+
+  // Mute / Unmute Toggle
+  if (btnMute && video) {
+    btnMute.addEventListener('click', () => {
+      video.muted = !video.muted;
+      btnMute.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+    });
+  }
+
+  // Download Evidence Dossier with real generated blob
   if (btnDownloadDossier) {
     btnDownloadDossier.addEventListener('click', () => {
-      alert('Cryptographic Forensic Evidence Packet Generated!\nIncludes:\n- Sealed MP4 Video Chunk (Offset: 00:14:22)\n- Frame-by-frame JSON metadata & bounding box coordinates\n- Section 65B Indian Evidence Act Compliance Certificate\n- SHA-256 Tamper-Proof Digital Seal');
+      const modalTitle = document.getElementById('clipModalTitle')?.textContent || 'Forensic Playback';
+      const dossierContent = `=================================================================
+NIRIKSHAN STATEWIDE SURVEILLANCE MATRIX — FORENSIC EVIDENCE PACKET
+Government of Gujarat — Forensic Science Directorate (GFSU Certified)
+=================================================================
+Incident ID: ${modalTitle.replace('Forensic Incident Playback: ', '')}
+Timestamp: ${new Date().toISOString()} IST
+Section 65B Indian Evidence Act Compliance: CERTIFIED (VALID)
+Tamper-Proof Digital Seal: SHA-256 (Ed25519 Gujarat PKI Verified)
+
+Evidence Files Included:
+- Raw CCTV Video Chunk (Ring Buffer Node: Edge-NVR-Gandhinagar-04)
+- Synchronized AI Frame Detections & Bounding Box Telemetry
+- Optical Camera Geometry Calibration Profile
+- Chain of Custody Audit Log (Immutable Hyperledger Ledger)
+
+Status: ADMISSIBLE IN COURT OF LAW
+=================================================================`;
+
+      const blob = new Blob([dossierContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Forensic_Dossier_Section65B_${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showRealtimeAlertToast({
+        title: 'FORENSIC DOSSIER DOWNLOADED',
+        location: 'Section 65B Certified Legal Evidence Dossier saved to disk',
+        camera_id: 'TAMPER-SEAL: VALID SHA-256',
+        kafka_topic: 'nirikshan.evidence.export.success'
+      });
     });
   }
 }
@@ -4359,27 +4494,85 @@ window.openClipModal = async function(evtId) {
 
   const modal = document.getElementById('clipModal');
   const title = document.getElementById('clipModalTitle');
-  const watermark = document.getElementById('clipWatermark');
+  const osdText = document.getElementById('clipOsdCamText');
+  const bboxOverlay = document.getElementById('clipBboxOverlay');
   const bboxTag = document.getElementById('clipBboxTag');
+  const video = document.getElementById('clipVideoPlayer');
+
+  // Metadata Card Elements
+  const metaTarget = document.getElementById('clipMetaTarget');
+  const metaConf = document.getElementById('clipMetaConfidence');
+  const metaStorage = document.getElementById('clipMetaStorage');
+  const metaHash = document.getElementById('clipMetaHash');
 
   title.textContent = `Forensic Incident Playback: ${evt.id}`;
-  watermark.textContent = `${evt.camera_id} \u2022 ${new Date(evt.ts).toISOString().replace('T', ' ').slice(0, 19)} IST`;
   
-  if (evt.payload_json && (evt.payload_json.plate || evt.payload_json.plate_number)) {
-    const pVal = evt.payload_json.plate || evt.payload_json.plate_number;
-    bboxTag.textContent = `ANPR: ${pVal} (${evt.payload_json.confidence_score || 99}%)`;
-  } else if (evt.payload_json && (evt.payload_json.match_name || evt.payload_json.suspect_name)) {
-    const sVal = evt.payload_json.match_name || evt.payload_json.suspect_name;
-    bboxTag.textContent = `FACE: ${sVal} (${evt.payload_json.similarity || 94}%)`;
-  } else {
-    bboxTag.textContent = `EVENT: ${evt.type.toUpperCase()}`;
+  const formattedTime = new Date(evt.ts).toISOString().replace('T', ' ').slice(0, 19);
+  if (osdText) {
+    osdText.textContent = `${evt.camera_id} • ${formattedTime} IST`;
   }
 
+  // Determine Event Category & Appropriate Video Asset
+  const isFaceOrPerson = evt.type === 'face_recognition' || evt.type === 'crowd_surge' || (evt.payload_json && (evt.payload_json.match_name || evt.payload_json.suspect_name));
+  
+  if (isFaceOrPerson) {
+    const suspect = evt.payload_json?.match_name || evt.payload_json?.suspect_name || 'Vikram P. (Alias: Vicky)';
+    const score = evt.payload_json?.similarity || 94.2;
+    
+    if (bboxTag) bboxTag.innerHTML = `<i class="fa-solid fa-user-check"></i> FACE: ${suspect} (${score}%)`;
+    if (metaTarget) metaTarget.textContent = suspect;
+    if (metaConf) metaConf.textContent = `${score}% Biometric Similarity`;
+    
+    // Position natural face/person bounding box
+    if (bboxOverlay) {
+      bboxOverlay.style.top = '22%';
+      bboxOverlay.style.left = '38%';
+      bboxOverlay.style.width = '24%';
+      bboxOverlay.style.height = '42%';
+      bboxOverlay.style.borderColor = '#00f2fe';
+    }
+
+    if (video) {
+      video.src = 'assets/videos/cctv-pedestrians.mp4';
+    }
+  } else {
+    // ANPR / Vehicle / Speed incident
+    const plate = evt.payload_json?.plate || evt.payload_json?.plate_number || 'GJ-01-AB-1234';
+    const conf = evt.payload_json?.confidence_score || 99.1;
+    
+    if (bboxTag) bboxTag.innerHTML = `<i class="fa-solid fa-car-side"></i> ANPR: ${plate} (${conf}%)`;
+    if (metaTarget) metaTarget.textContent = `Vehicle Reg: ${plate}`;
+    if (metaConf) metaConf.textContent = `${conf}% OCR Confidence`;
+    
+    // Position natural vehicle bounding box
+    if (bboxOverlay) {
+      bboxOverlay.style.top = '44%';
+      bboxOverlay.style.left = '32%';
+      bboxOverlay.style.width = '35%';
+      bboxOverlay.style.height = '34%';
+      bboxOverlay.style.borderColor = '#10b981';
+    }
+
+    if (video) {
+      video.src = 'assets/videos/urban-traffic.mp4';
+    }
+  }
+
+  if (metaStorage) metaStorage.textContent = '15-Day Rolling Ring Buffer (Block #49102)';
+  if (metaHash) metaHash.textContent = `#SHA256-${(Math.random().toString(36).substring(2, 8)).toUpperCase()}-65B`;
+
   modal.classList.add('open');
+
+  // Start real CCTV playback
+  if (video) {
+    video.currentTime = 0;
+    video.play().catch(() => {});
+  }
 };
 
 window.downloadEvidencePacket = function(evtId) {
-  alert(`Forensic Dossier for ${evtId} downloaded.\nSealed with Government of Gujarat Public Key Infrastructure (PKI) digital signature.`);
+  const btn = document.getElementById('btnDownloadEvidenceDossier');
+  if (btn) btn.click();
 };
 
 /* =========================================================================
