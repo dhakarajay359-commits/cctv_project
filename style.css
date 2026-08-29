@@ -1958,6 +1958,17 @@ path.gujarat-district-border:hover {
   pointer-events: none !important;
 }
 
+path.interactive-blind-spot-layer {
+  cursor: pointer !important;
+  transition: fill-opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+path.interactive-blind-spot-layer:hover {
+  fill-opacity: 0.52 !important;
+  stroke-width: 3.5px !important;
+  filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.4));
+}
+
 .leaflet-tooltip.custom-district-tooltip {
   background: #ffffff !important;
   border: 1px solid #2563eb !important;

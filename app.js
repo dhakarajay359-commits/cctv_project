@@ -1397,7 +1397,8 @@ window.inspectCameraFovRange = async function(camId) {
   const dori = analysis.optical_specs.dori_standards;
 
   // 4A. Draw Multi-Tier DORI Distance Dashed Rings & Measurement Labels
-  // Detection Distance (120m)
+  // 4A. Draw Multi-Tier DORI Distance Dashed Rings & Measurement Labels
+  // Detection Distance (120m / 280m)
   const detectCircle = L.circle([camLat, camLng], {
     radius: dori.detection_range_meters || 120,
     color: '#00f2fe',
@@ -1408,7 +1409,7 @@ window.inspectCameraFovRange = async function(camId) {
   }).addTo(leafletMapInstance);
   mapFovLayers.push(detectCircle);
 
-  // Recognition Distance (65m)
+  // Recognition Distance (65m / 140m)
   const recogCircle = L.circle([camLat, camLng], {
     radius: dori.recognition_range_meters || 65,
     color: '#38bdf8',
@@ -1419,35 +1420,67 @@ window.inspectCameraFovRange = async function(camId) {
   }).addTo(leafletMapInstance);
   mapFovLayers.push(recogCircle);
 
-  // Distance Measurement Labels Directly on Map
+  // Distance Measurement Label Directly on Map
   const detectLabel = L.marker([camLat + 0.0010, camLng], {
     icon: L.divIcon({
       className: 'onmap-marker-wrap',
-      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe;">◄── ${dori.detection_range_meters || 120}m Detection Distance Range ──►</div>`,
+      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe; font-weight:800;">◄── ${dori.detection_range_meters || 120}m Detection Distance Range ──►</div>`,
       iconSize: [260, 20],
       iconAnchor: [130, 10]
     })
   }).addTo(leafletMapInstance);
   mapFovLayers.push(detectLabel);
 
-  // 4B. Draw Optical FOV Range Cone (Cyan Conical Sector)
+  // 4B. Draw Optical FOV Range Cone (Cyan Conical Sector for Present Camera)
   const fovPolygon = L.polygon(analysis.coverage_cone_polygon, {
     color: '#00f2fe',
-    weight: 2,
+    weight: 2.5,
     dashArray: '4, 4',
     fillColor: '#00f2fe',
     fillOpacity: 0.22
   }).addTo(leafletMapInstance);
 
+  const presentCamColor = analysis.department_id === 'dept-private' ? '#a855f7' : '#2563eb';
+  const presentCardinal = analysis.optical_specs.cardinal_heading || 'North';
+  const presentAzimuth = analysis.optical_specs.azimuth_heading_degrees || 0;
+  const presentCoveredArea = analysis.optical_specs.coverage_area_sqm || 38000;
+
+  // Present Camera Directional Heading Vector Arrow
+  const metersToDegLat = 1 / 111000;
+  const metersToDegLng = 1 / (111000 * Math.cos(camLat * (Math.PI / 180)));
+  const pRad = (presentAzimuth - 90) * (Math.PI / 180);
+  const pVecLat = camLat + Math.cos(pRad) * (dori.detection_range_meters * 0.75) * metersToDegLat;
+  const pVecLng = camLng + Math.sin(pRad) * (dori.detection_range_meters * 0.75) * metersToDegLng;
+
+  const presentDirLine = L.polyline([[camLat, camLng], [pVecLat, pVecLng]], {
+    color: presentCamColor,
+    weight: 3,
+    dashArray: '5, 5'
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(presentDirLine);
+
+  const presentDirBadge = L.marker([pVecLat, pVecLng], {
+    icon: L.divIcon({
+      className: 'onmap-marker-wrap',
+      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:${presentCamColor}; border-color:${presentCamColor}; font-size:9px; font-weight:800; padding:2px 7px;">
+        ▲ Present Camera: Facing ${presentCardinal} (${presentAzimuth}°) &bull; ${dori.detection_range_meters}m Range &bull; Covers ~${presentCoveredArea.toLocaleString()} m²
+      </div>`,
+      iconSize: [360, 20],
+      iconAnchor: [180, 10]
+    })
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(presentDirBadge);
+
   fovPolygon.bindPopup(`
-    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px;">
-      <strong style="color: #00f2fe;"><i class="fa-solid fa-satellite-dish"></i> OPTICAL COVERAGE CONE</strong><br/>
+    <div style="font-family: var(--font-main); font-size: 12px;">
+      <strong style="color: ${presentCamColor};"><i class="fa-solid fa-satellite-dish"></i> PRESENT CAMERA OPTICAL COVERAGE</strong><br/>
       <strong>${analysis.camera_name}</strong><br/>
-      <span>Direction: ${analysis.optical_specs.direction_name} (${analysis.optical_specs.fov_horizontal_degrees}°)</span><br/>
-      <div style="margin-top: 4px; font-size: 11px; color: #94a3b8;">
-        &bull; Max Detection Range: <strong>${analysis.optical_specs.dori_standards.detection_range_meters}m</strong><br/>
-        &bull; Recognition Range: <strong>${analysis.optical_specs.dori_standards.recognition_range_meters}m</strong><br/>
-        &bull; Identification Range: <strong>${analysis.optical_specs.dori_standards.identification_range_meters}m</strong>
+      <span>Facing Direction: <strong style="color: #2563eb;">${presentCardinal} (${presentAzimuth}°)</strong></span><br/>
+      <span>Active Covered Area: <strong>~${presentCoveredArea.toLocaleString()} sq.m</strong></span>
+      <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
+        &bull; Max Detection Range: <strong>${dori.detection_range_meters}m</strong><br/>
+        &bull; Recognition Range: <strong>${dori.recognition_range_meters}m</strong><br/>
+        &bull; Identification Range: <strong>${dori.identification_range_meters}m</strong>
       </div>
     </div>
   `);
@@ -1455,92 +1488,181 @@ window.inspectCameraFovRange = async function(camId) {
 
   // 5. Draw Unmonitored Blind Spot Gap (Crimson Striped Sector)
   const blindSpot = analysis.blind_spot_analysis;
+  const propSpecs = analysis.proposed_camera_specs || {
+    heading_direction_cardinal: blindSpot.deficit_direction_cardinal || 'South-West',
+    heading_azimuth_degrees: blindSpot.deficit_azimuth_degrees || 225,
+    range_meters: 110,
+    coverage_area_sqm: blindSpot.uncovered_area_sqm
+  };
+
   const blindPolygon = L.polygon(blindSpot.blind_polygon, {
     color: '#f43f5e',
-    weight: 2,
+    weight: 2.5,
     dashArray: '6, 6',
     fillColor: '#f43f5e',
-    fillOpacity: 0.35
+    fillOpacity: 0.35,
+    className: 'interactive-blind-spot-layer'
   }).addTo(leafletMapInstance);
 
-  blindPolygon.bindPopup(`
-    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 220px;">
-      <strong style="color: #f43f5e;"><i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE</strong><br/>
-      <span style="font-size: 11px; color: #ffffff;">${blindSpot.location_description}</span><br/>
-      <div style="margin: 4px 0; padding: 4px 6px; background: rgba(244,63,94,0.15); border-radius: 4px;">
-        <span style="color: #fbbf24; font-size: 11px;">Uncovered Area: <strong>~${blindSpot.uncovered_area_sqm.toLocaleString()} sq.m</strong></span><br/>
-        <span style="color: #10b981; font-size: 11px;">Recommended: <strong>${blindSpot.recommended_hardware}</strong></span>
+  // 6. Draw Proposed Camera Directional FOV Cone & Direction Arrow (Green Sector Pointing into Blind Area)
+  if (propSpecs.coverage_cone_polygon) {
+    const propFovCone = L.polygon(propSpecs.coverage_cone_polygon, {
+      color: '#10b981',
+      weight: 2,
+      dashArray: '4, 4',
+      fillColor: '#10b981',
+      fillOpacity: 0.24
+    }).addTo(leafletMapInstance);
+    mapFovLayers.push(propFovCone);
+  }
+
+  // Proposed Camera Direction Vector Line
+  const propLat = blindSpot.recommended_install_lat;
+  const propLng = blindSpot.recommended_install_lng;
+  const bRad = (propSpecs.heading_azimuth_degrees - 90) * (Math.PI / 180);
+  const propVecLat = propLat + Math.cos(bRad) * (propSpecs.range_meters * 0.70) * metersToDegLat;
+  const propVecLng = propLng + Math.sin(bRad) * (propSpecs.range_meters * 0.70) * metersToDegLng;
+
+  const propDirLine = L.polyline([[propLat, propLng], [propVecLat, propVecLng]], {
+    color: '#10b981',
+    weight: 3,
+    dashArray: '4, 4'
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(propDirLine);
+
+  const propDirBadge = L.marker([propVecLat, propVecLng], {
+    icon: L.divIcon({
+      className: 'onmap-marker-wrap',
+      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#10b981; border-color:#10b981; font-size:9px; font-weight:800; padding:2px 7px;">
+        ▲ New Camera: Facing ${propSpecs.heading_direction_cardinal} (${propSpecs.heading_azimuth_degrees}°) &bull; 110m Range &bull; Solves ~${blindSpot.uncovered_area_sqm.toLocaleString()} m² Blind Zone
+      </div>`,
+      iconSize: [380, 20],
+      iconAnchor: [190, 10]
+    })
+  }).addTo(leafletMapInstance);
+  mapFovLayers.push(propDirBadge);
+
+  // Function to show comprehensive Directional Coverage Diagnostic Popup
+  const openBlindSpotDiagnostic = () => {
+    blindPolygon.bindPopup(`
+      <div style="font-family: var(--font-main); font-size: 12px; min-width: 320px; padding: 4px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <span style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 800; font-size: 10px; padding: 2px 7px; border-radius: 4px;">
+            <i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE DIAGNOSTIC
+          </span>
+          <span style="font-size: 11px; font-weight: 700; color: #64748b;">~${blindSpot.uncovered_area_sqm.toLocaleString()} m² Deficit</span>
+        </div>
+
+        <!-- Present Camera Details -->
+        <div style="background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: #9333ea; font-weight: 800; font-size: 11px;">
+              <i class="fa-solid fa-video"></i> PRESENT CAMERA ORIENTATION
+            </span>
+            <span style="background: #a855f7; color: #ffffff; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 3px;">ACTIVE</span>
+          </div>
+          <div style="font-size: 11px; color: #0f172a; margin-top: 3px; line-height: 1.45;">
+            <div>&bull; <strong>Facing Direction:</strong> <span style="color: #9333ea; font-weight: 700;">${presentCardinal} (${presentAzimuth}°)</span></div>
+            <div>&bull; <strong>Detection Range:</strong> ${dori.detection_range_meters}m Detection Arc</div>
+            <div>&bull; <strong>Active Covered Area:</strong> ~${presentCoveredArea.toLocaleString()} m² in forward cone</div>
+            <div style="color: #a21caf; font-size: 10px; margin-top: 2px;">
+              <i class="fa-solid fa-info-circle"></i> Camera points away from this approach, creating an unmonitored blind zone.
+            </div>
+          </div>
+        </div>
+
+        <!-- Proposed Camera Direction Solution -->
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: #059669; font-weight: 800; font-size: 11px;">
+              <i class="fa-solid fa-compass-drafting"></i> NEW CAMERA DIRECTION &amp; GAP CLOSURE
+            </span>
+            <span style="background: #10b981; color: #ffffff; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 3px;">SOLUTION</span>
+          </div>
+          <div style="font-size: 11px; color: #0f172a; margin-top: 3px; line-height: 1.45;">
+            <div>&bull; <strong>Install Location:</strong> Mounted near Present Camera mast</div>
+            <div>&bull; <strong>Optimal Orientation:</strong> <span style="color: #059669; font-weight: 800;">Facing ${propSpecs.heading_direction_cardinal} (${propSpecs.heading_azimuth_degrees}°)</span></div>
+            <div>&bull; <strong>Required Range:</strong> 110m Radius (90° Optical Cone)</div>
+            <div>&bull; <strong>Blind Area Solved:</strong> <strong style="color: #059669;">100% of Blind Area (~${blindSpot.uncovered_area_sqm.toLocaleString()} m²)</strong></div>
+          </div>
+        </div>
+
+        <!-- Interactive Action Buttons -->
+        <div style="display: flex; gap: 6px; margin-top: 6px;">
+          <button type="button" onclick="simulateBlindSpotGapClosure()" id="btnSimulateSolve" style="
+            flex: 1; background: #059669; color: #ffffff; border: none; padding: 6px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+          "><i class="fa-solid fa-wand-magic-sparkles"></i> Preview 100% Solved Coverage</button>
+          <button type="button" onclick="openCameraProposalModal()" style="
+            background: #2563eb; color: #ffffff; border: none; padding: 6px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer;
+          "><i class="fa-solid fa-plus"></i> Authorize</button>
+        </div>
       </div>
-      <button onclick="openCameraProposalModal()" style="
-        margin-top: 4px;
-        width: 100%;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: #ffffff;
-        border: none;
-        padding: 5px 8px;
-        border-radius: 4px;
-        font-weight: 700;
-        cursor: pointer;
-      "><i class="fa-solid fa-plus-circle"></i> Install Camera in Blind Zone</button>
-    </div>
-  `);
+    `).openPopup();
+  };
+
+  blindPolygon.on('click', openBlindSpotDiagnostic);
   mapFovLayers.push(blindPolygon);
 
-  // 6. Proposed Camera Installation Pin (Green Crosshair)
+  // 7. Proposed Camera Installation Pin (Green Crosshair)
   const propIcon = L.divIcon({
     className: 'prop-cam-pin',
     html: `<div style="
       background: #10b981;
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       border: 2px solid #ffffff;
       box-shadow: 0 0 14px #10b981;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #04101e;
+      color: #ffffff;
       font-size: 11px;
       font-weight: 900;
+      cursor: pointer;
     "><i class="fa-solid fa-plus"></i></div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11]
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
   });
 
   const propMarker = L.marker([blindSpot.recommended_install_lat, blindSpot.recommended_install_lng], { icon: propIcon }).addTo(leafletMapInstance);
-  propMarker.bindPopup(`
-    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 200px;">
-      <strong style="color: #10b981;"><i class="fa-solid fa-location-crosshairs"></i> RECOMMENDED CAMERA LOCATION</strong><br/>
-      <span>Eliminates ${blindSpot.location_description}</span><br/>
-      <button onclick="openCameraProposalModal()" style="
-        margin-top: 6px;
-        width: 100%;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: #ffffff;
-        border: none;
-        padding: 5px 8px;
-        border-radius: 4px;
-        font-weight: 700;
-        cursor: pointer;
-      "><i class="fa-solid fa-check"></i> Authorize Installation</button>
-    </div>
-  `);
+  propMarker.on('click', openBlindSpotDiagnostic);
   mapFovLayers.push(propMarker);
 
-  // 7. Fit Map Bounds smoothly
+  // 8. Global Simulator Function to Turn Blind Spot into 100% Covered Area
+  window.simulateBlindSpotGapClosure = function() {
+    blindPolygon.setStyle({
+      color: '#059669',
+      fillColor: '#10b981',
+      fillOpacity: 0.45,
+      dashArray: '3, 3'
+    });
+    showRealtimeAlertToast({
+      title: `100% BLIND AREA SOLVED: ${propSpecs.heading_direction_cardinal}`,
+      location: `New camera facing ${propSpecs.heading_direction_cardinal} (${propSpecs.heading_azimuth_degrees}°) with 110m range covers ~${blindSpot.uncovered_area_sqm.toLocaleString()} m²`,
+      camera_id: `GAP ELIMINATED: ZERO DEFICIT`,
+      kafka_topic: 'nirikshan.fov.solve.success'
+    });
+  };
+
+  // 9. Fit Map Bounds smoothly
   const allCoords = [...analysis.coverage_cone_polygon, ...blindSpot.blind_polygon];
   leafletMapInstance.fitBounds(allCoords, { padding: [90, 90], maxZoom: 16 });
 
-  // 8. Populate & Display Floating FOV HUD
+  // 10. Populate & Display Floating FOV HUD with Complete Directional Breakdown
   const fovHud = document.getElementById('fovMapHud');
   if (fovHud) {
     document.getElementById('fovHudCamId').textContent = analysis.camera_id;
     document.getElementById('fovHudCamName').textContent = analysis.camera_name;
-    document.getElementById('fovHudDirection').textContent = `${analysis.optical_specs.direction_name} (${analysis.optical_specs.fov_horizontal_degrees}°)`;
-    document.getElementById('fovHudRange').textContent = `${analysis.optical_specs.dori_standards.detection_range_meters}m Max / ${analysis.optical_specs.dori_standards.recognition_range_meters}m Recog`;
+    document.getElementById('fovHudDirection').textContent = `${presentCardinal} (${presentAzimuth}°) • Area: ~${presentCoveredArea.toLocaleString()} m²`;
+    document.getElementById('fovHudRange').textContent = `${dori.detection_range_meters}m Detection / ${dori.recognition_range_meters}m Recog`;
     document.getElementById('fovHudDistrict').textContent = `${analysis.district} • ${getDeptName(analysis.department_id)}`;
     
-    document.getElementById('fovBlindSpotDesc').textContent = `${blindSpot.location_description} (~${blindSpot.uncovered_area_sqm.toLocaleString()} sq.m uncovered)`;
+    document.getElementById('fovBlindSpotDesc').innerHTML = `
+      <strong>Deficit Direction:</strong> Facing ${propSpecs.heading_direction_cardinal} (${propSpecs.heading_azimuth_degrees}°)<br/>
+      <strong>Uncovered Area:</strong> ~${blindSpot.uncovered_area_sqm.toLocaleString()} sq.m &bull; 
+      <strong>Solution:</strong> Install new camera facing ${propSpecs.heading_direction_cardinal} with 110m range.
+    `;
     document.getElementById('fovRecHardware').textContent = blindSpot.recommended_hardware;
     fovHud.style.display = 'block';
   }

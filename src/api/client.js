@@ -1398,17 +1398,50 @@ class NirikshanApiClient {
     }
     blindPoints.push([lat, lng]);
 
+    // Generate Proposed Camera FOV Sector Cone (Green Sector from new camera into blind area)
+    const proposedConePoints = [[blindLat, blindLng]];
+    const propFov = 90;
+    const propStartAngle = blindAzimuth - (propFov / 2);
+    const propEndAngle = blindAzimuth + (propFov / 2);
+    const propRangeMeters = 110;
+    for (let i = 0; i <= steps; i++) {
+      const angleDeg = propStartAngle + (i / steps) * (propEndAngle - propStartAngle);
+      const angleRad = (angleDeg - 90) * (Math.PI / 180);
+      const pLat = blindLat + Math.cos(angleRad) * propRangeMeters * metersToDegLat;
+      const pLng = blindLng + Math.sin(angleRad) * propRangeMeters * metersToDegLng;
+      proposedConePoints.push([pLat, pLng]);
+    }
+    proposedConePoints.push([blindLat, blindLng]);
+
+    function getHeadingCardinal(deg) {
+      const d = (deg % 360 + 360) % 360;
+      if (d >= 337.5 || d < 22.5) return 'North';
+      if (d >= 22.5 && d < 67.5) return 'North-East';
+      if (d >= 67.5 && d < 112.5) return 'East';
+      if (d >= 112.5 && d < 157.5) return 'South-East';
+      if (d >= 157.5 && d < 202.5) return 'South';
+      if (d >= 202.5 && d < 247.5) return 'South-West';
+      if (d >= 247.5 && d < 292.5) return 'West';
+      return 'North-West';
+    }
+
+    const presentCardinal = getHeadingCardinal(azimuth);
+    const blindCardinal = getHeadingCardinal(blindAzimuth);
+    const presentCoveredArea = Math.round((Math.PI * Math.pow(maxRangeMeters, 2) * (fov / 360)));
+
     const blindSpotInfo = {
       blind_spot_id: `BLIND-GAP-${cam.id.replace('CAM-', '')}-01`,
       location_description: `Unmonitored Blind Zone: ${cam.direction.includes('North') ? 'South Approach Service Ingress' : 'Secondary Ingress & Underpass Corridor'}`,
-      uncovered_azimuth: `${Math.round(bStartAngle)}° - ${Math.round(bEndAngle)}° (${blindAzimuth > 180 ? 'South-West' : 'South-East'})`,
+      uncovered_azimuth: `${Math.round(bStartAngle)}° - ${Math.round(bEndAngle)}° (${blindCardinal})`,
       uncovered_area_sqm: Math.round((Math.PI * Math.pow(blindDistanceMeters, 2) * (90 / 360))),
       risk_level: 'HIGH_RISK_DEFICIT',
       recommended_install_lat: parseFloat(blindLat.toFixed(6)),
       recommended_install_lng: parseFloat(blindLng.toFixed(6)),
       recommended_hardware: cam.type === 'ip' ? '4K Ultra-Starlight ANPR + PTZ' : 'Hikvision DeepinView Bullet (IP)',
       estimated_capex_inr: 45000,
-      blind_polygon: blindPoints
+      blind_polygon: blindPoints,
+      deficit_direction_cardinal: blindCardinal,
+      deficit_azimuth_degrees: blindAzimuth
     };
 
     return {
@@ -1424,6 +1457,8 @@ class NirikshanApiClient {
         fov_horizontal_degrees: fov,
         azimuth_heading_degrees: azimuth,
         direction_name: cam.direction,
+        cardinal_heading: presentCardinal,
+        coverage_area_sqm: presentCoveredArea,
         dori_standards: {
           detection_range_meters: maxRangeMeters,
           recognition_range_meters: recognitionRangeMeters,
@@ -1431,7 +1466,18 @@ class NirikshanApiClient {
         }
       },
       coverage_cone_polygon: fovPoints,
-      blind_spot_analysis: blindSpotInfo
+      blind_spot_analysis: blindSpotInfo,
+      proposed_camera_specs: {
+        install_lat: parseFloat(blindLat.toFixed(6)),
+        install_lng: parseFloat(blindLng.toFixed(6)),
+        heading_azimuth_degrees: blindAzimuth,
+        heading_direction_cardinal: blindCardinal,
+        fov_degrees: propFov,
+        range_meters: propRangeMeters,
+        coverage_cone_polygon: proposedConePoints,
+        coverage_area_sqm: blindSpotInfo.uncovered_area_sqm,
+        solves_blind_spot: true
+      }
     };
   }
 
