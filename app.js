@@ -4080,23 +4080,25 @@ window.openSuspectSightingCctv = async function(plate) {
     video.play().catch(() => {});
   }
 
-  // Active Real-Time Clock with running seconds & milliseconds (True Live Stream)
-  if (window.liveCctvClockInterval) clearInterval(window.liveCctvClockInterval);
-  window.liveCctvClockInterval = setInterval(() => {
+  // Steady Real-Time Clock with seconds precision (Standard CCTV OSD, no milliseconds flicker)
+  const updateLiveClock = () => {
     const now = new Date();
-    const pad = (n, l = 2) => String(n).padStart(l, '0');
+    const pad = (n) => String(n).padStart(2, '0');
     const y = now.getFullYear();
     const m = pad(now.getMonth() + 1);
     const d = pad(now.getDate());
     const hh = pad(now.getHours());
     const mm = pad(now.getMinutes());
     const ss = pad(now.getSeconds());
-    const ms = pad(now.getMilliseconds(), 3);
     const clockEl = document.getElementById('liveCctvRealtimeClock');
     if (clockEl) {
-      clockEl.textContent = `${y}-${m}-${d} ${hh}:${mm}:${ss}.${ms} IST`;
+      clockEl.textContent = `${y}-${m}-${d} ${hh}:${mm}:${ss} IST`;
     }
-  }, 60);
+  };
+
+  updateLiveClock();
+  if (window.liveCctvClockInterval) clearInterval(window.liveCctvClockInterval);
+  window.liveCctvClockInterval = setInterval(updateLiveClock, 1000);
 
   if (modal) modal.classList.add('open');
 
