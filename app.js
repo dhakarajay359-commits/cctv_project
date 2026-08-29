@@ -509,7 +509,13 @@ async function initGujaratBorderLayers() {
             });
           },
           click: (e) => {
-            if (e.target && e.target.getBounds) {
+            const matchedDist = window.apiClient?.districts?.find(d => {
+              const dn = (d.name || '').toLowerCase().trim();
+              return dn.includes(dName.toLowerCase().trim()) || dName.toLowerCase().trim().includes(dn.split(' ')[0]);
+            });
+            if (matchedDist) {
+              markDistrictCamerasCoverageArea(matchedDist);
+            } else if (e.target && e.target.getBounds) {
               leafletMapInstance.fitBounds(e.target.getBounds(), { padding: [35, 35], animate: true, duration: 0.8 });
             }
           }
@@ -1221,6 +1227,105 @@ function initGisVoiceAssistant(updateMapCallback) {
   });
 }
 
+// Tactical District Camera Installation Coverage Marker (Prominent Dashed Line Perimeter)
+window.activeDistrictDashedPolygon = null;
+window.activeDistrictCoverageBadge = null;
+
+window.clearDistrictCamerasCoverageArea = function() {
+  if (!leafletMapInstance) return;
+  if (window.activeDistrictDashedPolygon) {
+    try { leafletMapInstance.removeLayer(window.activeDistrictDashedPolygon); } catch(e) {}
+    window.activeDistrictDashedPolygon = null;
+  }
+  if (window.activeDistrictCoverageBadge) {
+    try { leafletMapInstance.removeLayer(window.activeDistrictCoverageBadge); } catch(e) {}
+    window.activeDistrictCoverageBadge = null;
+  }
+};
+
+window.markDistrictCamerasCoverageArea = function(dist) {
+  if (!leafletMapInstance || !dist) return;
+
+  window.clearDistrictCamerasCoverageArea();
+
+  const features = window.GUJARAT_GEO_DATA?.districts?.features || [];
+  const targetName = (dist.name || '').toLowerCase().trim();
+  const dFeature = features.find(f => {
+    const fn = (f.properties?.district || '').toLowerCase().trim();
+    return targetName.includes(fn) || fn.includes(targetName.split(' ')[0]);
+  });
+
+  const distLabel = dist.name.split(' (')[0];
+  const camCountStr = dist.total_cams >= 1000 ? `${(dist.total_cams / 1000).toFixed(1)}k` : dist.total_cams;
+
+  if (dFeature) {
+    // 1. Draw prominent dashed lining boundary around the entire district camera installation area
+    const dashedPolygon = L.geoJSON(dFeature, {
+      style: {
+        color: '#0284c7', // Sapphire blue dashed boundary line
+        weight: 3.5,
+        dashArray: '10, 7', // Prominent dashed lining
+        fillColor: '#0284c7',
+        fillOpacity: 0.08,
+        lineCap: 'round',
+        lineJoin: 'round',
+        className: 'district-coverage-dashed-line'
+      }
+    }).addTo(leafletMapInstance);
+
+    window.activeDistrictDashedPolygon = dashedPolygon;
+
+    // Smoothly focus map view on the marked district area
+    const bounds = dashedPolygon.getBounds();
+    leafletMapInstance.fitBounds(bounds, { padding: [45, 45], animate: true, duration: 1.0 });
+
+    // 2. Add prominent on-map label badge at top center of marked area
+    const northLat = bounds.getNorth();
+    const centerLng = (bounds.getEast() + bounds.getWest()) / 2;
+
+    const badgeMarker = L.marker([northLat, centerLng], {
+      icon: L.divIcon({
+        className: 'onmap-marker-wrap',
+        html: `
+          <div class="onmap-sector-banner" style="
+            background: #ffffff; color: #0f172a; border: 2px dashed #0284c7; padding: 5px 12px; font-size: 11.5px; border-radius: 6px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14); font-weight: 800; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+          ">
+            <i class="fa-solid fa-camera-retro" style="color: #0284c7; font-size: 13px;"></i>
+            <span>${distLabel} District: <strong style="color: #0284c7;">${dist.total_cams.toLocaleString()} Cameras Installed</strong> across this marked zone</span>
+            <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 800;">${camCountStr} FLEET</span>
+            <button type="button" onclick="clearDistrictCamerasCoverageArea()" style="
+              background: #f1f5f9; color: #64748b; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px;
+            " title="Clear dashed area">&times;</button>
+          </div>
+        `,
+        iconSize: [440, 32],
+        iconAnchor: [220, 16]
+      })
+    }).addTo(leafletMapInstance);
+
+    window.activeDistrictCoverageBadge = badgeMarker;
+
+    showRealtimeAlertToast({
+      title: `${distLabel.toUpperCase()} SURVEILLANCE FLEET: ${dist.total_cams.toLocaleString()} CAMERAS`,
+      location: `Dashed boundary marked for entire ${distLabel} surveillance area`,
+      camera_id: `${dist.coverage_score}% INTEGRATED (${dist.gap_status})`,
+      kafka_topic: 'nirikshan.district.focus.grid'
+    });
+  } else {
+    // Fallback: draw dashed circle
+    const fallbackCircle = L.circle([dist.lat, dist.lng], {
+      radius: 20000,
+      color: '#0284c7',
+      weight: 3.5,
+      dashArray: '10, 7',
+      fillColor: '#0284c7',
+      fillOpacity: 0.08
+    }).addTo(leafletMapInstance);
+    window.activeDistrictDashedPolygon = fallbackCircle;
+    leafletMapInstance.setView([dist.lat, dist.lng], 11, { animate: true });
+  }
+};
+
 // 5.2 GEO-SPATIAL SUPERCLUSTER & NODE RENDERING ENGINE
 async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
   const cameras = await window.apiClient.getCameras(dept, status, search);
@@ -1261,7 +1366,7 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       if (!dist.lat || !dist.lng) return;
       const countLabel = dist.total_cams >= 1000 ? `${(dist.total_cams / 1000).toFixed(1)}k` : dist.total_cams;
       const clusterHtml = `
-        <div class="leaflet-cluster-badge" style="width: 44px; height: 44px;">
+        <div class="leaflet-cluster-badge" style="width: 44px; height: 44px; cursor: pointer;" title="Click to view &amp; mark ${dist.name.split(' (')[0]} (${countLabel} Cameras)">
           ${countLabel}
         </div>
       `;
@@ -1273,17 +1378,17 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
 
       const clusterMarker = L.marker([dist.lat, dist.lng], { icon: clusterIcon }).addTo(leafletMapInstance);
       clusterMarker.bindPopup(`
-        <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
-          <strong style="color: #00f2fe; font-size: 13px;">${dist.name} Sector Cluster</strong><br/>
-          <span>Total Integrated Cameras: <strong>${dist.total_cams.toLocaleString()} Nodes</strong></span><br/>
+        <div style="font-family: var(--font-main); font-size: 12px; line-height: 1.4; min-width: 230px; padding: 2px;">
+          <strong style="color: #0284c7; font-size: 13px;">${dist.name} Sector Cluster</strong><br/>
+          <span>Total Integrated Cameras: <strong>${dist.total_cams.toLocaleString()} Nodes (${countLabel})</strong></span><br/>
           <span>Coverage Health Score: <strong>${dist.coverage_score}% (${dist.gap_status})</strong></span><br/>
-          <button onclick="leafletMapInstance.setView([${dist.lat}, ${dist.lng}], 11, { animate: true });" style="
-            margin-top: 6px; width: 100%; background: #00f2fe; color: #04101e; border: none; padding: 5px 8px; border-radius: 4px; font-weight: 700; cursor: pointer;
-          "><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom Into District Fleet</button>
+          <button type="button" onclick="markDistrictCamerasCoverageArea(window.apiClient.districts.find(d => d.id === '${dist.id}'))" style="
+            margin-top: 6px; width: 100%; background: #0284c7; color: #ffffff; border: none; padding: 5px 8px; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+          "><i class="fa-solid fa-draw-polygon"></i> Zoom &amp; Mark Area (Dashed Line)</button>
         </div>
       `);
       clusterMarker.on('click', () => {
-        leafletMapInstance.setView([dist.lat, dist.lng], 11, { animate: true });
+        markDistrictCamerasCoverageArea(dist);
       });
       leafletMarkers.push(clusterMarker);
     });
