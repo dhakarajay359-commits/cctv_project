@@ -2431,14 +2431,14 @@ path.district-coverage-dashed-line {
   border: 1px solid rgba(148, 163, 184, 0.15);
 }
 
-.compact-table {
+.health-timeline-table .compact-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.75rem;
   background: rgba(15, 23, 42, 0.6);
 }
 
-.compact-table th {
+.health-timeline-table .compact-table th {
   background: rgba(30, 41, 59, 0.85);
   padding: 0.55rem 0.75rem;
   color: #94a3b8;
@@ -2450,7 +2450,7 @@ path.district-coverage-dashed-line {
   text-transform: uppercase;
 }
 
-.compact-table td {
+.health-timeline-table .compact-table td {
   padding: 0.50rem 0.75rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   color: #f8fafc;
@@ -2458,8 +2458,38 @@ path.district-coverage-dashed-line {
   font-size: 0.74rem;
 }
 
-.compact-table tr:hover td {
+.health-timeline-table .compact-table tr:hover td {
   background: rgba(56, 189, 248, 0.05);
+}
+
+/* NATURAL SUSPECT WATCHLIST TABLE STYLING */
+.suspect-watchlist-table {
+  width: 100%;
+  font-size: 0.78rem;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.suspect-watchlist-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.70rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.suspect-watchlist-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  vertical-align: middle;
+}
+
+.suspect-watchlist-table tr:hover td {
+  background: #f8fafc;
 }
 
 .drawer-actions-row {

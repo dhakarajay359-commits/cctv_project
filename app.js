@@ -3735,42 +3735,45 @@ async function renderSuspectWatchlistTable() {
 
   watchlist.forEach(item => {
     const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid var(--border-color)';
+    tr.style.borderBottom = '1px solid #f1f5f9';
+    tr.style.background = '#ffffff';
 
     const priorityBadge = item.priority === 'CRITICAL'
-      ? `<span class="node-status-pill offline" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.65rem; font-weight: 700;">Critical</span>`
-      : `<span class="node-status-pill degraded" style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.65rem; font-weight: 700;">High</span>`;
+      ? `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; display: inline-block;">CRITICAL</span>`
+      : `<span style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; display: inline-block;">HIGH</span>`;
 
     tr.innerHTML = `
-      <td style="padding: 10px 12px;">
-        <strong style="color: #0f172a; font-family: var(--font-mono); font-size: 0.82rem;">${item.plate}</strong><br/>
-        <span style="font-size: 0.68rem; color: var(--text-muted);">${item.vehicle_type || 'Vehicle'}</span>
+      <td style="padding: 12px 14px; background: #ffffff;">
+        <strong style="color: #0f172a; font-family: var(--font-mono); font-size: 0.86rem; font-weight: 800; letter-spacing: 0.02em;">${item.plate}</strong>
+        <span style="font-size: 0.70rem; color: #64748b; font-weight: 500; display: block; margin-top: 2px;">${item.vehicle_type || 'Suspect Motor Vehicle'}</span>
       </td>
-      <td style="padding: 10px 12px;">
-        <div style="color: #0f172a; font-weight: 600; font-size: 0.78rem;">${item.crime}</div>
-        <span style="font-size: 0.68rem; color: var(--text-muted);">${item.registered_by || 'State Police Intelligence'}</span>
+      <td style="padding: 12px 14px; background: #ffffff;">
+        <div style="color: #0f172a; font-weight: 700; font-size: 0.82rem; line-height: 1.35;">${item.crime}</div>
+        <span style="font-size: 0.70rem; color: #64748b; font-weight: 500; display: block; margin-top: 2px;">${item.registered_by || 'State Police Intelligence'}</span>
       </td>
-      <td style="padding: 10px 12px;">
-        <span style="font-size: 0.74rem; color: #475569;">${item.fir}</span>
+      <td style="padding: 12px 14px; background: #ffffff;">
+        <span style="font-size: 0.76rem; color: #334155; font-family: var(--font-mono); font-weight: 600;">${item.fir}</span>
       </td>
-      <td style="padding: 10px 12px;">
-        <span style="color: #0f172a; font-weight: 600; font-size: 0.78rem;">${item.suspect_name}</span>
+      <td style="padding: 12px 14px; background: #ffffff;">
+        <span style="color: #0f172a; font-weight: 700; font-size: 0.82rem;">${item.suspect_name}</span>
       </td>
-      <td style="padding: 10px 12px; text-align: center;">
+      <td style="padding: 12px 14px; text-align: center; background: #ffffff;">
         ${priorityBadge}
       </td>
-      <td style="padding: 10px 12px; text-align: center;">
-        <span class="node-status-pill online" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.65rem; font-weight: 700;"><span class="dot-sm green"></span> Armed</span>
+      <td style="padding: 12px 14px; text-align: center; background: #ffffff;">
+        <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+          <span style="background: #10b981; width: 6px; height: 6px; border-radius: 50%; display: inline-block;"></span> ARMED
+        </span>
       </td>
-      <td style="padding: 10px 12px; text-align: right;">
-        <div style="display: flex; gap: 0.35rem; justify-content: flex-end; align-items: center;">
-          <button type="button" class="action-btn" onclick="window.renderTrajectoryOnGisMap('${item.plate}')" style="padding: 0.25rem 0.55rem; font-size: 0.7rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; font-weight: 600;" title="Draw Multi-Dept Pursuit Route on GIS Map">
+      <td style="padding: 12px 14px; text-align: right; background: #ffffff;">
+        <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
+          <button type="button" class="action-btn" onclick="window.renderTrajectoryOnGisMap('${item.plate}')" style="padding: 0.35rem 0.7rem; font-size: 0.72rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; font-weight: 700; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" title="Draw Multi-Dept Pursuit Route on GIS Map">
             <i class="fa-solid fa-map-location-dot"></i> Map Route
           </button>
-          <button type="button" class="action-btn" onclick="window.openSuspectSightingCctv('${item.plate}')" style="padding: 0.25rem 0.55rem; font-size: 0.7rem; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 600;" title="Open Live CCTV Camera Video Sighting">
+          <button type="button" class="action-btn" onclick="window.openSuspectSightingCctv('${item.plate}')" style="padding: 0.35rem 0.7rem; font-size: 0.72rem; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 700; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" title="Open Live CCTV Camera Video Sighting">
             <i class="fa-solid fa-video"></i> Sighting
           </button>
-          <button type="button" class="action-btn" onclick="window.removeSuspectTarget('${item.plate}')" style="padding: 0.25rem 0.45rem; font-size: 0.7rem; color: #94a3b8; background: transparent; border: none;" title="Remove from Watchlist">
+          <button type="button" class="action-btn" onclick="window.removeSuspectTarget('${item.plate}')" style="padding: 0.35rem 0.5rem; font-size: 0.8rem; color: #94a3b8; background: transparent; border: none; cursor: pointer; transition: color 0.15s ease;" title="Remove from Watchlist">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
