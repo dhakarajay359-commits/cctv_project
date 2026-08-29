@@ -3540,9 +3540,6 @@ async function renderLiveWall() {
             <button type="button" class="feed-ctrl-btn" onclick="captureFeedSnapshot('${cam.id}', '${cam.name}')" title="Capture Forensic Snapshot">
               <i class="fa-solid fa-camera"></i> Snapshot
             </button>
-            <button type="button" class="feed-ctrl-btn" onclick="openTagFeedModal('${cam.id}', '${cam.name}')" title="Tag for Investigation">
-              <i class="fa-solid fa-bookmark"></i> Tag
-            </button>
           ` : `
             <button type="button" class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="font-size: 0.7rem;">
               <i class="fa-solid fa-satellite-dish"></i> Range & Blind-Spot
