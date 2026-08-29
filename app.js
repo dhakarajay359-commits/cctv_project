@@ -2016,9 +2016,16 @@ function renderTacticalAreaCoverageOnMap(spot, dist, deployedCount = 100, isArme
   const headerMarker = L.marker([spot.lat + 0.0058, spot.lng + 0.0005], {
     icon: L.divIcon({
       className: 'onmap-marker-wrap',
-      html: `<div class="onmap-sector-banner" style="padding: 5px 12px; font-size: 11.5px; border-width: 2px;"><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> 100 CAMERAS COMBINED: 1.15 SQ.KM (1,150,000 m²) MONITORED AREA</div>`,
-      iconSize: [460, 28],
-      iconAnchor: [230, 14]
+      html: `
+        <div class="onmap-sector-banner" style="padding: 5px 12px; font-size: 11.5px; border-width: 2px; display: flex; align-items: center; gap: 8px;">
+          <span><i class="fa-solid fa-shield-halved" style="color:#10b981;"></i> 100 CAMERAS COMBINED: 1.15 SQ.KM (1,150,000 m²) MONITORED AREA</span>
+          <button type="button" onclick="download100CameraDeploymentCSV('${spot.name}', ${spot.lat}, ${spot.lng})" style="
+            background: #0284c7; color: #ffffff; border: none; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          " title="Download exact GPS coordinates for all 100 cameras"><i class="fa-solid fa-file-csv"></i> Download 100 Cams CSV</button>
+        </div>
+      `,
+      iconSize: [580, 30],
+      iconAnchor: [290, 15]
     })
   }).addTo(leafletMapInstance);
   window.activeDeployedCoverageLayers.push(headerMarker);
@@ -2150,7 +2157,7 @@ function renderTacticalAreaCoverageOnMap(spot, dist, deployedCount = 100, isArme
 
     const marker = L.marker([pole.lat, pole.lng], { icon: poleIcon }).addTo(leafletMapInstance);
     marker.bindPopup(`
-      <div style="font-family: var(--font-main); font-size: 12px; min-width: 270px; padding: 4px;">
+      <div style="font-family: var(--font-main); font-size: 12px; min-width: 285px; padding: 4px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
           <span style="background: #10b981; color: #ffffff; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 3px;">
             POLE #0${idx + 1} OF 10 (100 CAMS GRID)
@@ -2161,7 +2168,7 @@ function renderTacticalAreaCoverageOnMap(spot, dist, deployedCount = 100, isArme
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px; margin-bottom: 6px; font-size: 11px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
             <span style="color: #64748b;">GPS Coordinates:</span>
-            <strong style="color: #2563eb; font-family: var(--font-mono);">${pole.lat.toFixed(4)}° N, ${pole.lng.toFixed(4)}° E</strong>
+            <strong style="color: #2563eb; font-family: var(--font-mono);">${pole.lat.toFixed(6)}° N, ${pole.lng.toFixed(6)}° E</strong>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
             <span style="color: #64748b;">Active Cameras on Pole:</span>
@@ -2176,8 +2183,10 @@ function renderTacticalAreaCoverageOnMap(spot, dist, deployedCount = 100, isArme
             <strong style="color: #0f172a;">${pole.type}</strong>
           </div>
         </div>
-        <div style="font-size: 11px; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-          <i class="fa-solid fa-circle-check text-green"></i> 100% Active in 1.15 sq.km Statewide Surveillance Grid
+        <div style="display: flex; gap: 6px; margin-top: 6px;">
+          <button type="button" onclick="download100CameraDeploymentCSV('${spot.name}', ${spot.lat}, ${spot.lng})" style="
+            flex: 1; background: #0284c7; color: #ffffff; border: none; padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+          "><i class="fa-solid fa-file-csv"></i> Download 100 Cams CSV</button>
         </div>
       </div>
     `);
@@ -2188,6 +2197,56 @@ function renderTacticalAreaCoverageOnMap(spot, dist, deployedCount = 100, isArme
 
   if (centerMarker) centerMarker.openPopup();
 }
+
+/**
+ * Download exact 100-camera physical installation coordinates list as CSV
+ */
+window.download100CameraDeploymentCSV = function(spotName = 'SG Highway & SP Ring Road Interchange', baseLat = 23.1147, baseLng = 72.5372) {
+  const poles = [
+    { id: 'P#01', name: 'SG Highway Northbound Express Array', lat: baseLat + 0.0042, lng: baseLng + 0.0015, sector: 'SG Highway Fast Lanes', baseType: '4K ANPR Starlight + Dual Speed Radar' },
+    { id: 'P#02', name: 'SG Highway North Overbridge Ingress', lat: baseLat + 0.0028, lng: baseLng + 0.0010, sector: 'SG Highway Fast Lanes', baseType: '360° Optical SpeedDome + Bullet' },
+    { id: 'P#03', name: 'SG Highway North Interchange Approach', lat: baseLat + 0.0014, lng: baseLng + 0.0005, sector: 'Overbridge Flyover & Central Interchange', baseType: '4K Multi-Sensor Optical Array' },
+    { id: 'P#04', name: 'Interchange Master Hub (Central Signal Matrix)', lat: baseLat + 0.0000, lng: baseLng + 0.0000, sector: 'Overbridge Flyover & Central Interchange', baseType: '360° Panoramic High-Density Hub' },
+    { id: 'P#05', name: 'SG Highway South Flyover Entry Array', lat: baseLat - 0.0015, lng: baseLng - 0.0005, sector: 'SG Highway Fast Lanes', baseType: 'Fast-Lane ANPR + Speed Radar' },
+    { id: 'P#06', name: 'SG Highway Southbound Fast Lane Exit Sentry', lat: baseLat - 0.0032, lng: baseLng - 0.0012, sector: 'SG Highway Fast Lanes', baseType: 'Thermal Night-Vision + ANPR' },
+    { id: 'P#07', name: 'Ganesh Glory West Cross-Junction Ingress', lat: baseLat + 0.0002, lng: baseLng + 0.0020, sector: 'Ganesh Glory Commercial Street', baseType: 'Traffic Optical Dome Matrix' },
+    { id: 'P#08', name: 'Ganesh Glory 11 Business Hub Sentry', lat: baseLat - 0.0004, lng: baseLng + 0.0042, sector: 'Ganesh Glory Commercial Street', baseType: 'Biometric Facial Recognition' },
+    { id: 'P#09', name: 'Jagatpur Oxygen Park East Turn Array', lat: baseLat - 0.0014, lng: baseLng + 0.0064, sector: 'Jagatpur Railway Overbridge Bypass', baseType: 'Panoramic SpeedDome' },
+    { id: 'P#10', name: 'Jagatpur Railway Overbridge Arterial Gate', lat: baseLat - 0.0025, lng: baseLng + 0.0085, sector: 'Jagatpur Railway Overbridge Bypass', baseType: 'Heavy Cargo ANPR + Thermal' }
+  ];
+
+  const channelProfiles = [
+    { ch: '01', role: 'Inbound Fast Lane ANPR', azimuth: '030° NNE', height: '6.5m', fov: '45° Narrow', spec: '4K Ultra-Starlight 60fps' },
+    { ch: '02', role: 'Outbound Fast Lane ANPR', azimuth: '210° SSW', height: '6.5m', fov: '45° Narrow', spec: '4K Ultra-Starlight 60fps' },
+    { ch: '03', role: 'Dual Speed Doppler Radar Sentry', azimuth: '180° S', height: '7.0m', fov: '60° Velocity', spec: 'Microwave Radar + 4K Sensor' },
+    { ch: '04', role: '360° Optical Master PTZ SpeedDome', azimuth: '360° Omni', height: '8.5m Top', fov: '360° Pan / 45x Zoom', spec: 'Laser IR 500m Auto-Tracking' },
+    { ch: '05', role: 'Service Road & Slip Lane Bullet', azimuth: '090° E', height: '5.0m', fov: '90° Wide', spec: '5MP Starlight HDR' },
+    { ch: '06', role: 'Underpass / Overbridge Under-Belly Sentry', azimuth: '270° W', height: '4.8m', fov: '100° Wide', spec: 'Ultra Low-Light Anti-Glare' },
+    { ch: '07', role: 'Pedestrian Concourse & Crosswalk Eye', azimuth: '120° ESE', height: '4.2m', fov: '110° Concourse', spec: 'Crowd Analysis AI 4K' },
+    { ch: '08', role: 'High-Mount Biometric Face Capture Sentry', azimuth: '015° NNE', height: '3.8m', fov: '55° Face Gate', spec: '99.4% Face Match Confidence' },
+    { ch: '09', role: 'Thermal Radiometric Perimeter Sensor', azimuth: '330° NNW', height: '7.5m', fov: '640x512 Thermal', spec: 'Intrusion & Heat Disruption' },
+    { ch: '10', role: 'Auxiliary Wide Context Panoramic Sensor', azimuth: '150° SSE', height: '5.8m', fov: '180° Panoramic', spec: 'Multi-Lens Seamless Stitch' }
+  ];
+
+  let csvContent = 'Camera ID,Pole ID,Pole Location Name,Sub-Sector,Latitude,Longitude,Mounting Height,Direction / Azimuth,Channel Role,Hardware Specification,Department,Deployment Status\n';
+
+  poles.forEach((pole) => {
+    channelProfiles.forEach(ch => {
+      const camId = `CAM-GJ-AMD-BLIND-${pole.id.replace('#', '')}-${ch.ch}`;
+      const line = `"${camId}","${pole.id}","${pole.name}","${pole.sector}",${pole.lat.toFixed(6)},${pole.lng.toFixed(6)},"${ch.height}","${ch.azimuth}","${ch.role}","${ch.spec}","Gujarat State Police & AMC Smart City","Active (0% Blind Spot)"`;
+      csvContent += line + '\n';
+    });
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Gujarat_100_Camera_BlindSpot_Deployment_Coordinates.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 // Fly to specific blind-spot location on GIS Map & show full dashed coverage markings
 function plotBlindSpotLocationOnMap(lat, lng, name, camsNeeded, distName) {
