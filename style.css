@@ -3562,65 +3562,122 @@ path.district-coverage-dashed-line {
   display: none;
 }
 
-/* CROSS-DEPARTMENT VEHICLE TRAJECTORY TIMELINE STYLES */
+/* CROSS-DEPARTMENT VEHICLE TRAJECTORY TIMELINE & SUMMARY STYLES */
+.gap-summary-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.gap-metric-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.gap-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.gap-val {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.gap-metric-box strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.gap-metric-box strong.text-rose {
+  color: #dc2626;
+}
+
+.gap-metric-box .gap-val.text-cyan {
+  color: #0284c7;
+}
+
+.gap-metric-box .gap-val.text-amber {
+  color: #d97706;
+}
+
+.gap-metric-box .gap-val.text-green {
+  color: #16a34a;
+}
+
 .trajectory-steps-timeline {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.65rem;
   position: relative;
   margin-top: 0.5rem;
 }
 
 .traj-step-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 0.9rem 1.2rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.85rem 1.2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .traj-step-card:hover {
-  border-color: var(--accent-cyan);
-  background: rgba(0, 242, 254, 0.03);
+  border-color: #94a3b8;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
 }
 
 .traj-step-left {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.85rem;
 }
 
 .traj-step-num {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: rgba(0, 242, 254, 0.15);
-  color: var(--accent-cyan);
+  background: #f1f5f9;
+  color: #0284c7;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  border: 1px solid var(--accent-cyan);
+  font-size: 0.78rem;
+  border: 1.5px solid #cbd5e1;
   flex-shrink: 0;
 }
 
 .traj-node-info h4 {
-  font-size: 0.9rem;
-  color: var(--text-primary);
+  font-size: 0.88rem;
+  color: #0f172a;
   margin-bottom: 0.2rem;
+  font-weight: 700;
 }
 
 .traj-dept-badge {
-  font-size: 0.7rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 3px;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -3630,7 +3687,7 @@ path.district-coverage-dashed-line {
 .traj-step-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
   flex-shrink: 0;
 }
 
@@ -3642,12 +3699,12 @@ path.district-coverage-dashed-line {
   font-family: var(--font-mono);
   font-weight: 800;
   font-size: 0.95rem;
-  color: var(--accent-amber);
+  color: #d97706;
 }
 
 .speed-tag-box .speed-label {
   font-size: 0.68rem;
-  color: var(--text-muted);
+  color: #64748b;
   display: block;
 }
 
@@ -3655,7 +3712,142 @@ path.district-coverage-dashed-line {
   text-align: right;
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-secondary);
+  color: #334155;
+  font-weight: 600;
+}
+
+/* AI Predictive Intercept Card - Sleek, Natural & Crystal Clear */
+.predictive-intercept-card {
+  margin-top: 1.25rem;
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.pred-intercept-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.pred-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.pred-vector-pill {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pred-confidence-badge {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pred-title {
+  font-size: 1.05rem;
+  color: #f8fafc !important;
+  margin-top: 0.25rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.pred-desc {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  margin-top: 0.35rem;
+  line-height: 1.5;
+}
+
+.pred-desc strong {
+  color: #f87171;
+}
+
+.pred-desc em {
+  color: #38bdf8;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.pred-eta-box {
+  text-align: right;
+}
+
+.pred-eta-label {
+  font-size: 0.70rem;
+  color: #94a3b8;
+  display: block;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pred-eta-val {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.pred-intercept-bottom {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.pred-squad-text {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.pred-squad-text strong {
+  color: #f8fafc;
+}
+
+.pred-action-btn {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-size: 0.80rem !important;
+  font-weight: 700 !important;
+  padding: 0.45rem 1rem !important;
+  border-radius: 6px !important;
+  transition: background 0.15s ease !important;
+  cursor: pointer;
+}
+
+.pred-action-btn:hover {
+  background: #dc2626 !important;
 }
 
 .consent-hash-badge {

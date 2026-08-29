@@ -18,7 +18,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=2.6.8">
+  <link rel="stylesheet" href="style.css?v=2.7.2">
 </head>
 <body class="dark-theme">
   <div class="app-layout" id="appLayout">
@@ -1095,32 +1095,32 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           </div>
 
           <!-- AI Predictive Interception Card -->
-          <div class="predictive-intercept-card" style="margin-top: 1.4rem; background: rgba(244,63,94,0.08); border: 2px dashed var(--accent-rose); border-radius: var(--radius-md); padding: 1.2rem 1.4rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem;">
+          <div class="predictive-intercept-card">
+            <div class="pred-intercept-top">
               <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
-                  <span class="node-status-pill online" style="background: rgba(244,63,94,0.2); color: var(--accent-rose); border-color: var(--accent-rose); font-weight: 800;">
-                    <span class="dot-sm" style="background: var(--accent-rose);"></span> AI PREDICTIVE INTERCEPT VECTOR
+                <div class="pred-header-badges">
+                  <span class="pred-vector-pill">
+                    <span class="dot-sm" style="background: #ef4444;"></span> AI PREDICTIVE INTERCEPT VECTOR
                   </span>
-                  <span class="kafka-badge"><i class="fa-solid fa-satellite-dish"></i> 96.2% Confidence</span>
+                  <span class="pred-confidence-badge"><i class="fa-solid fa-satellite-dish"></i> 96.2% Confidence</span>
                 </div>
-                <h3 style="font-size: 1.1rem; color: #ffffff; margin-top: 0.2rem;" id="predNextLocTitle">Next Predicted Location: Forest Dept Sanctuary North Inter-State Corridor</h3>
-                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.3rem;" id="predStrategyDesc">
+                <h3 class="pred-title" id="predNextLocTitle">Next Predicted Location: Forest Dept Sanctuary North Inter-State Corridor</h3>
+                <p class="pred-desc" id="predStrategyDesc">
                   Vehicle maintaining <strong>92.0 km/h</strong> on NH-147 heading towards Rajasthan Interstate boundary. Pre-alert transmitted across department boundaries.
                 </p>
               </div>
 
-              <div style="text-align: right;">
-                <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Estimated Time of Arrival:</span>
-                <span style="font-family: var(--font-mono); font-size: 1.3rem; font-weight: 800; color: var(--accent-amber);" id="predEtaTime">~14 Mins (18:52 IST)</span>
+              <div class="pred-eta-box">
+                <span class="pred-eta-label">Estimated Time of Arrival:</span>
+                <span class="pred-eta-val" id="predEtaTime">~14 Mins (18:52 IST)</span>
               </div>
             </div>
 
-            <div style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid rgba(244,63,94,0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
-              <span style="font-size: 0.75rem; color: var(--text-muted);" id="predForwardUnit">
+            <div class="pred-intercept-bottom">
+              <span class="pred-squad-text" id="predForwardUnit">
                 <i class="fa-solid fa-car-on text-cyan"></i> Forward Squad: <strong>Inter-State Border Flying Squad #11</strong> (Pre-Positioned)
               </span>
-              <button class="action-btn primary" id="btnDispatchForwardRoadblock" style="background: linear-gradient(135deg, #f43f5e, #be123c); font-size: 0.78rem; padding: 0.35rem 0.8rem;">
+              <button class="action-btn primary pred-action-btn" id="btnDispatchForwardRoadblock">
                 <i class="fa-solid fa-shield-halved"></i> Arm Automated Roadblock & Forward Intercept
               </button>
             </div>
@@ -2543,7 +2543,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
-  <script src="src/api/client.js?v=2.7.1"></script>
-  <script src="app.js?v=2.7.1"></script>
+  <script src="src/api/client.js?v=2.7.2"></script>
+  <script src="app.js?v=2.7.2"></script>
 </body>
 </html>

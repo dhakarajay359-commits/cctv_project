@@ -4293,26 +4293,26 @@ function initTrajectoryPursuitLab() {
               <div class="traj-step-left">
                 <span class="traj-step-num">${s.step}</span>
                 <div class="traj-node-info">
-                  <h4>${s.camera_name} <span style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono);">(${s.camera_id})</span></h4>
-                  <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap; margin-top:0.2rem;">
-                    <span class="traj-dept-badge" style="background:${s.department_color}22; color:${s.department_color}; border:1px solid ${s.department_color}66;">
+                  <h4>${s.camera_name} <span style="font-size:0.75rem; color:#64748b; font-family:var(--font-mono); font-weight:600;">(${s.camera_id})</span></h4>
+                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap; margin-top:0.25rem;">
+                    <span class="traj-dept-badge" style="background:${s.department_color}18; color:${s.department_color}; border:1px solid ${s.department_color}44;">
                       <i class="fa-solid fa-shield-halved"></i> ${s.department_badge}
                     </span>
-                    <span style="font-size:0.72rem; color:var(--text-secondary);">&bull; ${s.district} &bull; <strong>${s.snapshot_type}</strong></span>
+                    <span style="font-size:0.75rem; color:#64748b;">&bull; ${s.district} &bull; <strong style="color:#334155;">${s.snapshot_type}</strong></span>
                   </div>
                 </div>
               </div>
 
               <div class="traj-step-right">
                 <div class="speed-tag-box">
-                  <span class="speed-val" style="color: ${s.speed_kmph > 90 ? 'var(--accent-rose)' : (s.speed_kmph > 75 ? 'var(--accent-amber)' : 'var(--accent-emerald)')};">
+                  <span class="speed-val" style="color: ${s.speed_kmph > 90 ? '#dc2626' : (s.speed_kmph > 75 ? '#d97706' : '#16a34a')};">
                     ${s.speed_kmph} km/h
                   </span>
                   <span class="speed-label">Segment Speed</span>
                 </div>
                 <div class="traj-time-box">
-                  <strong>${s.time_display}</strong><br/>
-                  <span style="font-size:0.68rem; color:var(--accent-cyan);">OCR: ${s.ocr_confidence}%</span>
+                  <strong style="color:#1e293b;">${s.time_display}</strong><br/>
+                  <span style="font-size:0.70rem; color:#0284c7; font-weight:700;">OCR: ${s.ocr_confidence}%</span>
                 </div>
               </div>
             `;
