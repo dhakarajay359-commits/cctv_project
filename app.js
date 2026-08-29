@@ -434,27 +434,6 @@ async function initGujaratBorderLayers() {
       className: 'gujarat-border-sharp'
     },
     onEachFeature: (feature, layer) => {
-      // Interactive Tactical State HUD Tooltip
-      layer.bindTooltip(`
-        <div class="gujarat-state-tooltip">
-          <div style="font-size: 0.84rem; font-weight: 800; color: #f87171; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 3px;">
-            <i class="fa-solid fa-shield-halved"></i> STATE OF GUJARAT (ગુજરાત રાજ્ય)
-          </div>
-          <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">
-            <div>Perimeter: <strong style="color: #fca5a5;">~3,100 km</strong> &bull; Coastline: <strong style="color: #fca5a5;">1,600 km</strong></div>
-            <div>Inter-State: <strong>Rajasthan, MP, Maharashtra, Pakistan/Rann</strong></div>
-            <div style="color: #f87171; margin-top: 2px; font-weight: 600;">
-              NIRIKSHAN Homeland Grid: 33 Districts &bull; 80,000+ CCTV Nodes
-            </div>
-          </div>
-        </div>
-      `, {
-        sticky: true,
-        direction: 'top',
-        className: 'custom-leaflet-tooltip',
-        opacity: 0.98
-      });
-
       layer.on({
         mouseover: (e) => {
           const l = e.target;

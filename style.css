@@ -1939,19 +1939,13 @@ path.gujarat-district-border:hover {
 }
 
 /* Custom Tooltips for Gujarat Boundaries */
-.leaflet-tooltip.custom-leaflet-tooltip {
-  background: #0f172a !important;
-  border: 1px solid #dc2626 !important;
-  border-radius: 6px !important;
-  color: #f8fafc !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
-  padding: 6px 10px !important;
-  font-family: var(--font-main) !important;
-}
-
-.leaflet-tooltip.custom-leaflet-tooltip::before {
-  border-top-color: #dc2626 !important;
-  border-bottom-color: #dc2626 !important;
+.gujarat-state-tooltip,
+.leaflet-tooltip.custom-leaflet-tooltip,
+.leaflet-tooltip-pane .custom-leaflet-tooltip {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .leaflet-tooltip.custom-district-tooltip {
