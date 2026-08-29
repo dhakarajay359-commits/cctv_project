@@ -18,7 +18,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=2.7.6">
+  <link rel="stylesheet" href="style.css?v=2.7.9">
 </head>
 <body class="dark-theme">
   <div class="app-layout" id="appLayout">
@@ -1049,7 +1049,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <div class="anpr-lab-presets">
             <div class="search-bar-wrap" style="min-width: 200px;">
               <i class="fa-solid fa-car"></i>
-              <input type="text" id="trajectoryPlateInput" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter Stolen Plate (e.g. GJ-01-AB-1234)">
+              <input type="text" id="trajectoryPlateInput" class="custom-input" placeholder="Enter Suspect Registration Number (e.g. GJ-01-XX-0000)">
             </div>
             <button class="action-btn primary" id="btnTraceTrajectory" style="background: #dc2626; color: #ffffff; border: 1px solid #dc2626; font-weight: 700;">
               <i class="fa-solid fa-compass"></i> Trace Route
@@ -1060,32 +1060,26 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           </div>
         </div>
 
-        <div class="quick-samples-bar" style="margin-top: 0.6rem; margin-bottom: 0.8rem;">
-          <span>Select Target Pursuit:</span>
-          <button class="sample-chip" onclick="document.getElementById('trajectoryPlateInput').value='GJ-01-AB-1234'; document.getElementById('btnTraceTrajectory').click();">GJ-01-AB-1234 (Stolen Creta &bull; Police ➔ AMC ➔ Private ➔ RTO ➔ Forest)</button>
-          <button class="sample-chip" onclick="document.getElementById('trajectoryPlateInput').value='MP-09-HH-5541'; document.getElementById('btnTraceTrajectory').click();">MP-09-HH-5541 (Overweight Truck &bull; Civil Supplies ➔ RTO ➔ Border Patrol)</button>
-        </div>
-
         <!-- Trajectory Reconstruction Interactive Dashboard Output -->
         <div id="trajectoryResultsContainer" style="display: none; margin-top: 1rem;">
           <!-- Trajectory Summary Banner -->
           <div class="gap-summary-banner" style="margin-bottom: 1.2rem;">
             <div class="gap-metric-box">
               <span class="gap-label">Target Stolen Vehicle</span>
-              <strong class="text-rose" id="trajVehicleModel">Hyundai Creta (White)</strong>
-              <span style="font-size: 0.7rem; color: var(--text-muted);" id="trajFirRef">FIR-2026-GJ-01-8841</span>
+              <strong class="text-rose" id="trajVehicleModel">-</strong>
+              <span style="font-size: 0.7rem; color: var(--text-muted);" id="trajFirRef">-</span>
             </div>
             <div class="gap-metric-box">
               <span class="gap-label">Total Multi-Dept Transit</span>
-              <span class="gap-val text-cyan" id="trajTotalDist">74.2 km</span>
+              <span class="gap-val text-cyan" id="trajTotalDist">-</span>
             </div>
             <div class="gap-metric-box">
               <span class="gap-label">Average Transit Speed</span>
-              <span class="gap-val text-amber" id="trajAvgSpeed">81.5 km/h</span>
+              <span class="gap-val text-amber" id="trajAvgSpeed">-</span>
             </div>
             <div class="gap-metric-box">
               <span class="gap-label">Current Heading Vector</span>
-              <span class="gap-val text-green" id="trajHeading">North-West (325°)</span>
+              <span class="gap-val text-green" id="trajHeading">-</span>
             </div>
           </div>
 
@@ -1105,17 +1099,17 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
                   <span class="pred-vector-pill">
                     <span class="dot-sm" style="background: #ef4444;"></span> AI PREDICTIVE INTERCEPT VECTOR
                   </span>
-                  <span class="pred-confidence-badge"><i class="fa-solid fa-satellite-dish"></i> 96.2% Confidence</span>
+                  <span class="pred-confidence-badge" id="predConfidenceBadge"><i class="fa-solid fa-satellite-dish"></i> 96.2% Confidence</span>
                 </div>
-                <h3 class="pred-title" id="predNextLocTitle">Next Predicted Location: Forest Dept Sanctuary North Inter-State Corridor</h3>
+                <h3 class="pred-title" id="predNextLocTitle">Next Predicted Location: -</h3>
                 <p class="pred-desc" id="predStrategyDesc">
-                  Vehicle maintaining <strong>92.0 km/h</strong> on NH-147 heading towards Rajasthan Interstate boundary. Pre-alert transmitted across department boundaries.
+                  Trajectory details will be projected here upon route trace.
                 </p>
               </div>
 
               <div class="pred-eta-box">
                 <span class="pred-eta-label">Estimated Time of Arrival:</span>
-                <span class="pred-eta-val" id="predEtaTime">~14 Mins (18:52 IST)</span>
+                <span class="pred-eta-val" id="predEtaTime">-</span>
               </div>
             </div>
 
@@ -1473,14 +1467,8 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <!-- TAB 1: VAHAN -->
         <div id="tab-vahan" class="sandbox-panel active">
           <div class="sandbox-query-row">
-            <input type="text" id="vahanQueryInput" class="custom-input" value="GJ-01-AB-1234" placeholder="Enter Registration Number (e.g. GJ-01-AB-1234)">
+            <input type="text" id="vahanQueryInput" class="custom-input" placeholder="Enter Registration Number (e.g. GJ-01-XX-0000)">
             <button class="action-btn primary" id="btnExecuteVahanQuery"><i class="fa-solid fa-search"></i> Query VAHAN 4.0 API</button>
-          </div>
-          <div class="quick-samples-bar">
-            <span>Quick Samples:</span>
-            <button class="sample-chip" onclick="document.getElementById('vahanQueryInput').value='GJ-01-AB-1234'; document.getElementById('btnExecuteVahanQuery').click();">GJ-01-AB-1234 (Stolen SUV)</button>
-            <button class="sample-chip" onclick="document.getElementById('vahanQueryInput').value='MP-09-HH-5541'; document.getElementById('btnExecuteVahanQuery').click();">MP-09-HH-5541 (Overweight Truck)</button>
-            <button class="sample-chip" onclick="document.getElementById('vahanQueryInput').value='MH-04-AZ-8890'; document.getElementById('btnExecuteVahanQuery').click();">MH-04-AZ-8890 (Expired Fitness)</button>
           </div>
           <div class="sandbox-result-box" id="vahanResultBox" style="display: none;"></div>
         </div>
@@ -1488,13 +1476,8 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <!-- TAB 2: EGUJCOP -->
         <div id="tab-egujcop" class="sandbox-panel">
           <div class="sandbox-query-row">
-            <input type="text" id="egujcopQueryInput" class="custom-input" value="Vikram K. Rathod" placeholder="Enter Suspect Name, Alias, or CCTNS ID...">
+            <input type="text" id="egujcopQueryInput" class="custom-input" placeholder="Enter Suspect Name, Alias, or CCTNS ID...">
             <button class="action-btn primary" id="btnExecuteEgujcopQuery"><i class="fa-solid fa-search"></i> Query eGujCop CCTNS</button>
-          </div>
-          <div class="quick-samples-bar">
-            <span>Quick Samples:</span>
-            <button class="sample-chip" onclick="document.getElementById('egujcopQueryInput').value='Vikram K. Rathod'; document.getElementById('btnExecuteEgujcopQuery').click();">Vikram K. Rathod (Wanted Fugitive NBW)</button>
-            <button class="sample-chip" onclick="document.getElementById('egujcopQueryInput').value='Haresh B. Solanki'; document.getElementById('btnExecuteEgujcopQuery').click();">Haresh B. Solanki (Proclaimed Offender)</button>
           </div>
           <div class="sandbox-result-box" id="egujcopResultBox" style="display: none;"></div>
         </div>
@@ -1502,7 +1485,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <!-- TAB 3: SARTHI -->
         <div id="tab-sarthi" class="sandbox-panel">
           <div class="sandbox-query-row">
-            <input type="text" id="sarthiQueryInput" class="custom-input" value="GJ01 20180019281" placeholder="Enter Driving License Number...">
+            <input type="text" id="sarthiQueryInput" class="custom-input" placeholder="Enter Driving License Number...">
             <button class="action-btn primary" id="btnExecuteSarthiQuery"><i class="fa-solid fa-search"></i> Query SARTHI DL</button>
           </div>
           <div class="sandbox-result-box" id="sarthiResultBox" style="display: none;"></div>
@@ -1511,7 +1494,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <!-- TAB 4: NAFIS -->
         <div id="tab-nafis" class="sandbox-panel">
           <div class="sandbox-query-row">
-            <input type="text" id="nafisQueryInput" class="custom-input" value="NAFIS-IN-2026-99018" placeholder="Enter Biometric Embedding / NAFIS ID...">
+            <input type="text" id="nafisQueryInput" class="custom-input" placeholder="Enter Biometric Embedding / NAFIS ID...">
             <button class="action-btn primary" id="btnExecuteNafisQuery"><i class="fa-solid fa-search"></i> Query NAFIS Biometric Index</button>
           </div>
           <div class="sandbox-result-box" id="nafisResultBox" style="display: none;"></div>
@@ -2546,7 +2529,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
-  <script src="src/api/client.js?v=2.7.6"></script>
-  <script src="app.js?v=2.7.6"></script>
+  <script src="src/api/client.js?v=2.7.9"></script>
+  <script src="app.js?v=2.7.9"></script>
 </body>
 </html>

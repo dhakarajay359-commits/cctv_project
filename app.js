@@ -1220,7 +1220,8 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       const clusterIcon = L.divIcon({
         className: 'custom-cluster-pin',
         html: clusterHtml,
-        iconSize: [44, 44]
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
       });
 
       const clusterMarker = L.marker([dist.lat, dist.lng], { icon: clusterIcon }).addTo(leafletMapInstance);
@@ -4334,10 +4335,15 @@ function initTrajectoryPursuitLab() {
 
   if (btnTrace) {
     btnTrace.addEventListener('click', async () => {
-      const plateVal = inputPlate?.value || 'GJ-01-AB-1234';
+      const plateVal = (inputPlate?.value || '').trim();
+      if (!plateVal) {
+        alert('Please enter a vehicle registration number to trace its route.');
+        inputPlate?.focus();
+        return;
+      }
       btnTrace.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tracing Multi-Dept Grid...';
       const traj = await window.apiClient.reconstructVehicleTrajectory(plateVal);
-      btnTrace.innerHTML = '<i class="fa-solid fa-compass"></i> Trace Cross-Dept Route';
+      btnTrace.innerHTML = '<i class="fa-solid fa-compass"></i> Trace Route';
 
       const container = document.getElementById('trajectoryResultsContainer');
       if (container) {
@@ -5098,7 +5104,13 @@ async function initIntegrationView() {
   const btnVahan = document.getElementById('btnExecuteVahanQuery');
   if (btnVahan) {
     btnVahan.addEventListener('click', async () => {
-      const plate = document.getElementById('vahanQueryInput').value;
+      const input = document.getElementById('vahanQueryInput');
+      const plate = (input?.value || '').trim();
+      if (!plate) {
+        alert('Please enter a vehicle registration plate to query VAHAN 4.0.');
+        input?.focus();
+        return;
+      }
       btnVahan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Querying VAHAN Gateway...';
       const res = await window.apiClient.lookupVahan(plate);
       btnVahan.innerHTML = '<i class="fa-solid fa-search"></i> Query VAHAN 4.0 API';
@@ -5109,7 +5121,7 @@ async function initIntegrationView() {
       box.innerHTML = `
         <div class="result-field-grid">
           <div class="res-item"><label>Registration Plate:</label> <span class="text-cyan">${d.plate}</span></div>
-          <div class="res-item"><label>Vehicle Status:</label> <span class="${d.status.includes('STOLEN') ? 'text-rose' : 'text-green'}">${d.status}</span></div>
+          <div class="res-item"><label>Vehicle Status:</label> <span class="${d.status.includes('STOLEN') || d.status.includes('SUSPECT') ? 'text-rose' : 'text-green'}">${d.status}</span></div>
           <div class="res-item"><label>Registered Owner:</label> <span>${d.registered_owner}</span></div>
           <div class="res-item"><label>Make / Model:</label> <span>${d.vehicle_make_model}</span></div>
           <div class="res-item"><label>RTO Authority:</label> <span>${d.rto_office}</span></div>
@@ -5123,7 +5135,13 @@ async function initIntegrationView() {
   const btnEgujcop = document.getElementById('btnExecuteEgujcopQuery');
   if (btnEgujcop) {
     btnEgujcop.addEventListener('click', async () => {
-      const q = document.getElementById('egujcopQueryInput').value;
+      const input = document.getElementById('egujcopQueryInput');
+      const q = (input?.value || '').trim();
+      if (!q) {
+        alert('Please enter a suspect name, alias, or CCTNS ID to search.');
+        input?.focus();
+        return;
+      }
       btnEgujcop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching CCTNS Registry...';
       const res = await window.apiClient.lookupEGujCop(q);
       btnEgujcop.innerHTML = '<i class="fa-solid fa-search"></i> Query eGujCop CCTNS';
@@ -5143,7 +5161,7 @@ async function initIntegrationView() {
           </div>
         `;
       } else {
-        box.innerHTML = `<p style="color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> ${res.message}</p>`;
+        box.innerHTML = `<p style="color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> ${res.message || 'No active criminal warrants found for this subject.'}</p>`;
       }
     });
   }
@@ -5151,7 +5169,13 @@ async function initIntegrationView() {
   const btnSarthi = document.getElementById('btnExecuteSarthiQuery');
   if (btnSarthi) {
     btnSarthi.addEventListener('click', async () => {
-      const q = document.getElementById('sarthiQueryInput').value;
+      const input = document.getElementById('sarthiQueryInput');
+      const q = (input?.value || '').trim();
+      if (!q) {
+        alert('Please enter a driving license number to query SARTHI.');
+        input?.focus();
+        return;
+      }
       const res = await window.apiClient.lookupSarthi(q);
       const box = document.getElementById('sarthiResultBox');
       box.style.display = 'block';
@@ -5170,7 +5194,13 @@ async function initIntegrationView() {
   const btnNafis = document.getElementById('btnExecuteNafisQuery');
   if (btnNafis) {
     btnNafis.addEventListener('click', async () => {
-      const q = document.getElementById('nafisQueryInput').value;
+      const input = document.getElementById('nafisQueryInput');
+      const q = (input?.value || '').trim();
+      if (!q) {
+        alert('Please enter a biometric embedding or NAFIS ID to query.');
+        input?.focus();
+        return;
+      }
       const res = await window.apiClient.lookupNafis(q);
       const box = document.getElementById('nafisResultBox');
       box.style.display = 'block';
