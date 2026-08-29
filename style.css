@@ -1773,12 +1773,12 @@ body.focus-mode .leaflet-container-view {
 }
 
 .map-border-btn {
-  height: 32px;
+  height: 33px;
   background: #ffffff;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 0 0.75rem;
-  border-radius: var(--radius-sm);
+  border: 1.5px solid #cbd5e1;
+  color: #1e293b;
+  padding: 0 0.85rem;
+  border-radius: 6px;
   font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
@@ -1786,21 +1786,22 @@ body.focus-mode .leaflet-container-view {
   align-items: center;
   gap: 0.45rem;
   white-space: nowrap;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
   user-select: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  position: relative;
 }
 
 .map-border-btn i {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  transition: transform 0.2s ease, color 0.18s ease;
+  color: #475569;
+  font-size: 0.82rem;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
 }
 
 .map-border-btn strong {
   display: inline-block;
-  padding: 0.1rem 0.4rem;
+  padding: 0.1rem 0.42rem;
   border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 700;
@@ -1809,28 +1810,34 @@ body.focus-mode .leaflet-container-view {
   color: #64748b;
   border: 1px solid #e2e8f0;
   margin-left: 0.25rem;
-  transition: all 0.18s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Hover: Regular / Inactive */
 .map-border-btn:hover {
-  background: #f8fafc;
-  color: var(--text-primary);
-  border-color: #94a3b8;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transform: translateY(-0.5px);
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #64748b;
+  box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.10), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  transform: translateY(-1.5px);
 }
 
 .map-border-btn:hover i {
-  color: var(--text-primary);
+  color: #0f172a;
+  transform: scale(1.15);
 }
 
 .map-border-btn:hover strong {
   border-color: #cbd5e1;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
+/* Press Interaction */
 .map-border-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transform: translateY(0.5px) scale(0.985);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition-duration: 0.08s;
 }
 
 .map-border-btn:focus {
@@ -1840,19 +1847,19 @@ body.focus-mode .leaflet-container-view {
 .map-border-btn:focus-visible {
   outline: none;
   border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22);
 }
 
-/* Active State (Natural, grounded look) */
+/* Active State (ON) */
 .map-border-btn.active {
   background: #ffffff;
   border: 1.5px solid #0f172a;
-  color: var(--text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .map-border-btn.active i {
-  color: var(--text-primary);
+  color: #0f172a;
 }
 
 .map-border-btn.active strong {
@@ -1861,16 +1868,39 @@ body.focus-mode .leaflet-container-view {
   border: 1px solid #86efac;
 }
 
+/* Hover: Active State */
 .map-border-btn.active:hover {
-  background: #f8fafc;
+  background: #ffffff;
   border-color: #0f172a;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  box-shadow: 0 6px 18px -2px rgba(15, 23, 42, 0.12), 0 2px 6px -1px rgba(15, 23, 42, 0.05);
+  transform: translateY(-1.5px);
 }
 
-.map-border-btn.active:focus-visible {
-  outline: none;
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25);
+.map-border-btn.active:hover i {
+  transform: scale(1.15);
+  color: #0f172a;
+}
+
+.map-border-btn.active:hover strong {
+  background: #bbf7d0;
+  color: #14532d;
+  border-color: #4ade80;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.22);
+  transform: scale(1.04);
+}
+
+/* Fit State Button Hover Enhancement */
+#btnFitGujaratBorder:hover {
+  background: #f0f7ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.14), 0 2px 6px -1px rgba(37, 99, 235, 0.05);
+}
+
+#btnFitGujaratBorder:hover i {
+  color: #2563eb;
+  transform: scale(1.18);
 }
 
 .map-border-badge {
