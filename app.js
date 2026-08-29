@@ -3654,6 +3654,43 @@ window.openTagFeedModal = function(camId, camName) {
 /* =========================================================================
    7. ANALYTICS & ANPR VIEW (PHASE 4 - MODEL 2 ANALYTICS ENGINE)
    ========================================================================= */
+window.resetAnalyticsFilters = async function() {
+  const search = document.getElementById('analyticsSearch');
+  const camFilter = document.getElementById('analyticsCameraFilter');
+  const typeFilter = document.getElementById('analyticsTypeFilter');
+  const liveOutput = document.getElementById('anprLiveOutput');
+  const anprPreset = document.getElementById('anprSamplePreset');
+  const btnReset = document.getElementById('btnResetAnalyticsFilters');
+
+  if (search) search.value = '';
+  if (camFilter) camFilter.value = 'ALL';
+  if (typeFilter) typeFilter.value = 'ALL';
+  if (anprPreset) anprPreset.value = 'sample-ahmedabad';
+  if (liveOutput) liveOutput.style.display = 'none';
+
+  // Smooth tactile micro-animation on Reset button icon
+  if (btnReset) {
+    const icon = btnReset.querySelector('i');
+    if (icon) {
+      icon.style.transition = 'transform 0.4s ease';
+      icon.style.transform = 'rotate(-360deg)';
+      setTimeout(() => {
+        icon.style.transition = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      }, 400);
+    }
+  }
+
+  await renderAnalyticsTable();
+
+  showRealtimeAlertToast({
+    title: 'FILTERS RESET',
+    location: 'Forensic event registry restored to default statewide feed',
+    camera_id: 'ALL CAMERAS • ZERO DEFICIT',
+    kafka_topic: 'nirikshan.analytics.reset'
+  });
+};
+
 async function initAnalyticsView() {
   const search = document.getElementById('analyticsSearch');
   const camFilter = document.getElementById('analyticsCameraFilter');
@@ -3666,11 +3703,9 @@ async function initAnalyticsView() {
   if (typeFilter) typeFilter.addEventListener('change', () => renderAnalyticsTable());
 
   if (btnReset) {
-    btnReset.addEventListener('click', async () => {
-      if (search) search.value = '';
-      if (camFilter) camFilter.value = 'ALL';
-      if (typeFilter) typeFilter.value = 'ALL';
-      await renderAnalyticsTable();
+    btnReset.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.resetAnalyticsFilters();
     });
   }
 

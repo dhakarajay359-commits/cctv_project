@@ -1860,27 +1860,36 @@ class NirikshanApiClient {
   }
 
   async getEvents(filters = {}) {
-    let result = this.events;
+    let result = this.events || [];
 
     // Camera ID filter
     if (filters.camera_id && filters.camera_id !== 'ALL') {
       result = result.filter(e => e.camera_id === filters.camera_id);
     }
 
-    // Event Type filter (anpr, face, crowd, manual)
+    // Event Type filter (flexible matching for anpr, face, crowd/loitering, manual)
     if (filters.type && filters.type !== 'ALL') {
-      result = result.filter(e => e.type.toLowerCase() === filters.type.toLowerCase());
+      const ft = filters.type.toLowerCase().trim();
+      result = result.filter(e => {
+        const et = (e.type || '').toLowerCase();
+        if (et === ft) return true;
+        if (ft === 'face' && (et.includes('face') || et.includes('match'))) return true;
+        if (ft === 'crowd' && (et.includes('crowd') || et.includes('loiter'))) return true;
+        if (ft === 'anpr' && et.includes('anpr')) return true;
+        return et.startsWith(ft);
+      });
     }
 
     // Plate number or search query filter
     if (filters.search && filters.search.trim()) {
-      const q = filters.search.toLowerCase();
+      const q = filters.search.toLowerCase().trim();
       result = result.filter(e => {
-        const payloadStr = JSON.stringify(e.payload_json).toLowerCase();
+        const payloadStr = JSON.stringify(e.payload_json || {}).toLowerCase();
         return (
-          e.id.toLowerCase().includes(q) ||
-          e.camera_id.toLowerCase().includes(q) ||
-          (e.camera_name && e.camera_name.toLowerCase().includes(q)) ||
+          ((e.id || '').toLowerCase().includes(q)) ||
+          ((e.camera_id || '').toLowerCase().includes(q)) ||
+          ((e.camera_name || '').toLowerCase().includes(q)) ||
+          ((e.type || '').toLowerCase().includes(q)) ||
           payloadStr.includes(q)
         );
       });
@@ -1888,10 +1897,11 @@ class NirikshanApiClient {
 
     // Plate specific filter
     if (filters.plate_number && filters.plate_number.trim()) {
-      const p = filters.plate_number.toLowerCase();
-      result = result.filter(e => 
-        e.payload_json && e.payload_json.plate && e.payload_json.plate.toLowerCase().includes(p)
-      );
+      const p = filters.plate_number.toLowerCase().trim();
+      result = result.filter(e => {
+        const pl = e.payload_json?.plate || e.payload_json?.plate_number || '';
+        return pl.toLowerCase().includes(p);
+      });
     }
 
     // Date range filtering
