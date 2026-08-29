@@ -1776,10 +1776,10 @@ body.focus-mode .leaflet-container-view {
   height: 32px;
   background: #ffffff;
   border: 1px solid var(--border-color);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   padding: 0 0.75rem;
   border-radius: var(--radius-sm);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -1789,24 +1789,25 @@ body.focus-mode .leaflet-container-view {
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   user-select: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .map-border-btn i {
-  color: var(--accent-cyan);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   transition: transform 0.2s ease, color 0.18s ease;
 }
 
 .map-border-btn strong {
   display: inline-block;
-  padding: 0.08rem 0.35rem;
-  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   background: #f1f5f9;
   color: #64748b;
+  border: 1px solid #e2e8f0;
   margin-left: 0.25rem;
   transition: all 0.18s ease;
 }
@@ -1814,18 +1815,17 @@ body.focus-mode .leaflet-container-view {
 .map-border-btn:hover {
   background: #f8fafc;
   color: var(--text-primary);
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+  border-color: #94a3b8;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   transform: translateY(-0.5px);
 }
 
 .map-border-btn:hover i {
-  transform: scale(1.08);
+  color: var(--text-primary);
 }
 
 .map-border-btn:hover strong {
-  background: #e2e8f0;
-  color: var(--text-primary);
+  border-color: #cbd5e1;
 }
 
 .map-border-btn:active {
@@ -1839,39 +1839,38 @@ body.focus-mode .leaflet-container-view {
 
 .map-border-btn:focus-visible {
   outline: none;
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22);
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+
+/* Active State (Natural, grounded look) */
+.map-border-btn.active {
+  background: #ffffff;
+  border: 1.5px solid #0f172a;
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.map-border-btn.active i {
   color: var(--text-primary);
 }
 
-.map-border-btn.active {
-  background: rgba(2, 132, 199, 0.08);
-  border-color: rgba(2, 132, 199, 0.4);
-  color: var(--accent-cyan);
-  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
-  font-weight: 700;
-}
-
 .map-border-btn.active strong {
-  background: rgba(2, 132, 199, 0.18);
-  color: #0284c7;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
 }
 
 .map-border-btn.active:hover {
-  background: rgba(2, 132, 199, 0.14);
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-
-.map-border-btn.active:hover strong {
-  background: rgba(2, 132, 199, 0.28);
-  color: #0284c7;
+  background: #f8fafc;
+  border-color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .map-border-btn.active:focus-visible {
   outline: none;
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.3);
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25);
 }
 
 .map-border-badge {
