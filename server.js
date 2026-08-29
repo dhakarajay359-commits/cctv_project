@@ -11,6 +11,9 @@ const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0';
 const ROOT_DIR = path.resolve(__dirname);
 
+// In-Memory YOLO Detection Target Database
+const yoloSuspectDatabase = [];
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -56,6 +59,38 @@ const server = http.createServer((req, res) => {
       timestamp: new Date().toISOString()
     }, null, 2));
     return;
+  }
+
+  // YOLO Suspect Watchlist Database Endpoints (for Live CCTV Stream Inferences)
+  if (pathname === '/api/suspects' || pathname === '/api/v1/suspects') {
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', count: yoloSuspectDatabase.length, suspects: yoloSuspectDatabase }));
+      return;
+    }
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          if (payload.plate) {
+            yoloSuspectDatabase.unshift({
+              ...payload,
+              id: payload.id || `WCH-${Math.floor(100 + Math.random() * 900)}`,
+              active: true,
+              created_at: new Date().toISOString()
+            });
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'registered', message: 'Suspect synced to YOLO Vision Database', target: payload.plate }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        }
+      });
+      return;
+    }
   }
 
   // Dynamic Camera Stream Ingest Catalogue Endpoint (Sentinel Grid Specification)

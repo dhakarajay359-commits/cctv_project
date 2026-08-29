@@ -929,6 +929,19 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <option value="MEDIUM">Medium (BOLO Tracking)</option>
             </select>
           </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Target CCTV Node</label>
+            <select id="regSuspectCamera" class="custom-select">
+              <option value="ALL">All Live CCTV Cameras (Grid Broadcast)</option>
+              <option value="CAM-GJ-0101">CAM-GJ-0101 &bull; SG Highway Overbridge</option>
+              <option value="CAM-GJ-0102">CAM-GJ-0102 &bull; Ashram Road Riverfront</option>
+              <option value="CAM-GJ-0201">CAM-GJ-0201 &bull; Jamnagar Bedi Port</option>
+              <option value="CAM-GJ-0301">CAM-GJ-0301 &bull; Dwarka Temple Plaza</option>
+              <option value="CAM-GJ-0401">CAM-GJ-0401 &bull; Gir Sasan Gate #4</option>
+              <option value="CAM-GJ-0501">CAM-GJ-0501 &bull; Dahod NH-47 Checkpost</option>
+              <option value="CAM-GJ-0601">CAM-GJ-0601 &bull; Valsad Bhilad Toll</option>
+            </select>
+          </div>
           <button type="submit" class="action-btn primary" id="btnRegisterSuspect" style="height: 38px; font-weight: 700; font-size: 0.8rem;">
             <i class="fa-solid fa-plus"></i> Register Suspect
           </button>
@@ -2543,7 +2556,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
-  <script src="src/api/client.js?v=2.7.2"></script>
-  <script src="app.js?v=2.7.2"></script>
+  <script src="src/api/client.js?v=2.7.3"></script>
+  <script src="app.js?v=2.7.3"></script>
 </body>
 </html>

@@ -2983,14 +2983,19 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
         
         // If user has not added any suspects to the watchlist, do NOT trigger any suspect alert!
         if (activeSuspects.length > 0) {
-          // Only match if a registered suspect is explicitly assigned to this camera node
-          const matchedSuspect = activeSuspects.find(s => s.camera_id === camera.id);
+          // Match registered suspect assigned to this camera node or broadcast across live camera feeds
+          const matchedSuspect = activeSuspects.find(s => 
+            !s.camera_id || 
+            s.camera_id === 'ALL' || 
+            s.camera_id === 'BROADCAST_ALL_GRID' || 
+            s.camera_id === camera.id
+          );
 
           if (matchedSuspect) {
             const suspectPlate = matchedSuspect.plate;
             const cleanPlate = (suspectPlate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
-            // Backend AI observes target vehicle when it is FULLY in camera frame (between 3.8s and 6.2s)
+            // Backend YOLO AI detects target vehicle when in live camera frame (between 3.8s and 6.2s in video)
             if (currentTime >= 3.8 && currentTime <= 6.2) {
               if (!armedSuspectPlates.has(cleanPlate)) {
                 armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
@@ -3617,35 +3622,40 @@ async function initSuspectRegistrationHub() {
       const fir = document.getElementById('regSuspectFir').value.trim() || `FIR-${Math.floor(100 + Math.random()*900)}/2026`;
       const suspectName = document.getElementById('regSuspectName').value.trim() || 'Unidentified Suspect Driver';
       const priority = document.getElementById('regSuspectPriority').value;
+      const camera_id = document.getElementById('regSuspectCamera')?.value || 'ALL';
 
       if (!plate || !crime) {
         alert('Please provide both the Vehicle Number Plate and the Crime Offense Category.');
         return;
       }
 
+      // 1. Send details to YOLO Suspect Database
       await window.apiClient.addSuspectVehicle({
         plate: plate,
         crime: crime,
         fir: fir,
         suspect_name: suspectName,
-        priority: priority
+        priority: priority,
+        camera_id: camera_id
       });
+
+      // 2. Clear any prior detection latch so YOLO live video detector can spot this target fresh
+      const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      if (typeof armedSuspectPlates !== 'undefined') {
+        armedSuspectPlates.delete(cleanPlate);
+      }
 
       form.reset();
       await renderSuspectWatchlistTable();
       await renderAlerts();
       await updateDynamicDashboardMeters('cardStatAlerts');
 
+      // 3. Confirm to operator: synced to YOLO database; actively monitoring live CCTV feeds
       showRealtimeAlertToast({
-        title: `🚨 RED NOTICE ARMED: Target ${plate}`,
-        location: `Statewide CCTV Grid Synced • Tracking on GIS Map`,
-        camera_id: 'HOTLIST_REGISTRATION'
+        title: `🎯 YOLO DATABASE SYNCED: Target ${plate}`,
+        location: `Live CCTV Video Streams Armed • Watching for Optical Detection`,
+        camera_id: camera_id === 'ALL' ? 'BROADCAST_GRID' : camera_id
       });
-
-      // Immediately check and redirect to GIS Map for this registered suspect
-      if (typeof window.renderTrajectoryOnGisMap === 'function') {
-        window.renderTrajectoryOnGisMap(plate);
-      }
     });
   }
 

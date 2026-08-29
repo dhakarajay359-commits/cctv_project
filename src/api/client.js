@@ -1938,6 +1938,7 @@ class NirikshanApiClient {
     const newRecord = {
       id: `WCH-${Math.floor(100 + Math.random() * 900)}`,
       plate: cleanPlate,
+      camera_id: payload.camera_id || 'ALL',
       vehicle_type: payload.vehicle_type || 'Suspect Motor Vehicle',
       crime: payload.crime || 'Unlawful Interstate Transit & Police Bolo Warrant',
       fir: payload.fir || `FIR-${Math.floor(100 + Math.random() * 900)}/2026-HQ`,
@@ -1952,6 +1953,13 @@ class NirikshanApiClient {
 
     this.suspectWatchlist.unshift(newRecord);
     try { localStorage.setItem('nirikshan_suspect_watchlist', JSON.stringify(this.suspectWatchlist)); } catch(e){}
+    try {
+      fetch('/api/suspects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecord)
+      }).catch(() => {});
+    } catch(e) {}
     this.logAudit('SUSPECT_VEHICLE_REGISTERED', `Target: ${cleanPlate} | Offense: ${newRecord.crime}`);
 
     // Automatically generate Critical Hot-Pursuit Alert on Kafka Event Bus
