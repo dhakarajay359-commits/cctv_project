@@ -409,7 +409,7 @@ async function initGujaratBorderLayers() {
   gujaratStateGlowLayer = L.geoJSON(geoData.stateBoundary, {
     smoothFactor: 0.5,
     style: {
-      color: '#1d4ed8',
+      color: '#dc2626',
       weight: 4,
       opacity: 0.1,
       fill: false,
@@ -420,14 +420,14 @@ async function initGujaratBorderLayers() {
     interactive: false
   }).addTo(leafletMapInstance);
 
-  // 2. Natural Authoritative Administrative Boundary Layer (Classic cartographic cobalt blue, sharp & clean)
+  // 2. Natural Authoritative Administrative Boundary Layer (Classic cartographic red, sharp & clean)
   gujaratStateBorderLayer = L.geoJSON(geoData.stateBoundary, {
     smoothFactor: 0.5,
     style: {
-      color: '#1d4ed8',
+      color: '#dc2626',
       weight: 2.2,
-      opacity: 0.85,
-      fillColor: '#2563eb',
+      opacity: 0.88,
+      fillColor: '#dc2626',
       fillOpacity: 0.015,
       lineCap: 'round',
       lineJoin: 'round',
@@ -437,13 +437,13 @@ async function initGujaratBorderLayers() {
       // Interactive Tactical State HUD Tooltip
       layer.bindTooltip(`
         <div class="gujarat-state-tooltip">
-          <div style="font-size: 0.84rem; font-weight: 800; color: #60a5fa; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 3px;">
+          <div style="font-size: 0.84rem; font-weight: 800; color: #f87171; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 3px;">
             <i class="fa-solid fa-shield-halved"></i> STATE OF GUJARAT (ગુજરાત રાજ્ય)
           </div>
           <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">
-            <div>Perimeter: <strong style="color: #93c5fd;">~3,100 km</strong> &bull; Coastline: <strong style="color: #93c5fd;">1,600 km</strong></div>
+            <div>Perimeter: <strong style="color: #fca5a5;">~3,100 km</strong> &bull; Coastline: <strong style="color: #fca5a5;">1,600 km</strong></div>
             <div>Inter-State: <strong>Rajasthan, MP, Maharashtra, Pakistan/Rann</strong></div>
-            <div style="color: #60a5fa; margin-top: 2px; font-weight: 600;">
+            <div style="color: #f87171; margin-top: 2px; font-weight: 600;">
               NIRIKSHAN Homeland Grid: 33 Districts &bull; 80,000+ CCTV Nodes
             </div>
           </div>
@@ -459,7 +459,7 @@ async function initGujaratBorderLayers() {
         mouseover: (e) => {
           const l = e.target;
           l.setStyle({
-            color: '#1e40af',
+            color: '#b91c1c',
             weight: 3.0,
             fillOpacity: 0.04
           });
@@ -467,7 +467,7 @@ async function initGujaratBorderLayers() {
         mouseout: (e) => {
           const l = e.target;
           l.setStyle({
-            color: '#1d4ed8',
+            color: '#dc2626',
             weight: 2.2,
             fillOpacity: 0.015
           });

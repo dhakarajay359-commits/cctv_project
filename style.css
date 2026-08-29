@@ -1870,7 +1870,7 @@ path.gujarat-border-sharp {
 }
 
 path.gujarat-border-sharp:hover {
-  stroke: #1e40af !important;
+  stroke: #b91c1c !important;
   stroke-width: 3px !important;
   fill-opacity: 0.04 !important;
   filter: none !important;
@@ -1886,7 +1886,7 @@ path.gujarat-district-border {
 }
 
 path.gujarat-district-border:hover {
-  stroke: #1d4ed8 !important;
+  stroke: #dc2626 !important;
   stroke-width: 1.8px !important;
   stroke-dasharray: none !important;
   fill-opacity: 0.05 !important;
@@ -1896,7 +1896,7 @@ path.gujarat-district-border:hover {
 /* Custom Tooltips for Gujarat Boundaries */
 .leaflet-tooltip.custom-leaflet-tooltip {
   background: #0f172a !important;
-  border: 1px solid #2563eb !important;
+  border: 1px solid #dc2626 !important;
   border-radius: 6px !important;
   color: #f8fafc !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
@@ -1905,8 +1905,8 @@ path.gujarat-district-border:hover {
 }
 
 .leaflet-tooltip.custom-leaflet-tooltip::before {
-  border-top-color: #2563eb !important;
-  border-bottom-color: #2563eb !important;
+  border-top-color: #dc2626 !important;
+  border-bottom-color: #dc2626 !important;
 }
 
 .leaflet-tooltip.custom-district-tooltip {
