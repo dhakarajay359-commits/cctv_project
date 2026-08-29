@@ -384,8 +384,24 @@
         <!-- Leaflet Map Canvas -->
         <div class="gis-map-canvas-wrap">
           <div class="map-top-bar">
-            <div class="map-mode-indicator">
-              <i class="fa-solid fa-map-location-dot text-cyan"></i> <strong>Live GIS Map</strong> &bull; Gujarat Sector
+            <div class="map-top-bar-left">
+              <div class="map-mode-indicator">
+                <i class="fa-solid fa-map-location-dot text-cyan"></i> <strong>Live GIS Map</strong> &bull; Gujarat Sector
+              </div>
+              <div class="map-border-controls">
+                <button type="button" class="map-border-btn active" id="btnToggleGujaratBorder" title="Toggle Sharp Border Highlight of Gujarat State">
+                  <i class="fa-solid fa-draw-polygon text-cyan"></i> <span>Gujarat Border: <strong id="lblGujaratBorderStatus">ON</strong></span>
+                </button>
+                <button type="button" class="map-border-btn active" id="btnToggleDistrictBorders" title="Toggle 33 Internal District Boundaries">
+                  <i class="fa-solid fa-border-all text-cyan"></i> <span>Districts: <strong id="lblDistrictBordersStatus">ON</strong></span>
+                </button>
+                <button type="button" class="map-border-btn" id="btnFitGujaratBorder" title="Fit Entire Gujarat State in Map View">
+                  <i class="fa-solid fa-expand text-cyan"></i> <span>Fit State</span>
+                </button>
+                <span class="map-border-badge" title="State Grid: 33 Districts &bull; 1,600 km Coastline">
+                  <i class="fa-solid fa-shield-halved text-cyan"></i> 33 Districts &bull; 1,600km Coast
+                </span>
+              </div>
             </div>
             <!-- Editable Cross-Dept Pursuit Input on GIS Map -->
             <div class="map-pursuit-quick-bar">
@@ -2362,6 +2378,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   
   <!-- NIRIKSHAN Platform Scripts -->
+  <script src="src/data/gujarat_geo.js"></script>
   <script src="src/api/client.js"></script>
   <script src="app.js"></script>
 </body>

@@ -372,6 +372,197 @@ function initNavigation() {
    5. GIS DASHBOARD & LEAFLET MAP (MULTI-DEPT SPATIAL MATRIX)
    ========================================================================= */
 let mapTrajectoryLayers = [];
+let gujaratStateBorderLayer = null;
+let gujaratStateGlowLayer = null;
+let gujaratDistrictsLayer = null;
+let isGujaratBorderVisible = true;
+let isGujaratDistrictsVisible = true;
+
+/**
+ * Initialize Gujarat Statewide Vector Boundaries (High Efficiency & Sharpness)
+ * Renders outer state perimeter with glowing tactical halo and precision razor core stroke,
+ * plus 33 administrative district boundaries with interactive tooltips.
+ */
+async function initGujaratBorderLayers() {
+  if (!leafletMapInstance) return;
+
+  // Retrieve GeoJSON from preloaded synchronous memory or fallback async fetch
+  let geoData = window.GUJARAT_GEO_DATA;
+  if (!geoData || !geoData.stateBoundary) {
+    try {
+      const resp = await fetch('assets/gujarat_state_boundary.geojson');
+      if (resp.ok) {
+        const stateBoundary = await resp.json();
+        const distResp = await fetch('assets/gujarat_districts_clean.geojson');
+        const districts = distResp.ok ? await distResp.json() : null;
+        geoData = { stateBoundary, districts };
+        window.GUJARAT_GEO_DATA = geoData;
+      }
+    } catch (e) {
+      console.warn('Geospatial vector load notice:', e);
+    }
+  }
+
+  if (!geoData || !geoData.stateBoundary) return;
+
+  // 1. Ambient Tactical Glow Layer (Cyan aura underneath razor core)
+  gujaratStateGlowLayer = L.geoJSON(geoData.stateBoundary, {
+    smoothFactor: 0.5,
+    style: {
+      color: '#00f2fe',
+      weight: 7,
+      opacity: 0.35,
+      fill: false,
+      lineCap: 'round',
+      lineJoin: 'round',
+      className: 'gujarat-border-glow'
+    },
+    interactive: false
+  }).addTo(leafletMapInstance);
+
+  // 2. Razor-Sharp Core Boundary Layer (High-contrast, geometric precision stroke + subtle state tint)
+  gujaratStateBorderLayer = L.geoJSON(geoData.stateBoundary, {
+    smoothFactor: 0.5,
+    style: {
+      color: '#00f2fe',
+      weight: 2.8,
+      opacity: 1.0,
+      fillColor: '#00f2fe',
+      fillOpacity: 0.045,
+      lineCap: 'round',
+      lineJoin: 'round',
+      className: 'gujarat-border-sharp'
+    },
+    onEachFeature: (feature, layer) => {
+      // Interactive Tactical State HUD Tooltip
+      layer.bindTooltip(`
+        <div class="gujarat-state-tooltip">
+          <div style="font-size: 0.84rem; font-weight: 800; color: #00f2fe; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 3px;">
+            <i class="fa-solid fa-shield-halved"></i> STATE OF GUJARAT (ગુજરાત રાજ્ય)
+          </div>
+          <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">
+            <div>Perimeter: <strong style="color: #38bdf8;">~3,100 km</strong> &bull; Coastline: <strong style="color: #38bdf8;">1,600 km</strong></div>
+            <div>Inter-State: <strong>Rajasthan, MP, Maharashtra, Pakistan/Rann</strong></div>
+            <div style="color: #67e8f9; margin-top: 2px; font-weight: 600;">
+              NIRIKSHAN Homeland Grid: 33 Districts &bull; 80,000+ CCTV Nodes
+            </div>
+          </div>
+        </div>
+      `, {
+        sticky: true,
+        direction: 'top',
+        className: 'custom-leaflet-tooltip',
+        opacity: 0.98
+      });
+
+      layer.on({
+        mouseover: (e) => {
+          const l = e.target;
+          l.setStyle({
+            color: '#38bdf8',
+            weight: 3.8,
+            fillOpacity: 0.08
+          });
+        },
+        mouseout: (e) => {
+          const l = e.target;
+          l.setStyle({
+            color: '#00f2fe',
+            weight: 2.8,
+            fillOpacity: 0.045
+          });
+        },
+        click: () => {
+          fitGujaratBounds();
+        }
+      });
+    }
+  }).addTo(leafletMapInstance);
+
+  // 3. Crisp Internal District Boundaries (Subtle dashed administrative matrix)
+  if (geoData.districts) {
+    gujaratDistrictsLayer = L.geoJSON(geoData.districts, {
+      smoothFactor: 0.5,
+      style: {
+        color: '#0284c7',
+        weight: 1.1,
+        opacity: 0.45,
+        dashArray: '3, 4',
+        fillColor: '#38bdf8',
+        fillOpacity: 0.015,
+        lineCap: 'round',
+        lineJoin: 'round',
+        className: 'gujarat-district-border'
+      },
+      onEachFeature: (feature, layer) => {
+        const dName = feature.properties?.district || 'District';
+        layer.bindTooltip(`
+          <div style="font-family: var(--font-main); font-size: 0.74rem; font-weight: 700; color: #0f172a;">
+            <i class="fa-solid fa-location-dot" style="color: #0284c7;"></i> ${dName} District
+          </div>
+        `, {
+          sticky: true,
+          direction: 'auto',
+          className: 'custom-district-tooltip'
+        });
+
+        layer.on({
+          mouseover: (e) => {
+            const l = e.target;
+            l.setStyle({
+              weight: 2.2,
+              opacity: 0.95,
+              color: '#00f2fe',
+              dashArray: null,
+              fillOpacity: 0.12
+            });
+            l.bringToFront();
+            if (gujaratStateBorderLayer) gujaratStateBorderLayer.bringToFront();
+          },
+          mouseout: (e) => {
+            const l = e.target;
+            l.setStyle({
+              color: '#0284c7',
+              weight: 1.1,
+              opacity: 0.45,
+              dashArray: '3, 4',
+              fillOpacity: 0.015
+            });
+          },
+          click: (e) => {
+            if (e.target && e.target.getBounds) {
+              leafletMapInstance.fitBounds(e.target.getBounds(), { padding: [35, 35], animate: true, duration: 0.8 });
+            }
+          }
+        });
+      }
+    }).addTo(leafletMapInstance);
+  }
+
+  // Ensure boundaries remain cleanly under markers and clusters
+  if (gujaratDistrictsLayer) gujaratDistrictsLayer.bringToBack();
+  if (gujaratStateGlowLayer) gujaratStateGlowLayer.bringToBack();
+  if (gujaratStateBorderLayer) gujaratStateBorderLayer.bringToBack();
+
+  // Smoothly fit all of Gujarat on start
+  fitGujaratBounds();
+}
+
+/**
+ * Smoothly frames and fits the entire razor-sharp Gujarat boundary
+ */
+function fitGujaratBounds() {
+  if (!leafletMapInstance) return;
+  if (gujaratStateBorderLayer && gujaratStateBorderLayer.getBounds().isValid()) {
+    leafletMapInstance.fitBounds(gujaratStateBorderLayer.getBounds(), {
+      padding: [25, 25],
+      animate: true,
+      duration: 1.0
+    });
+  } else {
+    leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 1.0 });
+  }
+}
 
 async function initGisDashboard() {
   const mapEl = document.getElementById('leafletMap');
@@ -392,6 +583,9 @@ async function initGisDashboard() {
     attribution: '&copy; Government of Gujarat - Nirikshan GeoMatrix'
   }).addTo(leafletMapInstance);
 
+  // Initialize razor-sharp Gujarat state border and district vector layers
+  await initGujaratBorderLayers();
+
   // Filters
   const zoneSelect = document.getElementById('gisZoneSelect');
   const deptSelect = document.getElementById('gisDeptSelect');
@@ -405,6 +599,63 @@ async function initGisDashboard() {
   const mapPursuitInput = document.getElementById('mapPursuitInput');
   const btnCloseHud = document.getElementById('btnCloseHud');
   const btnArmRoadblockHud = document.getElementById('btnArmRoadblockFromHud');
+
+  // Gujarat Border Controls Event Listeners
+  const btnToggleStateBorder = document.getElementById('btnToggleGujaratBorder');
+  const btnToggleDistBorders = document.getElementById('btnToggleDistrictBorders');
+  const btnFitState = document.getElementById('btnFitGujaratBorder');
+  const lblBorderStatus = document.getElementById('lblGujaratBorderStatus');
+  const lblDistStatus = document.getElementById('lblDistrictBordersStatus');
+
+  if (btnToggleStateBorder) {
+    btnToggleStateBorder.addEventListener('click', () => {
+      isGujaratBorderVisible = !isGujaratBorderVisible;
+      if (isGujaratBorderVisible) {
+        if (gujaratStateBorderLayer && !leafletMapInstance.hasLayer(gujaratStateBorderLayer)) {
+          leafletMapInstance.addLayer(gujaratStateBorderLayer);
+        }
+        if (gujaratStateGlowLayer && !leafletMapInstance.hasLayer(gujaratStateGlowLayer)) {
+          leafletMapInstance.addLayer(gujaratStateGlowLayer);
+        }
+        btnToggleStateBorder.classList.add('active');
+        if (lblBorderStatus) lblBorderStatus.textContent = 'ON';
+      } else {
+        if (gujaratStateBorderLayer && leafletMapInstance.hasLayer(gujaratStateBorderLayer)) {
+          leafletMapInstance.removeLayer(gujaratStateBorderLayer);
+        }
+        if (gujaratStateGlowLayer && leafletMapInstance.hasLayer(gujaratStateGlowLayer)) {
+          leafletMapInstance.removeLayer(gujaratStateGlowLayer);
+        }
+        btnToggleStateBorder.classList.remove('active');
+        if (lblBorderStatus) lblBorderStatus.textContent = 'OFF';
+      }
+    });
+  }
+
+  if (btnToggleDistBorders) {
+    btnToggleDistBorders.addEventListener('click', () => {
+      isGujaratDistrictsVisible = !isGujaratDistrictsVisible;
+      if (isGujaratDistrictsVisible) {
+        if (gujaratDistrictsLayer && !leafletMapInstance.hasLayer(gujaratDistrictsLayer)) {
+          leafletMapInstance.addLayer(gujaratDistrictsLayer);
+        }
+        btnToggleDistBorders.classList.add('active');
+        if (lblDistStatus) lblDistStatus.textContent = 'ON';
+      } else {
+        if (gujaratDistrictsLayer && leafletMapInstance.hasLayer(gujaratDistrictsLayer)) {
+          leafletMapInstance.removeLayer(gujaratDistrictsLayer);
+        }
+        btnToggleDistBorders.classList.remove('active');
+        if (lblDistStatus) lblDistStatus.textContent = 'OFF';
+      }
+    });
+  }
+
+  if (btnFitState) {
+    btnFitState.addEventListener('click', () => {
+      fitGujaratBounds();
+    });
+  }
 
   let currentDept = 'ALL';
   let currentStatus = 'ALL';
@@ -450,7 +701,7 @@ async function initGisDashboard() {
 
         // Fly smoothly to target zone / district
         if (val === 'zone-all') {
-          leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 1.2 });
+          fitGujaratBounds();
         } else if (val.startsWith('zone-')) {
           const zones = await window.apiClient.getZones();
           const z = zones.find(item => item.id === val);
@@ -524,7 +775,7 @@ async function initGisDashboard() {
 
       // Smoothly re-center map view
       if (leafletMapInstance) {
-        leafletMapInstance.flyTo([22.8, 71.5], 7.5, { duration: 0.8 });
+        fitGujaratBounds();
       }
 
       // Reload fresh GIS nodes and district clusters

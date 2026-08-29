@@ -1637,6 +1637,144 @@ body.focus-mode .leaflet-container-view {
   background: #ffffff !important;
 }
 
+/* =========================================================================
+   GUJARAT STATE BORDER & PRECISION VECTOR HIGHLIGHT (HIGH SHARPNESS & EFFICIENCY)
+   ========================================================================= */
+
+.map-top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.map-border-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.map-border-btn {
+  height: 28px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0 0.65rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.map-border-btn:hover {
+  background: #f1f5f9;
+  color: var(--text-primary);
+  border-color: #cbd5e1;
+}
+
+.map-border-btn.active {
+  background: rgba(2, 132, 199, 0.1);
+  border-color: #0284c7;
+  color: #0284c7;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.15);
+}
+
+.map-border-btn.active strong {
+  color: #0284c7;
+}
+
+.map-border-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+}
+
+/* Vector Path Precision & Sharpness */
+path.gujarat-border-glow {
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  pointer-events: none !important;
+  filter: drop-shadow(0 0 3px rgba(0, 242, 254, 0.7)) drop-shadow(0 0 8px rgba(2, 132, 199, 0.45));
+}
+
+path.gujarat-border-sharp {
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  vector-effect: non-scaling-stroke !important;
+  shape-rendering: geometricPrecision !important;
+  transition: stroke-width 0.2s ease, stroke 0.2s ease, fill-opacity 0.2s ease;
+  cursor: pointer;
+}
+
+path.gujarat-border-sharp:hover {
+  stroke: #00f2fe !important;
+  stroke-width: 4px !important;
+  fill-opacity: 0.08 !important;
+  filter: drop-shadow(0 0 6px #00f2fe);
+}
+
+path.gujarat-district-border {
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  vector-effect: non-scaling-stroke !important;
+  shape-rendering: geometricPrecision !important;
+  transition: stroke-width 0.15s ease, stroke 0.15s ease, fill-opacity 0.15s ease;
+  cursor: pointer;
+}
+
+path.gujarat-district-border:hover {
+  stroke: #0284c7 !important;
+  stroke-width: 2.2px !important;
+  stroke-dasharray: none !important;
+  fill-opacity: 0.12 !important;
+  filter: drop-shadow(0 0 4px rgba(2, 132, 199, 0.5));
+}
+
+/* Custom Tooltips for Gujarat Boundaries */
+.leaflet-tooltip.custom-leaflet-tooltip {
+  background: #0f172a !important;
+  border: 1px solid #00f2fe !important;
+  border-radius: 6px !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(0, 242, 254, 0.3) !important;
+  padding: 6px 10px !important;
+  font-family: var(--font-main) !important;
+}
+
+.leaflet-tooltip.custom-leaflet-tooltip::before {
+  border-top-color: #00f2fe !important;
+  border-bottom-color: #00f2fe !important;
+}
+
+.leaflet-tooltip.custom-district-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #0284c7 !important;
+  border-radius: 4px !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  padding: 3px 8px !important;
+  font-family: var(--font-main) !important;
+}
+
+.leaflet-tooltip.custom-district-tooltip::before {
+  border-top-color: #0284c7 !important;
+  border-bottom-color: #0284c7 !important;
+}
+
 .phase-tag-badge {
   display: none !important;
 }
@@ -1655,30 +1793,69 @@ body.focus-mode .leaflet-container-view {
 }
 
 .reg-sub-btn {
-  background: transparent;
-  border: none;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.9rem;
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.45rem;
   font-family: var(--font-main);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  user-select: none;
+}
+
+.reg-sub-btn i {
+  color: inherit;
+  transition: color 0.2s ease;
 }
 
 .reg-sub-btn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card-hover, #f8fafc);
+  border-color: #cbd5e1;
+}
+
+.reg-sub-btn:hover i {
+  color: var(--accent-cyan);
+}
+
+.reg-sub-btn:focus {
+  outline: none;
+}
+
+.reg-sub-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22);
+  color: var(--text-primary);
 }
 
 .reg-sub-btn.active {
-  background: var(--bg-card);
+  background: rgba(2, 132, 199, 0.08);
   color: var(--accent-cyan);
-  border: 1px solid var(--border-glow);
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  font-weight: 700;
+}
+
+.reg-sub-btn.active i {
+  color: var(--accent-cyan);
+}
+
+.reg-sub-btn.active:hover {
+  background: rgba(2, 132, 199, 0.14);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.reg-sub-btn.active:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.3);
 }
 
 .reg-subview {
@@ -2913,29 +3090,68 @@ body.focus-mode .leaflet-container-view {
 
 /* PHASE 6 — SECURITY, RBAC & GOVERNANCE STYLES */
 .admin-sub-btn {
-  background: transparent;
+  background: var(--bg-card, #ffffff);
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.45rem 0.9rem;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  transition: all 0.2s ease;
+  gap: 0.45rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  user-select: none;
+}
+
+.admin-sub-btn i {
+  color: inherit;
+  transition: color 0.2s ease;
 }
 
 .admin-sub-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: #ffffff;
+  background: var(--bg-card-hover, #f8fafc);
+  color: var(--text-primary);
+  border-color: #cbd5e1;
+}
+
+.admin-sub-btn:hover i {
+  color: var(--accent-cyan);
+}
+
+.admin-sub-btn:focus {
+  outline: none;
+}
+
+.admin-sub-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22);
+  color: var(--text-primary);
 }
 
 .admin-sub-btn.active {
-  background: rgba(0, 242, 254, 0.12);
+  background: rgba(2, 132, 199, 0.08);
   color: var(--accent-cyan);
-  border-color: rgba(0, 242, 254, 0.35);
+  border-color: rgba(2, 132, 199, 0.35);
+  font-weight: 700;
+}
+
+.admin-sub-btn.active i {
+  color: var(--accent-cyan);
+}
+
+.admin-sub-btn.active:hover {
+  background: rgba(2, 132, 199, 0.14);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.admin-sub-btn.active:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.3);
 }
 
 .admin-subview {
@@ -2993,7 +3209,7 @@ body.focus-mode .leaflet-container-view {
 
 .traj-node-info h4 {
   font-size: 0.9rem;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.2rem;
 }
 
@@ -3236,7 +3452,7 @@ body.focus-mode .leaflet-container-view {
 
 .alert-title-wrap h3 {
   font-size: 0.95rem;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .kafka-badge {
@@ -3383,7 +3599,7 @@ body.focus-mode .leaflet-container-view {
 }
 
 .res-item span {
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -3462,7 +3678,7 @@ body.focus-mode .leaflet-container-view {
 .gw-header h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .gw-header span {
@@ -3525,7 +3741,10 @@ body.focus-mode .leaflet-container-view {
 .endpoint-card code {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: #ffffff;
+  color: var(--accent-cyan);
+  background: rgba(2, 132, 199, 0.08);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
 }
 
 .endpoint-card p {
