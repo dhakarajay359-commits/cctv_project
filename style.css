@@ -1686,10 +1686,55 @@ body.focus-mode .leaflet-container-view {
   display: none !important;
 }
 
-.leaflet-container-view {
+/* LEAFLET MAP CONTAINER & FOCUS STYLING (REMOVE HARSH BLACK FOCUS BOX) */
+.leaflet-container,
+.leaflet-container-view,
+#leafletMap {
   flex: 1;
   min-height: 520px;
   background: #f1f5f9;
+  outline: none !important;
+  border: none !important;
+}
+
+.leaflet-container:focus,
+.leaflet-container:focus-visible,
+.leaflet-container-view:focus,
+.leaflet-container-view:focus-visible,
+#leafletMap:focus,
+#leafletMap:focus-visible,
+.gis-map-canvas-wrap:focus,
+.gis-map-canvas-wrap:focus-visible,
+.gis-master-layout:focus,
+.gis-master-layout:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+  outline: none !important;
+  border: none !important;
+}
+
+.leaflet-zoom-box {
+  border: 2px solid var(--accent-cyan) !important;
+  background: rgba(2, 132, 199, 0.12) !important;
+  outline: none !important;
+}
+
+.leaflet-bar a:focus,
+.leaflet-bar a:focus-visible {
+  outline: none !important;
+  background-color: #f1f5f9 !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.3) !important;
 }
 
 /* Leaflet Map Styling */
