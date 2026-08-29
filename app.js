@@ -1313,29 +1313,6 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       });
 
       const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
-      
-      // Draw Dashed Distance Coverage Footprint for Camera at street zoom (>= 13)
-      if (currentZoom >= 13) {
-        const camDistCircle = L.circle([cam.lat, cam.lng], {
-          radius: 110,
-          color: '#3b82f6',
-          weight: 1.5,
-          dashArray: '3, 4',
-          fillColor: '#3b82f6',
-          fillOpacity: 0.12
-        }).addTo(leafletMapInstance);
-        leafletMarkers.push(camDistCircle);
-
-        const distTag = L.marker([cam.lat - 0.0009, cam.lng], {
-          icon: L.divIcon({
-            className: 'onmap-marker-wrap',
-            html: `<div class="onmap-dimension-badge" style="font-size: 8.5px; padding: 1px 5px; background: #0f172a; color: #38bdf8; border-color: #38bdf8;">📹 1 Camera: 110m Radius (~38,000 m² Coverage)</div>`,
-            iconSize: [220, 16],
-            iconAnchor: [110, 8]
-          })
-        }).addTo(leafletMapInstance);
-        leafletMarkers.push(distTag);
-      }
 
       marker.bindPopup(`
         <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; line-height: 1.4; min-width: 220px; padding: 2px;">
