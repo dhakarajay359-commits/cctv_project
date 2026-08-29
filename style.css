@@ -1502,112 +1502,184 @@ body.focus-mode .leaflet-container-view {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.65rem 1rem;
+  gap: 0.75rem;
+  row-gap: 0.65rem;
+  padding: 0.6rem 1rem;
   background: #ffffff;
   border-bottom: 1px solid var(--border-color);
   font-size: 0.78rem;
   flex-wrap: wrap;
+  min-height: 52px;
 }
 
 .map-mode-indicator {
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.map-mode-indicator .text-cyan {
+  color: var(--accent-cyan);
+  font-size: 0.9rem;
 }
 
 /* QUICK PURSUIT BAR ON GIS MAP */
 .map-pursuit-quick-bar {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  background: #f8fafc;
+  gap: 0.5rem;
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 0.22rem 0.35rem 0.22rem 0.6rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  padding: 0.22rem 0.35rem 0.22rem 0.65rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: auto;
+}
+
+.map-pursuit-quick-bar:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.map-pursuit-quick-bar:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .map-pursuit-quick-bar label {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 800;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   display: flex;
   align-items: center;
   gap: 0.35rem;
   white-space: nowrap;
+  user-select: none;
+}
+
+.map-pursuit-quick-bar label i {
+  color: #ef4444;
+  font-size: 0.8rem;
 }
 
 .map-pursuit-input {
-  height: 28px;
-  width: 140px;
-  background: #ffffff;
+  height: 30px;
+  width: 145px;
+  background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
-  padding: 0 0.55rem;
+  padding: 0 0.6rem;
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   outline: none;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.map-pursuit-input:hover {
+  background: #ffffff;
+  border-color: #94a3b8;
 }
 
 .map-pursuit-input:focus {
-  border-color: #94a3b8;
-  box-shadow: none;
+  background: #ffffff;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
   outline: none;
 }
 
 .btn-trace-pursuit {
-  height: 28px;
-  background: #2563eb;
-  border: 1px solid #2563eb;
+  height: 30px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border: 1px solid #0284c7;
   color: #ffffff;
-  padding: 0 0.75rem;
+  padding: 0 0.85rem;
   border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.74rem;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+  outline: none;
+}
+
+.btn-trace-pursuit i {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
 }
 
 .btn-trace-pursuit:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  border-color: #0369a1;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35);
+  transform: translateY(-0.5px);
+}
+
+.btn-trace-pursuit:hover i {
+  transform: rotate(90deg);
+}
+
+.btn-trace-pursuit:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.2);
+}
+
+.btn-trace-pursuit:focus {
+  outline: none;
+}
+
+.btn-trace-pursuit:focus-visible {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.4);
 }
 
 .btn-clear-pursuit {
-  height: 28px;
+  height: 30px;
   background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  padding: 0 0.55rem;
+  padding: 0 0.6rem;
   border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
+  outline: none;
 }
 
 .btn-clear-pursuit:hover {
-  background: #f1f5f9;
-  color: var(--text-primary);
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.btn-clear-pursuit:focus {
+  outline: none;
+}
+
+.btn-clear-pursuit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
 }
 
 .map-telemetry-badge {
@@ -1644,63 +1716,140 @@ body.focus-mode .leaflet-container-view {
 .map-top-bar-left {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .map-border-controls {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
+  flex-wrap: wrap;
 }
 
 .map-border-btn {
-  height: 28px;
-  background: #f8fafc;
+  height: 32px;
+  background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  padding: 0 0.65rem;
-  border-radius: 4px;
-  font-size: 0.72rem;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.74rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   white-space: nowrap;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
   user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.map-border-btn i {
+  color: var(--accent-cyan);
+  font-size: 0.8rem;
+  transition: transform 0.2s ease, color 0.18s ease;
+}
+
+.map-border-btn strong {
+  display: inline-block;
+  padding: 0.08rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: #f1f5f9;
+  color: #64748b;
+  margin-left: 0.25rem;
+  transition: all 0.18s ease;
 }
 
 .map-border-btn:hover {
-  background: #f1f5f9;
+  background: #f8fafc;
   color: var(--text-primary);
   border-color: #cbd5e1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-0.5px);
+}
+
+.map-border-btn:hover i {
+  transform: scale(1.08);
+}
+
+.map-border-btn:hover strong {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.map-border-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.map-border-btn:focus {
+  outline: none;
+}
+
+.map-border-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22);
+  color: var(--text-primary);
 }
 
 .map-border-btn.active {
-  background: rgba(2, 132, 199, 0.1);
-  border-color: #0284c7;
-  color: #0284c7;
-  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.15);
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.4);
+  color: var(--accent-cyan);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
+  font-weight: 700;
 }
 
 .map-border-btn.active strong {
+  background: rgba(2, 132, 199, 0.18);
   color: #0284c7;
 }
 
+.map-border-btn.active:hover {
+  background: rgba(2, 132, 199, 0.14);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.map-border-btn.active:hover strong {
+  background: rgba(2, 132, 199, 0.28);
+  color: #0284c7;
+}
+
+.map-border-btn.active:focus-visible {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.3);
+}
+
 .map-border-badge {
-  font-size: 0.68rem;
+  height: 32px;
+  font-size: 0.72rem;
   font-family: var(--font-mono);
   background: #eff6ff;
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
-  padding: 0.18rem 0.5rem;
+  padding: 0 0.75rem;
   border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
   font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
+}
+
+.map-border-badge i {
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
 }
 
 /* Vector Path Precision & Sharpness */
@@ -3268,23 +3417,6 @@ path.gujarat-district-border:hover {
 }
 
 /* MAP PURSUIT HUD & RADAR PIN STYLES */
-.map-pursuit-quick-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-sm);
-}
-
-.map-pursuit-quick-bar label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
 .pursuit-map-hud {
   position: absolute;
   top: 50px;
