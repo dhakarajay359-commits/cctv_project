@@ -1279,32 +1279,6 @@ window.markDistrictCamerasCoverageArea = function(dist) {
     const bounds = dashedPolygon.getBounds();
     leafletMapInstance.fitBounds(bounds, { padding: [45, 45], animate: true, duration: 1.0 });
 
-    // 2. Add prominent on-map label badge at top center of marked area
-    const northLat = bounds.getNorth();
-    const centerLng = (bounds.getEast() + bounds.getWest()) / 2;
-
-    const badgeMarker = L.marker([northLat, centerLng], {
-      icon: L.divIcon({
-        className: 'onmap-marker-wrap',
-        html: `
-          <div class="onmap-sector-banner" style="
-            background: #ffffff; color: #0f172a; border: 2px dashed #0284c7; padding: 5px 12px; font-size: 11.5px; border-radius: 6px; box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14); font-weight: 800; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
-          ">
-            <i class="fa-solid fa-camera-retro" style="color: #0284c7; font-size: 13px;"></i>
-            <span>${distLabel} District: <strong style="color: #0284c7;">${dist.total_cams.toLocaleString()} Cameras Installed</strong> across this marked zone</span>
-            <span style="background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 800;">${camCountStr} FLEET</span>
-            <button type="button" onclick="clearDistrictCamerasCoverageArea()" style="
-              background: #f1f5f9; color: #64748b; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-left: 4px;
-            " title="Clear dashed area">&times;</button>
-          </div>
-        `,
-        iconSize: [440, 32],
-        iconAnchor: [220, 16]
-      })
-    }).addTo(leafletMapInstance);
-
-    window.activeDistrictCoverageBadge = badgeMarker;
-
     showRealtimeAlertToast({
       title: `${distLabel.toUpperCase()} SURVEILLANCE FLEET: ${dist.total_cams.toLocaleString()} CAMERAS`,
       location: `Dashed boundary marked for entire ${distLabel} surveillance area`,
