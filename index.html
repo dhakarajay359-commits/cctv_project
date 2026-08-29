@@ -18,7 +18,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=2.6.1">
+  <link rel="stylesheet" href="style.css?v=2.6.4">
 </head>
 <body class="dark-theme">
   <div class="app-layout" id="appLayout">
@@ -1271,6 +1271,119 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     </div>
 
     <!-- ========================================================================= -->
+    <!-- LIVE CCTV SURVEILLANCE STREAM MODAL (REAL-TIME STREAMING) -->
+    <!-- ========================================================================= -->
+    <div class="app-modal" id="liveCctvModal">
+      <div class="modal-content large" style="max-width: 880px; background: #0b0f17; border: 1px solid #1e293b; color: #ffffff;">
+        <div class="modal-header" style="background: #0f172a; border-bottom: 1px solid #1e293b; padding: 0.9rem 1.25rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); display: flex; align-items: center; justify-content: center; color: #ef4444;">
+              <i class="fa-solid fa-video" style="font-size: 1.2rem;"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="live-broadcast-pill">
+                  <span class="live-broadcast-dot"></span> LIVE RTSP STREAM
+                </span>
+                <span style="font-size: 0.72rem; color: #94a3b8; font-family: var(--font-mono);" id="liveCctvLatency">
+                  Latency: 138ms &bull; 30 FPS &bull; H.265
+                </span>
+              </div>
+              <h3 id="liveCctvModalTitle" style="color: #ffffff; margin: 0.2rem 0 0 0; font-size: 1.1rem; font-weight: 800;">
+                Live CCTV Stream: CAM-GJ-0101
+              </h3>
+            </div>
+          </div>
+          <button class="close-modal-btn" id="closeLiveCctvModal" style="color: #94a3b8; font-size: 1.5rem;">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 1rem;">
+          <!-- Live Video Frame Viewport -->
+          <div class="live-cctv-viewport" id="liveCctvViewport" style="position: relative; aspect-ratio: 16/9; background: #000; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
+            <video id="liveCctvVideoElement" playsinline loop muted autoplay style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;"></video>
+            
+            <!-- Live Real-Time OSD Clock (Ticking down to Milliseconds) -->
+            <div class="live-cctv-osd-tl">
+              <span class="live-rec-badge"><span class="pulse-red-dot"></span> LIVE</span>
+              <span id="liveCctvRealtimeClock" style="font-family: var(--font-mono); font-weight: 700; font-size: 0.76rem; letter-spacing: 0.04em;">2026-08-29 16:35:42.124 IST</span>
+              <span style="margin: 0 4px; opacity: 0.5;">|</span>
+              <span id="liveCctvCamNameOsd" style="font-family: var(--font-mono); font-size: 0.74rem; color: #38bdf8;">CAM-GJ-0102 &bull; SG Highway</span>
+            </div>
+
+            <!-- Live Network Stats (Top Right) -->
+            <div class="live-cctv-osd-tr">
+              <span style="color: #10b981;"><i class="fa-solid fa-wifi"></i> 4.8 Mbps</span> &bull; <span>1080p UHD</span>
+            </div>
+
+            <!-- Live Target AI Tracking Box -->
+            <div class="live-target-box" id="liveTargetBox">
+              <div class="bbox-corner tl"></div>
+              <div class="bbox-corner tr"></div>
+              <div class="bbox-corner bl"></div>
+              <div class="bbox-corner br"></div>
+              <div class="live-target-label" id="liveTargetLabel">
+                <i class="fa-solid fa-crosshairs" style="color: #ffffff;"></i>
+                <span id="liveTargetPlateText">LIVE TARGET: GJ-01-AB-1234 (98.9%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Stream Control Bar (No Scrubber - True Live Feed) -->
+          <div class="live-cctv-toolbar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; background: #0f172a; padding: 0.5rem 0.85rem; border-radius: 6px; border: 1px solid #1e293b;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span class="live-feed-badge-green">
+                <span class="pulse-green-dot"></span> REAL-TIME FEED
+              </span>
+              <span style="font-size: 0.74rem; color: #94a3b8; font-family: var(--font-mono);" id="liveCctvStreamUri">
+                rtsp://10.240.12.85:554/live/primary
+              </span>
+            </div>
+
+            <!-- Live PTZ & Action Controls -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button type="button" class="player-ctrl-btn" id="btnLiveCctvZoom" title="PTZ Optical Zoom (1x / 1.5x / 2.0x)" style="width: auto; padding: 0 9px; font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono); color: #38bdf8; border-color: #0284c7;">
+                <i class="fa-solid fa-magnifying-glass-plus"></i> 1.0x Zoom
+              </button>
+              <button type="button" class="player-ctrl-btn" id="btnLiveCctvSnapshot" title="Capture Live Frame Snapshot" style="width: auto; padding: 0 9px; font-size: 0.75rem; font-weight: 700;">
+                <i class="fa-solid fa-camera"></i> Snapshot
+              </button>
+              <button type="button" class="player-ctrl-btn" id="btnLiveCctvFullscreen" title="Toggle Fullscreen">
+                <i class="fa-solid fa-expand"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Camera Specs & Intercept Target Card -->
+          <div class="live-specs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-top: 0.75rem;">
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px;">
+              <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Camera Junction</span>
+              <div id="liveCamJunctionText" style="font-size: 0.82rem; font-weight: 800; color: #ffffff; margin-top: 2px;">S.G. Highway Gandhinagar Crossing</div>
+            </div>
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px;">
+              <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">GPS Coordinates</span>
+              <div id="liveCamGpsText" style="font-size: 0.82rem; font-weight: 700; font-family: var(--font-mono); color: #38bdf8; margin-top: 2px;">23.184200° N, 72.631500° E</div>
+            </div>
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px;">
+              <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Suspect Target</span>
+              <div id="liveCamSuspectText" style="font-size: 0.82rem; font-weight: 800; color: #ef4444; margin-top: 2px;">Vikram P. (Alias: Vicky)</div>
+            </div>
+            <div style="background: #0f172a; border: 1px solid #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px;">
+              <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Optical Orientation</span>
+              <div id="liveCamFovText" style="font-size: 0.82rem; font-weight: 700; color: #10b981; margin-top: 2px;">Facing North-East (45°) &bull; 110m</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="background: #0f172a; border-top: 1px solid #1e293b; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between;">
+          <button type="button" class="btn-cancel" id="btnCloseLiveCctv" style="background: #1e293b; color: #ffffff; border: 1px solid #334155;">Close Stream</button>
+          <button type="button" class="action-btn primary" id="btnDispatchFromLiveFeed" style="background: #dc2626; color: #ffffff; font-weight: 700;">
+            <i class="fa-solid fa-car-on"></i> Dispatch Interceptor Squad to this Camera
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
     <!-- VIEW 5: ALERTS & REAL-TIME DISPATCH (PHASE 5 - KAFKA ALERT BUS) -->
     <!-- ========================================================================= -->
     <section id="view-alerts" class="app-view">
@@ -2430,6 +2543,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
   <script src="src/api/client.js"></script>
-  <script src="app.js?v=2.6.3"></script>
+  <script src="app.js?v=2.6.4"></script>
 </body>
 </html>
