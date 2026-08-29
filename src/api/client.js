@@ -232,681 +232,52 @@ class NirikshanApiClient {
       { id: 'dist-dang', name: 'Dang (Ahwa - Forest)', zone: 'South Gujarat', total_cams: 900, target_cams: 2200, density_per_sqkm: 4.8, coverage_score: 40.9, gap_status: 'Critical Gap', gap_cams_needed: 1300, lat: 20.7533, lng: 73.6871 },
 
       // Kutch Zone (1 District)
-      { id: 'dist-kutch', name: 'Kutch (Ports, SEZ & Border)', zone: 'Kutch & Border Zone', total_cams: 4600, target_cams: 8500, density_per_sqkm: 7.8, coverage_score: 54.1, gap_status: 'High Gap', gap_cams_needed: 3900, lat: 23.2420, lng: 69.6669 }
     ];
 
-    // 3. Statewide Strategic Camera Fleet (Representing all 5 zones and 26+ departments)
-    this.cameras = [
-      // Central: Ahmedabad
-      {
-        id: 'CAM-GJ-0101',
-        district: 'Ahmedabad (Urban)',
-        zone: 'Central Gujarat',
-        department_id: 'dept-police',
-        name: 'SG Highway Iskcon Crossroad Overbridge',
-        lat: 23.0298,
-        lng: 72.5074,
-        type: 'ip',
-        vendor: 'Hikvision DS-2CD4A26FWD',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-sg01.nirikshan.gov.in/live/stream1',
-        fov_angle: 90,
-        direction: 'Northbound',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 18, status: 'online' }, { time: '12:00', ping_ms: 22, status: 'online' }, { time: '18:00', ping_ms: 19, status: 'online' }]
-      },
-      {
-        id: 'CAM-GJ-0102',
-        district: 'Ahmedabad (Urban)',
-        zone: 'Central Gujarat',
-        department_id: 'dept-amc',
-        name: 'Ashram Road Nehru Bridge Riverfront',
-        lat: 23.0276,
-        lng: 72.5735,
-        type: 'ip',
-        vendor: 'Dahua IPC-HFW8241E',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-ashram02.nirikshan.gov.in/live/stream1',
-        fov_angle: 120,
-        direction: 'Riverfront South',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 15, status: 'online' }, { time: '12:00', ping_ms: 18, status: 'online' }, { time: '18:00', ping_ms: 16, status: 'online' }]
-      },
-      // Central: Gandhinagar (Capital)
-      {
-        id: 'CAM-GJ-0103',
-        district: 'Gandhinagar (Capital)',
-        zone: 'Central Gujarat',
-        department_id: 'dept-police',
-        name: 'Sachivalaya Swarnim Sankul Gate #1',
-        lat: 23.2156,
-        lng: 72.6369,
-        type: 'ip',
-        vendor: 'Bosch Dinion IP 7000',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-sachivalaya.nirikshan.gov.in/live/stream1',
-        fov_angle: 110,
-        direction: 'Capital High Security Perimeter',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 12, status: 'online' }, { time: '12:00', ping_ms: 14, status: 'online' }, { time: '18:00', ping_ms: 13, status: 'online' }]
-      },
-      {
-        id: 'CAM-GJ-0302',
-        district: 'Gandhinagar (Capital)',
-        zone: 'Central Gujarat',
-        department_id: 'dept-private',
-        name: 'GIFT City Fin-Tech Tower 1 Concourse',
-        lat: 23.1610,
-        lng: 72.6840,
-        type: 'ip',
-        vendor: 'Axis Q3517-LVE',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-giftcity.nirikshan.gov.in/live/stream1',
-        fov_angle: 90,
-        direction: 'International Financial District',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 10, status: 'online' }, { time: '12:00', ping_ms: 12, status: 'online' }, { time: '18:00', ping_ms: 11, status: 'online' }]
-      },
-      // Central: Vadodara
-      {
-        id: 'CAM-GJ-0104',
-        district: 'Vadodara',
-        zone: 'Central Gujarat',
-        department_id: 'dept-police',
-        name: 'Alkapuri Railway Station Flyover Junction',
-        lat: 22.3110,
-        lng: 73.1780,
-        type: 'ip',
-        vendor: 'CP Plus SpeedDome 4K',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-vadodara01.nirikshan.gov.in/live/stream1',
-        fov_angle: 360,
-        direction: 'Junction Central',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 22, status: 'online' }, { time: '12:00', ping_ms: 25, status: 'online' }, { time: '18:00', ping_ms: 21, status: 'online' }]
-      },
-      // Central: Anand
-      {
-        id: 'CAM-GJ-0201',
-        district: 'Anand (Milk City)',
-        zone: 'Central Gujarat',
-        department_id: 'dept-rto',
-        name: 'Amul Dairy Road Express Toll Connector',
-        lat: 22.5645,
-        lng: 72.9289,
-        type: 'ip',
-        vendor: 'Hikvision ANPR Bullet',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-anand.nirikshan.gov.in/live/stream1',
-        fov_angle: 70,
-        direction: 'Express Highway Connector',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 24, status: 'online' }, { time: '12:00', ping_ms: 26, status: 'online' }, { time: '18:00', ping_ms: 23, status: 'online' }]
-      },
-      // Central: Dahod Border
-      {
-        id: 'CAM-GJ-0205',
-        district: 'Dahod (Tribal Border)',
-        zone: 'Central Gujarat',
-        department_id: 'dept-rto',
-        name: 'Gujarat-MP Interstate Border Checkpost NH-47',
-        lat: 22.8360,
-        lng: 74.2540,
-        type: 'ip',
-        vendor: 'Hikvision ANPR Heavy Bullet',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-dahod01.nirikshan.gov.in/live/stream1',
-        fov_angle: 60,
-        direction: 'State Ingress Lane',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 48, status: 'online' }, { time: '12:00', ping_ms: 50, status: 'online' }, { time: '18:00', ping_ms: 47, status: 'online' }]
-      },
-
-      // North Gujarat: Mehsana
-      {
-        id: 'CAM-GJ-0202',
-        district: 'Mehsana',
-        zone: 'North Gujarat',
-        department_id: 'dept-rto',
-        name: 'Viramgam-Mandal RTO High-Speed Weighbridge',
-        lat: 23.1200,
-        lng: 72.3100,
-        type: 'ip',
-        vendor: 'Dahua ANPR Camera',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-mehsana01.nirikshan.gov.in/live/stream1',
-        fov_angle: 65,
-        direction: 'Northbound Toll Weighbridge',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 28, status: 'online' }, { time: '12:00', ping_ms: 31, status: 'online' }, { time: '18:00', ping_ms: 27, status: 'online' }]
-      },
-      // North Gujarat: Banaskantha (Palanpur)
-      {
-        id: 'CAM-GJ-0203',
-        district: 'Banaskantha (Palanpur & Border)',
-        zone: 'North Gujarat',
-        department_id: 'dept-rto',
-        name: 'Gujarat-Rajasthan Abu Road Border Toll Gate',
-        lat: 24.2880,
-        lng: 72.5800,
-        type: 'ip',
-        vendor: 'CP Plus Highway ANPR',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 20,
-        stream_url: 'webrtc://edge-banaskantha.nirikshan.gov.in/live/stream1',
-        fov_angle: 75,
-        direction: 'Interstate Crossing #01',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 35, status: 'online' }, { time: '12:00', ping_ms: 38, status: 'online' }, { time: '18:00', ping_ms: 33, status: 'online' }]
-      },
-      // North Gujarat: Patan
-      {
-        id: 'CAM-GJ-0106',
-        district: 'Patan (Heritage)',
-        zone: 'North Gujarat',
-        department_id: 'dept-police',
-        name: 'Rani ki Vav UNESCO Heritage Concourse',
-        lat: 23.8585,
-        lng: 72.1015,
-        type: 'ip',
-        vendor: 'Honeywell Panoramic Dome',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-patan.nirikshan.gov.in/live/stream1',
-        fov_angle: 180,
-        direction: 'Tourist Plaza Central',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 30, status: 'online' }, { time: '12:00', ping_ms: 34, status: 'online' }, { time: '18:00', ping_ms: 29, status: 'online' }]
-      },
-
-      // Saurashtra: Rajkot
-      {
-        id: 'CAM-GJ-0107',
-        district: 'Rajkot (Hub)',
-        zone: 'Saurashtra',
-        department_id: 'dept-police',
-        name: '150 Feet Ring Road Madhapar Chowk',
-        lat: 22.3160,
-        lng: 70.7720,
-        type: 'ip',
-        vendor: 'Hikvision DarkFighter 4K',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-rajkot01.nirikshan.gov.in/live/stream1',
-        fov_angle: 90,
-        direction: 'Ring Road West Junction',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 26, status: 'online' }, { time: '12:00', ping_ms: 28, status: 'online' }, { time: '18:00', ping_ms: 25, status: 'online' }]
-      },
-      // Saurashtra: Jamnagar
-      {
-        id: 'CAM-GJ-0204',
-        district: 'Jamnagar (Refinery & Port)',
-        zone: 'Saurashtra',
-        department_id: 'dept-rto',
-        name: 'Jamnagar-Rajkot Highway Toll Gate #2',
-        lat: 22.4707,
-        lng: 70.0577,
-        type: 'ip',
-        vendor: 'CP Plus SpeedDome 4K',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-jamnagar01.nirikshan.gov.in/live/stream1',
-        fov_angle: 70,
-        direction: 'Inbound Commercial Lane',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 32, status: 'online' }, { time: '12:00', ping_ms: 35, status: 'online' }, { time: '18:00', ping_ms: 31, status: 'online' }]
-      },
-      // Saurashtra: Devbhumi Dwarka
-      {
-        id: 'CAM-GJ-0105',
-        district: 'Devbhumi Dwarka',
-        zone: 'Saurashtra',
-        department_id: 'dept-police',
-        name: 'Dwarkadhish Temple North Gate Plaza',
-        lat: 22.2376,
-        lng: 68.9678,
-        type: 'ip',
-        vendor: 'Bosch Dinion IP 7000',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-dwarka01.nirikshan.gov.in/live/stream1',
-        fov_angle: 110,
-        direction: 'Pilgrim Concourse',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 42, status: 'online' }, { time: '12:00', ping_ms: 45, status: 'online' }, { time: '18:00', ping_ms: 40, status: 'online' }]
-      },
-      // Saurashtra: Gir Somnath & Sasan Gir
-      {
-        id: 'CAM-GJ-0501',
-        district: 'Gir Somnath (Temple & Coast)',
-        zone: 'Saurashtra',
-        department_id: 'dept-forest',
-        name: 'Sasan Gir National Park Sanctuary Gate #4',
-        lat: 21.1340,
-        lng: 70.5820,
-        type: 'ip',
-        vendor: 'Axis Thermal Forest Shield',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 20,
-        stream_url: 'webrtc://edge-sasan01.nirikshan.gov.in/live/stream1',
-        fov_angle: 120,
-        direction: 'Forest Eco-Corridor East',
-        resolution: '4K Thermal',
-        health_history: [{ time: '06:00', ping_ms: 55, status: 'online' }, { time: '12:00', ping_ms: 58, status: 'online' }, { time: '18:00', ping_ms: 52, status: 'online' }]
-      },
-      {
-        id: 'CAM-GJ-0108',
-        district: 'Gir Somnath (Temple & Coast)',
-        zone: 'Saurashtra',
-        department_id: 'dept-police',
-        name: 'Somnath Mahadev Mandir Promenade',
-        lat: 20.8880,
-        lng: 70.4010,
-        type: 'ip',
-        vendor: 'Hikvision 4K PTZ Coastal Guard',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-somnath.nirikshan.gov.in/live/stream1',
-        fov_angle: 180,
-        direction: 'Arabian Sea Coastal Concourse',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 46, status: 'online' }, { time: '12:00', ping_ms: 49, status: 'online' }, { time: '18:00', ping_ms: 44, status: 'online' }]
-      },
-      // Saurashtra: Morbi
-      {
-        id: 'CAM-GJ-0207',
-        district: 'Morbi (Ceramic Hub)',
-        zone: 'Saurashtra',
-        department_id: 'dept-rto',
-        name: 'Morbi-Kandla National Highway Industrial Toll',
-        lat: 22.8250,
-        lng: 70.8340,
-        type: 'ip',
-        vendor: 'CP Plus Heavy Freight ANPR',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-morbi.nirikshan.gov.in/live/stream1',
-        fov_angle: 65,
-        direction: 'Heavy Freight Freight Lane',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 31, status: 'online' }, { time: '12:00', ping_ms: 34, status: 'online' }, { time: '18:00', ping_ms: 30, status: 'online' }]
-      },
-      // Saurashtra: Bhavnagar
-      {
-        id: 'CAM-GJ-0109',
-        district: 'Bhavnagar (Ports)',
-        zone: 'Saurashtra',
-        department_id: 'dept-police',
-        name: 'Ghogha Ro-Ro Ferry Passenger & Cargo Terminal',
-        lat: 21.6850,
-        lng: 72.2850,
-        type: 'ip',
-        vendor: 'Dahua Marine Shield Bullet',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 20,
-        stream_url: 'webrtc://edge-ghogha.nirikshan.gov.in/live/stream1',
-        fov_angle: 90,
-        direction: 'Ferry Ingress Dock',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 33, status: 'online' }, { time: '12:00', ping_ms: 36, status: 'online' }, { time: '18:00', ping_ms: 32, status: 'online' }]
-      },
-
-      // South Gujarat: Surat
-      {
-        id: 'CAM-GJ-0110',
-        district: 'Surat (Diamond & Textile Metro)',
-        zone: 'South Gujarat',
-        department_id: 'dept-police',
-        name: 'Surat Diamond Bourse Mega Gate #01',
-        lat: 21.1300,
-        lng: 72.8450,
-        type: 'ip',
-        vendor: 'Hikvision AI Facial & ANPR Matrix',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-surat01.nirikshan.gov.in/live/stream1',
-        fov_angle: 120,
-        direction: 'Diamond Bourse Main Ingress',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 18, status: 'online' }, { time: '12:00', ping_ms: 20, status: 'online' }, { time: '18:00', ping_ms: 17, status: 'online' }]
-      },
-      {
-        id: 'CAM-GJ-0303',
-        district: 'Surat (Diamond & Textile Metro)',
-        zone: 'South Gujarat',
-        department_id: 'dept-amc',
-        name: 'Ring Road Textile Market Smart Junction',
-        lat: 21.1950,
-        lng: 72.8350,
-        type: 'ip',
-        vendor: 'Honeywell Smart City 360',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 10,
-        stream_url: 'webrtc://edge-suratmarket.nirikshan.gov.in/live/stream1',
-        fov_angle: 360,
-        direction: 'Commercial Traffic Matrix',
-        resolution: '1080p',
-        health_history: [{ time: '06:00', ping_ms: 19, status: 'online' }, { time: '12:00', ping_ms: 22, status: 'online' }, { time: '18:00', ping_ms: 18, status: 'online' }]
-      },
-      // South Gujarat: Bharuch
-      {
-        id: 'CAM-GJ-0208',
-        district: 'Bharuch (Chemical & Port)',
-        zone: 'South Gujarat',
-        department_id: 'dept-rto',
-        name: 'Narmada Bridge NH-48 Express Highway Checkpoint',
-        lat: 21.7100,
-        lng: 72.9900,
-        type: 'ip',
-        vendor: 'CP Plus 4K Highway Radar',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-bharuch.nirikshan.gov.in/live/stream1',
-        fov_angle: 80,
-        direction: 'NH-48 Golden Bridge Toll Corridor',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 21, status: 'online' }, { time: '12:00', ping_ms: 23, status: 'online' }, { time: '18:00', ping_ms: 20, status: 'online' }]
-      },
-      // South Gujarat: Narmada (Statue of Unity)
-      {
-        id: 'CAM-GJ-0111',
-        district: 'Narmada (Statue of Unity)',
-        zone: 'South Gujarat',
-        department_id: 'dept-police',
-        name: 'Statue of Unity National Tourism High Security Grid',
-        lat: 21.8380,
-        lng: 73.7191,
-        type: 'ip',
-        vendor: 'Bosch Intelligent Concourse PTZ',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-sou.nirikshan.gov.in/live/stream1',
-        fov_angle: 180,
-        direction: 'Memorial Island Concourse',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 25, status: 'online' }, { time: '12:00', ping_ms: 28, status: 'online' }, { time: '18:00', ping_ms: 24, status: 'online' }]
-      },
-      // South Gujarat: Valsad Border
-      {
-        id: 'CAM-GJ-0206',
-        district: 'Valsad (Border Corridor)',
-        zone: 'South Gujarat',
-        department_id: 'dept-rto',
-        name: 'NH-48 Bhilad Toll Plaza & Maharashtra Border Check',
-        lat: 20.3015,
-        lng: 72.8872,
-        type: 'ip',
-        vendor: 'CP Plus 4K Highway ANPR',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 15,
-        stream_url: 'webrtc://edge-bhilad.nirikshan.gov.in/live/stream1',
-        fov_angle: 65,
-        direction: 'Maharashtra-Gujarat Interstate Corridor',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 22, status: 'online' }, { time: '12:00', ping_ms: 24, status: 'online' }, { time: '18:00', ping_ms: 21, status: 'online' }]
-      },
-
-      // Kutch Zone: Bhuj, Kandla Port & Border
-      {
-        id: 'CAM-GJ-0112',
-        district: 'Kutch (Ports, SEZ & Border)',
-        zone: 'Kutch & Border Zone',
-        department_id: 'dept-police',
-        name: 'Bhuj Jubilee Circle Central Security Hub',
-        lat: 23.2420,
-        lng: 69.6669,
-        type: 'ip',
-        vendor: 'Hikvision 4K DarkFighter',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 20,
-        stream_url: 'webrtc://edge-bhuj.nirikshan.gov.in/live/stream1',
-        fov_angle: 120,
-        direction: 'District Headquarters Central',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 38, status: 'online' }, { time: '12:00', ping_ms: 41, status: 'online' }, { time: '18:00', ping_ms: 37, status: 'online' }]
-      },
-      {
-        id: 'CAM-GJ-0209',
-        district: 'Kutch (Ports, SEZ & Border)',
-        zone: 'Kutch & Border Zone',
-        department_id: 'dept-rto',
-        name: 'Kandla Major Port Gate #01 Freight Checkpost',
-        lat: 23.0050,
-        lng: 70.2180,
-        type: 'ip',
-        vendor: 'CP Plus Port Marine Heavy ANPR',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-kandlaport.nirikshan.gov.in/live/stream1',
-        fov_angle: 80,
-        direction: 'Port Cargo Ingress Gate #01',
-        resolution: '4K',
-        health_history: [{ time: '06:00', ping_ms: 36, status: 'online' }, { time: '12:00', ping_ms: 40, status: 'online' }, { time: '18:00', ping_ms: 35, status: 'online' }]
-      },
-      {
-        id: 'CAM-GJ-0502',
-        district: 'Kutch (Ports, SEZ & Border)',
-        zone: 'Kutch & Border Zone',
-        department_id: 'dept-forest',
-        name: 'Khavda - White Rann of Kutch Border Eco-Corridor',
-        lat: 23.8450,
-        lng: 69.7280,
-        type: 'ip',
-        vendor: 'Axis Thermal Border Guard',
-        status: 'online',
-        storage_type: 'edge_nvr',
-        retention_days: 30,
-        stream_url: 'webrtc://edge-khavda.nirikshan.gov.in/live/stream1',
-        fov_angle: 180,
-        direction: 'Great Rann Border Ingress',
-        resolution: '4K Thermal',
-        health_history: [{ time: '06:00', ping_ms: 62, status: 'online' }, { time: '12:00', ping_ms: 68, status: 'online' }, { time: '18:00', ping_ms: 60, status: 'online' }]
+    // 3. Statewide Camera Inventory (Persisted in LocalStorage & Ready for Real Cameras)
+    try {
+      const savedCams = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_camera_inventory') : null;
+      if (savedCams !== null) {
+        this.cameras = JSON.parse(savedCams);
+      } else {
+        // Clean default: 0 dummy cameras, ready for real user connection
+        this.cameras = [];
       }
-    ];
+    } catch(e) {
+      this.cameras = [];
+    }
 
-    // 3. Events (ANPR, Face, Loitering)
-    this.events = [
-      {
-        id: 'EVT-90812',
-        camera_id: 'CAM-GJ-0202',
-        camera_name: 'SP Ring Road Nikol Toll Plaza',
-        type: 'anpr',
-        payload_json: {
-          plate_number: 'GJ-01-AB-1234',
-          confidence: 0.982,
-          vehicle_type: 'SUV (Hyundai Creta)',
-          color: 'White',
-          speed_kmh: 72
-        },
-        ts: new Date(Date.now() - 1000 * 60 * 3).toISOString()
-      },
-      {
-        id: 'EVT-90811',
-        camera_id: 'CAM-GJ-0102',
-        camera_name: 'Ashram Road Nehru Bridge Junction',
-        type: 'face_match',
-        payload_json: {
-          match_confidence: 0.942,
-          gallery_id: 'CCTNS-CRIM-2025-8812',
-          suspect_name: 'Vikram K. (Alias: Vicky)',
-          gender: 'Male',
-          age_est: 34
-        },
-        ts: new Date(Date.now() - 1000 * 60 * 12).toISOString()
-      },
-      {
-        id: 'EVT-90810',
-        camera_id: 'CAM-GJ-0103',
-        camera_name: 'Kalupur Railway Station Concourse',
-        type: 'face_match',
-        payload_json: {
-          match_confidence: 0.961,
-          gallery_id: 'NAFIS-MIS-2026-441',
-          subject_name: 'Aryan M. (Missing Child Alert)',
-          gender: 'Male',
-          age_est: 9
-        },
-        ts: new Date(Date.now() - 1000 * 60 * 25).toISOString()
-      },
-      {
-        id: 'EVT-90809',
-        camera_id: 'CAM-GJ-0201',
-        camera_name: 'NH-48 Bagodara RTO Checkpost',
-        type: 'anpr',
-        payload_json: {
-          plate_number: 'GJ-02-ZZ-9912',
-          confidence: 0.991,
-          vehicle_type: 'Heavy Multi-Axle Truck',
-          color: 'Yellow/Blue',
-          speed_kmh: 54
-        },
-        ts: new Date(Date.now() - 1000 * 60 * 40).toISOString()
-      },
-      {
-        id: 'EVT-90808',
-        camera_id: 'CAM-GJ-0301',
-        camera_name: 'Sindhu Bhavan Road Crossroad',
-        type: 'loitering',
-        payload_json: {
-          duration_seconds: 480,
-          person_count: 5,
-          zone: 'Restricted Transformer Yard'
-        },
-        ts: new Date(Date.now() - 1000 * 60 * 60).toISOString()
-      }
-    ];
+    // 4. Real-time Events (Clean queue)
+    this.events = [];
 
-    // 4. Alerts
-    this.alerts = [
-      {
-        id: 'ALT-1001',
-        event_id: 'EVT-90812',
-        camera_id: 'CAM-GJ-0202',
-        matched_source: 'vahan',
-        title: 'Stolen Vehicle Detected on Highway',
-        severity: 'critical', // 'critical' | 'high' | 'medium' | 'info'
-        status: 'active', // 'active' | 'acknowledged' | 'dispatched' | 'closed'
-        routed_to: 'Police PCR Patrol #14 & Highway Interceptor',
-        details: 'Vehicle flagged stolen in FIR #892/2026 at Navrangpura Police Station.',
-        ts: new Date(Date.now() - 1000 * 60 * 3).toISOString()
-      },
-      {
-        id: 'ALT-1002',
-        event_id: 'EVT-90811',
-        camera_id: 'CAM-GJ-0102',
-        matched_source: 'egujcop',
-        title: 'Non-Bailable Arrest Warrant Suspect Match',
-        severity: 'critical',
-        status: 'active',
-        routed_to: 'Crime Branch Unit 3 & PCR 09',
-        details: 'Sec 302 IPC wanted suspect identified via facial vector comparison.',
-        ts: new Date(Date.now() - 1000 * 60 * 12).toISOString()
-      },
-      {
-        id: 'ALT-1003',
-        event_id: 'EVT-90810',
-        camera_id: 'CAM-GJ-0103',
-        matched_source: 'nafis',
-        title: 'Missing Child Hotlist Match (Op. Muskaan)',
-        severity: 'high',
-        status: 'dispatched',
-        routed_to: 'Railway Protection Force (RPF) Platform 1',
-        details: 'Child report filed at Vadodara Central on 14-Aug matched with 96.1% confidence.',
-        ts: new Date(Date.now() - 1000 * 60 * 25).toISOString()
-      },
-      {
-        id: 'ALT-1004',
-        event_id: 'EVT-90809',
-        camera_id: 'CAM-GJ-0201',
-        matched_source: 'sarthi',
-        title: 'Commercial Vehicle Blacklisted (Permit Expired)',
-        severity: 'medium',
-        status: 'closed',
-        routed_to: 'RTO Checkpost Booth 1',
-        details: 'Auto e-Challan ₹10,000 generated for expired roadworthiness.',
-        ts: new Date(Date.now() - 1000 * 60 * 40).toISOString()
-      }
-    ];
+    // 5. Real-time Critical Alerts (Clean queue)
+    this.alerts = [];
 
-    // 5. Consent Records (Private Cameras)
-    this.consentRecords = [
-      {
-        id: 'CSR-001',
-        camera_id: 'CAM-GJ-0601',
-        establishment_name: 'Palladium Mall RWA',
-        owner_type: 'mall',
-        granted_scope: 'Outward Road-Facing Metadata & Emergency Triggered Live View',
-        status: 'active',
-        signed_at: '2026-02-01T15:00:00Z',
-        certificate_hash: '0x8f21bc9942a188f01b9'
-      },
-      {
-        id: 'CSR-002',
-        camera_id: 'CAM-GJ-0602',
-        establishment_name: 'Titanium City Center Society',
-        owner_type: 'society',
-        granted_scope: 'ANPR Incident Metadata Only (Zero Raw Video Upload)',
-        status: 'active',
-        signed_at: '2026-02-10T12:00:00Z',
-        certificate_hash: '0x3c78a011ef5901ba34'
-      }
-    ];
+    // 6. Consent Records (Clean queue)
+    this.consentRecords = [];
 
-    // 6. Audit Trail
-    this.auditLogs = [
-      { id: 'AUD-991', user: 'Insp. V. R. Jadeja', role: 'Superadmin', action: 'LIVE_STREAM_PULL', target: 'CAM-GJ-0101', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), ip: '10.24.110.45' },
-      { id: 'AUD-990', user: 'System (Kafka Bus)', role: 'Gateway Service', action: 'CROSS_DB_QUERY', target: 'VAHAN_API:GJ-01-AB-1234', timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(), ip: '10.24.100.12' },
-      { id: 'AUD-989', user: 'Sub-Insp. S. Patel', role: 'Operator', action: 'ALERT_DISPATCH', target: 'ALT-1002 (eGujCop)', timestamp: new Date(Date.now() - 1000 * 60 * 11).toISOString(), ip: '10.24.110.50' },
-      { id: 'AUD-988', user: 'RTO Officer Mehta', role: 'Admin', action: 'CAMERA_ONBOARD', target: 'CAM-GJ-0202', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), ip: '10.28.14.88' }
-    ];
+    // 7. System Audit Trail (Clean log)
+    this.auditLogs = [];
 
-    // 7. ACTIVE STATE SUSPECT & INTERCEPTION WATCHLIST (AUTHORITY REGISTERED)
+    // 8. ACTIVE STATE SUSPECT & INTERCEPTION WATCHLIST (AUTHORITY REGISTERED)
     try {
       const savedWatchlist = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_suspect_watchlist') : null;
       if (savedWatchlist !== null) {
-        this.suspectWatchlist = JSON.parse(savedWatchlist);
+        const parsed = JSON.parse(savedWatchlist);
+        // Exclude dummy test samples
+        this.suspectWatchlist = Array.isArray(parsed) ? parsed.filter(s => 
+          s.plate !== 'GJ-01-AB-1234' && 
+          s.plate !== 'MP-09-HH-5541' && 
+          s.plate !== 'GJ-27-EA-5500'
+        ) : [];
       } else {
-        // Empty by default: only armed when the user enters/registers real suspect data
         this.suspectWatchlist = [];
       }
     } catch (e) {
       this.suspectWatchlist = [];
     }
 
-    // 8. CCTNS/NAFIS BIOMETRIC FACIAL WATCHLIST
+    // 9. CCTNS/NAFIS BIOMETRIC FACIAL WATCHLIST (Clean default)
     try {
       const savedFaces = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_facial_watchlist') : null;
       if (savedFaces !== null) {
@@ -1015,6 +386,7 @@ class NirikshanApiClient {
     };
 
     this.cameras.push(newCam);
+    try { localStorage.setItem('nirikshan_camera_inventory', JSON.stringify(this.cameras)); } catch(e){}
     this.logAudit('CAMERA_ONBOARD_VIA_ADAPTER', `${newCam.id} (${payload.protocol.toUpperCase()})`);
     return {
       status: 'registered',
@@ -1275,7 +647,53 @@ class NirikshanApiClient {
   // OPTICAL FOV RANGE & BLIND-SPOT GAP ANALYSIS ENGINE
   // =========================================================================
   async getCameraFovAnalysis(cameraId) {
-    const cam = await this.getCameraById(cameraId) || this.cameras[0];
+    const cam = await this.getCameraById(cameraId) || (this.cameras && this.cameras.length > 0 ? this.cameras[0] : null);
+    if (!cam) {
+      return {
+        camera_id: cameraId || 'N/A',
+        camera_name: 'No Camera Selected',
+        district: 'None',
+        department_id: 'dept-police',
+        lat: 23.0225,
+        lng: 72.5714,
+        optical_specs: {
+          vendor_model: 'N/A',
+          resolution: '1080p',
+          fov_horizontal_degrees: 90,
+          azimuth_heading_degrees: 0,
+          direction_name: 'N/A',
+          cardinal_heading: 'North',
+          coverage_area_sqm: 0,
+          dori_standards: { detection_range_meters: 0, recognition_range_meters: 0, identification_range_meters: 0 }
+        },
+        coverage_cone_polygon: [],
+        blind_spot_analysis: {
+          blind_spot_id: 'NONE',
+          location_description: 'No active camera selected for blind spot diagnostics',
+          uncovered_azimuth: '0°',
+          uncovered_area_sqm: 0,
+          risk_level: 'LOW',
+          recommended_install_lat: 23.0225,
+          recommended_install_lng: 72.5714,
+          recommended_hardware: 'N/A',
+          estimated_capex_inr: 0,
+          blind_polygon: [],
+          deficit_direction_cardinal: 'North',
+          deficit_azimuth_degrees: 0
+        },
+        proposed_camera_specs: {
+          install_lat: 23.0225,
+          install_lng: 72.5714,
+          heading_azimuth_degrees: 0,
+          heading_direction_cardinal: 'North',
+          fov_degrees: 90,
+          range_meters: 0,
+          coverage_cone_polygon: [],
+          coverage_area_sqm: 0,
+          solves_blind_spot: false
+        }
+      };
+    }
     const lat = cam.lat;
     const lng = cam.lng;
     const fov = cam.fov_angle || 90;
@@ -1482,6 +900,7 @@ class NirikshanApiClient {
     };
 
     this.cameras.push(newCam);
+    try { localStorage.setItem('nirikshan_camera_inventory', JSON.stringify(this.cameras)); } catch(e){}
 
     // Dynamically update district camera totals and reduce gap
     const dist = this.districts.find(d => d.name === newCam.district || d.id === newCam.district || newCam.district.includes(d.name.split(' (')[0]));
@@ -1500,6 +919,7 @@ class NirikshanApiClient {
     const idx = this.cameras.findIndex(c => c.id === id);
     if (idx !== -1) {
       const removed = this.cameras.splice(idx, 1)[0];
+      try { localStorage.setItem('nirikshan_camera_inventory', JSON.stringify(this.cameras)); } catch(e){}
       const dist = this.districts.find(d => d.name === removed.district || d.id === removed.district || (removed.district && removed.district.includes(d.name.split(' (')[0])));
       if (dist) {
         dist.total_cams = Math.max(0, dist.total_cams - 1);
@@ -1511,6 +931,40 @@ class NirikshanApiClient {
       return { status: 'success', deleted: removed };
     }
     return { status: 'error', message: 'Camera not found' };
+  }
+
+  async clearAllCameras() {
+    this.cameras = [];
+    try { localStorage.setItem('nirikshan_camera_inventory', JSON.stringify([])); } catch(e){}
+    this.districts.forEach(dist => {
+      dist.total_cams = 0;
+      dist.gap_cams_needed = dist.target_cams;
+      dist.coverage_score = 0;
+      dist.gap_status = 'Critical Gap';
+    });
+    this.logAudit('CAMERA_INVENTORY_CLEARED', 'All camera nodes decommissioned');
+    return { status: 'cleared', count: 0 };
+  }
+
+  async clearAllDummyData() {
+    this.cameras = [];
+    this.alerts = [];
+    this.events = [];
+    this.suspectWatchlist = [];
+    this.facialWatchlist = [];
+    this.auditLogs = [];
+    try {
+      localStorage.removeItem('nirikshan_camera_inventory');
+      localStorage.removeItem('nirikshan_suspect_watchlist');
+      localStorage.removeItem('nirikshan_facial_watchlist');
+    } catch(e) {}
+    this.districts.forEach(dist => {
+      dist.total_cams = 0;
+      dist.gap_cams_needed = dist.target_cams;
+      dist.coverage_score = 0;
+      dist.gap_status = 'Critical Gap';
+    });
+    return { status: 'cleared', message: 'All dummy data successfully removed. System ready for real feeds.' };
   }
 
   async bulkImportCameras(csvRows) {
@@ -1551,6 +1005,8 @@ class NirikshanApiClient {
         dist.gap_status = dist.coverage_score >= 90 ? 'Optimal' : (dist.coverage_score >= 70 ? 'Moderate Gap' : (dist.coverage_score >= 50 ? 'High Gap' : 'Critical Gap'));
       }
     });
+
+    try { localStorage.setItem('nirikshan_camera_inventory', JSON.stringify(this.cameras)); } catch(e){}
 
     this.logAudit('CAMERA_BULK_IMPORT', `${imported.length} Cameras Ingested`);
     return {

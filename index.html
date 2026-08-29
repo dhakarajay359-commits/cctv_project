@@ -18,7 +18,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=2.7.5">
+  <link rel="stylesheet" href="style.css?v=2.7.6">
 </head>
 <body class="dark-theme">
   <div class="app-layout" id="appLayout">
@@ -508,6 +508,9 @@
           <h2><i class="fa-solid fa-list-check"></i> Master Camera Registry &amp; Gap-Analysis Portal</h2>
         </div>
         <div class="registry-actions-group">
+          <button class="action-btn" id="btnClearAllCamerasBtn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); font-size: 0.78rem;" title="Decommission all cameras to connect clean real feeds">
+            <i class="fa-solid fa-trash-can"></i> Clear All Cameras
+          </button>
           <button class="action-btn" id="btnOpenAdapterWizardModal" style="background: rgba(0, 242, 254, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);">
             <i class="fa-solid fa-microchip"></i> Edge Adapter Wizard (Phase 2)
           </button>
@@ -947,19 +950,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           </button>
         </form>
 
-        <!-- Quick 1-Click Suspect Presets Bar -->
-        <div class="quick-samples-bar" style="margin-top: 0.75rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-          <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">Sample Test Presets:</span>
-          <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('GJ-01-AB-1234', 'Armed Bank Robbery & Kidnapping (Sec 392/364 IPC)', 'FIR-892/2026 (Satellite PS)', 'Vikram Ramsinh Solanki', 'CRITICAL');">
-            GJ-01-AB-1234 &bull; White Creta
-          </button>
-          <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('MP-09-HH-5541', 'Inter-State PDS Grain Siphoning & Toll Evasion', 'FIR-104/2026 (Civil Supplies)', 'Pravin Khimji Patel', 'HIGH');">
-            MP-09-HH-5541 &bull; Tata Truck
-          </button>
-          <button type="button" class="sample-chip" onclick="window.populateSuspectPreset('GJ-27-EA-5500', 'Extortion & Non-Bailable Hit-and-Run Warrant', 'FIR-312/2026 (Crime Branch)', 'Sanjay K. Barot', 'CRITICAL');">
-            GJ-27-EA-5500 &bull; Hit &amp; Run Warrant
-          </button>
-        </div>
 
         <!-- Active Suspect Watchlist Table -->
         <div style="margin-top: 0.8rem;">
@@ -2556,7 +2546,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
-  <script src="src/api/client.js?v=2.7.3"></script>
-  <script src="app.js?v=2.7.5"></script>
+  <script src="src/api/client.js?v=2.7.6"></script>
+  <script src="app.js?v=2.7.6"></script>
 </body>
 </html>

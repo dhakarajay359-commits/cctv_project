@@ -1718,6 +1718,19 @@ async function renderRegistryTable() {
   if (!tbody) return;
 
   tbody.innerHTML = '';
+  if (cameras.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 3rem 1rem; color: #64748b; background: #ffffff;">
+          <i class="fa-solid fa-video-slash" style="font-size: 2.2rem; color: #94a3b8; margin-bottom: 0.6rem; display: block;"></i>
+          <strong style="color: #0f172a; font-size: 1rem; display: block; margin-bottom: 0.35rem;">No Camera Nodes In Registry</strong>
+          <span style="font-size: 0.82rem; color: #64748b;">Click <strong>"+ Onboard New Camera"</strong> or <strong>"Bulk CSV Import"</strong> to connect real CCTV cameras.</span>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   cameras.forEach(cam => {
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
@@ -3362,6 +3375,19 @@ async function renderLiveWall() {
 
   wallGrid.innerHTML = '';
 
+  if (displayCams.length === 0) {
+    wallGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4.5rem 2rem; background: #0f172a; border: 1px dashed #334155; border-radius: 8px; text-align: center; color: #94a3b8;">
+        <i class="fa-solid fa-video-slash" style="font-size: 2.5rem; color: #64748b; margin-bottom: 0.8rem;"></i>
+        <strong style="color: #f8fafc; font-size: 1.05rem; margin-bottom: 0.35rem;">No Live CCTV Camera Feeds Connected</strong>
+        <p style="font-size: 0.82rem; color: #64748b; max-width: 460px; line-height: 1.5;">
+          Connect your camera RTSP/WebRTC streams in Camera Registry or via the Edge Adapter Wizard to monitor live feeds on this video wall.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
   const sampleVideos = [
     'assets/videos/highway-traffic.mp4',
     'assets/videos/highway-traffic.mp4',
@@ -3725,8 +3751,10 @@ async function renderSuspectWatchlistTable() {
   if (watchlist.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" style="text-align: center; padding: 1.2rem; color: var(--text-muted);">
-          No active suspects in registry. Regular vehicle traffic passes without triggering alerts.
+        <td colspan="7" style="text-align: center; padding: 2.2rem 1.2rem; color: #64748b; background: #ffffff;">
+          <i class="fa-solid fa-shield-halved" style="font-size: 1.8rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
+          <strong style="color: #0f172a; font-size: 0.92rem; display: block; margin-bottom: 0.25rem;">No Active Suspect Targets in Watchlist</strong>
+          <span style="font-size: 0.78rem; color: #64748b;">Register suspect vehicles using the form above to arm live YOLO optical detection.</span>
         </td>
       </tr>
     `;
@@ -5381,6 +5409,18 @@ function initModalHandlers() {
   if (btnOpen) btnOpen.addEventListener('click', () => modal.classList.add('open'));
   if (btnClose) btnClose.addEventListener('click', () => modal.classList.remove('open'));
   if (btnCancel) btnCancel.addEventListener('click', () => modal.classList.remove('open'));
+
+  const btnClearAll = document.getElementById('btnClearAllCamerasBtn');
+  if (btnClearAll) {
+    btnClearAll.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to clear all cameras from the registry?\n\nThis will remove all dummy cameras so you can connect your real cameras.')) {
+        await window.apiClient.clearAllCameras();
+        await refreshAllData();
+        await updateDynamicDashboardMeters();
+        alert('All camera nodes cleared. The grid is ready for real camera feeds.');
+      }
+    });
+  }
 
   // Phase 2 Edge Adapter Wizard
   initAdapterWizard();
