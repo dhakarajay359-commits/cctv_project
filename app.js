@@ -4906,10 +4906,22 @@ function initAdapterWizard() {
   if (btnClose) btnClose.addEventListener('click', () => wizardModal.classList.remove('open'));
 
   protoCards.forEach(card => {
-    card.addEventListener('click', () => {
-      protoCards.forEach(c => c.classList.remove('selected'));
+    const selectCard = () => {
+      protoCards.forEach(c => {
+        c.classList.remove('selected');
+        c.setAttribute('aria-pressed', 'false');
+      });
       card.classList.add('selected');
+      card.setAttribute('aria-pressed', 'true');
       selectedProtocol = card.getAttribute('data-protocol');
+    };
+
+    card.addEventListener('click', selectCard);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectCard();
+      }
     });
   });
 
