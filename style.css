@@ -1852,12 +1852,12 @@ body.focus-mode .leaflet-container-view {
   font-size: 0.78rem;
 }
 
-/* Vector Path Precision & Sharpness */
+/* Vector Path Precision & Sharpness (Natural Cartographic Boundary) */
 path.gujarat-border-glow {
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
   pointer-events: none !important;
-  filter: drop-shadow(0 0 3px rgba(0, 242, 254, 0.7)) drop-shadow(0 0 8px rgba(2, 132, 199, 0.45));
+  filter: none !important;
 }
 
 path.gujarat-border-sharp {
@@ -1870,10 +1870,10 @@ path.gujarat-border-sharp {
 }
 
 path.gujarat-border-sharp:hover {
-  stroke: #00f2fe !important;
-  stroke-width: 4px !important;
-  fill-opacity: 0.08 !important;
-  filter: drop-shadow(0 0 6px #00f2fe);
+  stroke: #1e40af !important;
+  stroke-width: 3px !important;
+  fill-opacity: 0.04 !important;
+  filter: none !important;
 }
 
 path.gujarat-district-border {
@@ -1886,42 +1886,42 @@ path.gujarat-district-border {
 }
 
 path.gujarat-district-border:hover {
-  stroke: #0284c7 !important;
-  stroke-width: 2.2px !important;
+  stroke: #1d4ed8 !important;
+  stroke-width: 1.8px !important;
   stroke-dasharray: none !important;
-  fill-opacity: 0.12 !important;
-  filter: drop-shadow(0 0 4px rgba(2, 132, 199, 0.5));
+  fill-opacity: 0.05 !important;
+  filter: none !important;
 }
 
 /* Custom Tooltips for Gujarat Boundaries */
 .leaflet-tooltip.custom-leaflet-tooltip {
   background: #0f172a !important;
-  border: 1px solid #00f2fe !important;
+  border: 1px solid #2563eb !important;
   border-radius: 6px !important;
   color: #f8fafc !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 10px rgba(0, 242, 254, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
   padding: 6px 10px !important;
   font-family: var(--font-main) !important;
 }
 
 .leaflet-tooltip.custom-leaflet-tooltip::before {
-  border-top-color: #00f2fe !important;
-  border-bottom-color: #00f2fe !important;
+  border-top-color: #2563eb !important;
+  border-bottom-color: #2563eb !important;
 }
 
 .leaflet-tooltip.custom-district-tooltip {
   background: #ffffff !important;
-  border: 1px solid #0284c7 !important;
+  border: 1px solid #2563eb !important;
   border-radius: 4px !important;
   color: #0f172a !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
   padding: 3px 8px !important;
   font-family: var(--font-main) !important;
 }
 
 .leaflet-tooltip.custom-district-tooltip::before {
-  border-top-color: #0284c7 !important;
-  border-bottom-color: #0284c7 !important;
+  border-top-color: #2563eb !important;
+  border-bottom-color: #2563eb !important;
 }
 
 .phase-tag-badge {

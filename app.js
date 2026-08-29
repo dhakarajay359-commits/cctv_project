@@ -409,9 +409,9 @@ async function initGujaratBorderLayers() {
   gujaratStateGlowLayer = L.geoJSON(geoData.stateBoundary, {
     smoothFactor: 0.5,
     style: {
-      color: '#00f2fe',
-      weight: 7,
-      opacity: 0.35,
+      color: '#1d4ed8',
+      weight: 4,
+      opacity: 0.1,
       fill: false,
       lineCap: 'round',
       lineJoin: 'round',
@@ -420,15 +420,15 @@ async function initGujaratBorderLayers() {
     interactive: false
   }).addTo(leafletMapInstance);
 
-  // 2. Razor-Sharp Core Boundary Layer (High-contrast, geometric precision stroke + subtle state tint)
+  // 2. Natural Authoritative Administrative Boundary Layer (Classic cartographic cobalt blue, sharp & clean)
   gujaratStateBorderLayer = L.geoJSON(geoData.stateBoundary, {
     smoothFactor: 0.5,
     style: {
-      color: '#00f2fe',
-      weight: 2.8,
-      opacity: 1.0,
-      fillColor: '#00f2fe',
-      fillOpacity: 0.045,
+      color: '#1d4ed8',
+      weight: 2.2,
+      opacity: 0.85,
+      fillColor: '#2563eb',
+      fillOpacity: 0.015,
       lineCap: 'round',
       lineJoin: 'round',
       className: 'gujarat-border-sharp'
@@ -437,13 +437,13 @@ async function initGujaratBorderLayers() {
       // Interactive Tactical State HUD Tooltip
       layer.bindTooltip(`
         <div class="gujarat-state-tooltip">
-          <div style="font-size: 0.84rem; font-weight: 800; color: #00f2fe; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 3px;">
+          <div style="font-size: 0.84rem; font-weight: 800; color: #60a5fa; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 3px;">
             <i class="fa-solid fa-shield-halved"></i> STATE OF GUJARAT (ગુજરાત રાજ્ય)
           </div>
           <div style="font-size: 0.72rem; color: #cbd5e1; line-height: 1.4;">
-            <div>Perimeter: <strong style="color: #38bdf8;">~3,100 km</strong> &bull; Coastline: <strong style="color: #38bdf8;">1,600 km</strong></div>
+            <div>Perimeter: <strong style="color: #93c5fd;">~3,100 km</strong> &bull; Coastline: <strong style="color: #93c5fd;">1,600 km</strong></div>
             <div>Inter-State: <strong>Rajasthan, MP, Maharashtra, Pakistan/Rann</strong></div>
-            <div style="color: #67e8f9; margin-top: 2px; font-weight: 600;">
+            <div style="color: #60a5fa; margin-top: 2px; font-weight: 600;">
               NIRIKSHAN Homeland Grid: 33 Districts &bull; 80,000+ CCTV Nodes
             </div>
           </div>
@@ -459,17 +459,17 @@ async function initGujaratBorderLayers() {
         mouseover: (e) => {
           const l = e.target;
           l.setStyle({
-            color: '#38bdf8',
-            weight: 3.8,
-            fillOpacity: 0.08
+            color: '#1e40af',
+            weight: 3.0,
+            fillOpacity: 0.04
           });
         },
         mouseout: (e) => {
           const l = e.target;
           l.setStyle({
-            color: '#00f2fe',
-            weight: 2.8,
-            fillOpacity: 0.045
+            color: '#1d4ed8',
+            weight: 2.2,
+            fillOpacity: 0.015
           });
         },
         click: () => {
@@ -484,12 +484,12 @@ async function initGujaratBorderLayers() {
     gujaratDistrictsLayer = L.geoJSON(geoData.districts, {
       smoothFactor: 0.5,
       style: {
-        color: '#0284c7',
-        weight: 1.1,
-        opacity: 0.45,
+        color: '#64748b',
+        weight: 1.0,
+        opacity: 0.5,
         dashArray: '3, 4',
-        fillColor: '#38bdf8',
-        fillOpacity: 0.015,
+        fillColor: '#2563eb',
+        fillOpacity: 0.01,
         lineCap: 'round',
         lineJoin: 'round',
         className: 'gujarat-district-border'
@@ -498,7 +498,7 @@ async function initGujaratBorderLayers() {
         const dName = feature.properties?.district || 'District';
         layer.bindTooltip(`
           <div style="font-family: var(--font-main); font-size: 0.74rem; font-weight: 700; color: #0f172a;">
-            <i class="fa-solid fa-location-dot" style="color: #0284c7;"></i> ${dName} District
+            <i class="fa-solid fa-location-dot" style="color: #2563eb;"></i> ${dName} District
           </div>
         `, {
           sticky: true,
@@ -510,11 +510,11 @@ async function initGujaratBorderLayers() {
           mouseover: (e) => {
             const l = e.target;
             l.setStyle({
-              weight: 2.2,
-              opacity: 0.95,
-              color: '#00f2fe',
+              weight: 1.8,
+              opacity: 0.85,
+              color: '#2563eb',
               dashArray: null,
-              fillOpacity: 0.12
+              fillOpacity: 0.05
             });
             l.bringToFront();
             if (gujaratStateBorderLayer) gujaratStateBorderLayer.bringToFront();
@@ -522,11 +522,11 @@ async function initGujaratBorderLayers() {
           mouseout: (e) => {
             const l = e.target;
             l.setStyle({
-              color: '#0284c7',
-              weight: 1.1,
-              opacity: 0.45,
+              weight: 1.0,
+              opacity: 0.5,
+              color: '#64748b',
               dashArray: '3, 4',
-              fillOpacity: 0.015
+              fillOpacity: 0.01
             });
           },
           click: (e) => {
