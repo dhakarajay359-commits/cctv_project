@@ -933,134 +933,7 @@ window.triggerTacticalRoadblockDispatch = async function(plateNumber = 'GJ-01-AB
   await renderAlerts();
 };
 
-// Render Multi-Department Vehicle Trajectory on Leaflet GIS Map
-window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234') {
-  const cleanPlate = (plateNumber || '').trim().toUpperCase() || 'GJ-01-AB-1234';
-  const mapInput = document.getElementById('mapPursuitInput');
-  if (mapInput) mapInput.value = cleanPlate;
 
-  // 1. Switch to Dashboard View if not active
-  const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
-  if (dashNavBtn) dashNavBtn.click();
-
-  if (!leafletMapInstance) return;
-  setTimeout(() => leafletMapInstance.invalidateSize(), 150);
-
-  // 2. Fetch Reconstructed Trajectory
-  const traj = await window.apiClient.reconstructVehicleTrajectory(cleanPlate);
-  clearTrajectoryFromGisMap();
-
-  // 3. Draw Sighting Trail
-  const sightingPoints = traj.sightings.map(s => [s.lat, s.lng]);
-  
-  // Glowing Solid Polyline for Completed Journey
-  const pathLine = L.polyline(sightingPoints, {
-    color: '#f43f5e',
-    weight: 5,
-    opacity: 0.9,
-    lineJoin: 'round'
-  }).addTo(leafletMapInstance);
-  mapTrajectoryLayers.push(pathLine);
-
-  // Numbered Sighting Pins
-  traj.sightings.forEach(s => {
-    const pinHtml = `
-      <div class="trajectory-step-pin" style="background: ${s.department_color}; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">
-        ${s.step}
-      </div>
-    `;
-    const icon = L.divIcon({
-      className: 'custom-traj-pin',
-      html: pinHtml,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13]
-    });
-
-    const marker = L.marker([s.lat, s.lng], { icon: icon }).addTo(leafletMapInstance);
-    marker.bindPopup(`
-      <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 190px;">
-        <strong style="color: ${s.department_color}; font-size: 13px;">STEP ${s.step} &bull; ${s.department_badge}</strong><br/>
-        <strong>${s.camera_name}</strong><br/>
-        <span style="color: #94a3b8;">${s.district} &bull; ${s.time_display}</span><br/>
-        <div style="margin-top: 4px; padding: 4px 6px; background: rgba(245,158,11,0.1); border-radius: 4px;">
-          <span style="color: #fbbf24; font-weight: 800;">Segment Speed: ${s.speed_kmph} km/h</span><br/>
-          <span style="color: #38bdf8; font-size: 11px;">OCR Confidence: ${s.ocr_confidence}%</span>
-        </div>
-      </div>
-    `);
-    mapTrajectoryLayers.push(marker);
-  });
-
-  // 4. Draw Projected AI Vector (Dashed Amber Line to Next Predicted Checkpoint)
-  const p = traj.predictive_trajectory;
-  const lastPoint = sightingPoints[sightingPoints.length - 1];
-  const predictedPoint = [p.next_predicted_lat, p.next_predicted_lng];
-
-  const projectedLine = L.polyline([lastPoint, predictedPoint], {
-    color: '#f59e0b',
-    weight: 4,
-    dashArray: '8, 8',
-    opacity: 0.95
-  }).addTo(leafletMapInstance);
-  mapTrajectoryLayers.push(projectedLine);
-
-  // Radar Pulse Marker at Predicted Intercept Point
-  const radarHtml = `
-    <div class="radar-pulse-pin">
-      <i class="fa-solid fa-crosshairs"></i>
-    </div>
-  `;
-  const radarIcon = L.divIcon({
-    className: 'custom-radar-pin',
-    html: radarHtml,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
-  });
-
-  const predMarker = L.marker(predictedPoint, { icon: radarIcon }).addTo(leafletMapInstance);
-  predMarker.bindPopup(`
-    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 220px;">
-      <strong style="color: #f43f5e; font-size: 13px;"><i class="fa-solid fa-triangle-exclamation"></i> PREDICTED INTERCEPT POINT</strong><br/>
-      <strong>${p.next_predicted_location}</strong><br/>
-      <span style="color: #38bdf8;">Dept: ${p.next_predicted_dept}</span><br/>
-      <div style="margin-top: 5px; padding: 4px 6px; background: rgba(244,63,94,0.15); border: 1px solid #f43f5e; border-radius: 4px;">
-        <span style="color: #f43f5e; font-weight: 800;">ETA: ${p.current_eta_minutes} Mins (${p.estimated_arrival_time})</span><br/>
-        <span style="color: #fbbf24; font-size: 11px;">Projected Speed: ${p.projected_speed_kmph} km/h</span>
-      </div>
-      <button onclick="dispatchPcrFromMap('${traj.plate}', '${p.next_predicted_location}')" style="
-        margin-top: 6px;
-        width: 100%;
-        background: linear-gradient(135deg, #f43f5e, #be123c);
-        color: #ffffff;
-        border: none;
-        padding: 5px 8px;
-        border-radius: 4px;
-        font-weight: 700;
-        cursor: pointer;
-      "><i class="fa-solid fa-shield-halved"></i> Arm Roadblock Barrier</button>
-    </div>
-  `);
-  mapTrajectoryLayers.push(predMarker);
-
-  // 5. Fit Map Bounds
-  const allPoints = [...sightingPoints, predictedPoint];
-  leafletMapInstance.fitBounds(allPoints, { padding: [70, 70], maxZoom: 13 });
-
-  // 6. Populate and Open HUD Card
-  const hud = document.getElementById('pursuitMapHud');
-  const btnClear = document.getElementById('btnClearMapPursuit');
-  if (hud) {
-    hud.style.display = 'block';
-    document.getElementById('hudPlateBadge').textContent = traj.plate;
-    document.getElementById('hudVehicleName').textContent = traj.vehicle_model;
-    document.getElementById('hudDistance').textContent = `${traj.total_distance_km} km`;
-    document.getElementById('hudSpeed').textContent = `${traj.average_speed_kmph} km/h`;
-    document.getElementById('hudHeading').textContent = traj.current_heading.split(' ')[0] + ' ' + traj.current_heading.split(' ')[1];
-    document.getElementById('hudNextLoc').textContent = p.next_predicted_location;
-    document.getElementById('hudEta').textContent = `ETA: ~${p.current_eta_minutes} Mins (${p.estimated_arrival_time})`;
-  }
-  if (btnClear) btnClear.style.display = 'inline-block';
-};
 
 window.clearTrajectoryFromGisMap = function() {
   mapTrajectoryLayers.forEach(layer => leafletMapInstance.removeLayer(layer));
@@ -3108,51 +2981,40 @@ function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
         // VEHICLE ANPR OBSERVATION
         const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
         
-        // Dynamically assign suspect based on camera node
-        let matchedSuspect = null;
-        if (camera.id === 'CAM-GJ-0101') {
-          matchedSuspect = activeSuspects.find(s => s.plate === 'GJ-01-AB-1234') || activeSuspects[0];
-        } else if (camera.id === 'CAM-GJ-0102') {
-          matchedSuspect = activeSuspects.find(s => s.plate === 'GJ-05-CD-9988') || activeSuspects[1] || activeSuspects[0];
-        } else if (camera.id === 'CAM-GJ-0501' || camera.id === 'CAM-GJ-0502') {
-          matchedSuspect = activeSuspects.find(s => s.plate === 'MP-09-HH-5541') || activeSuspects[2] || activeSuspects[0];
-        } else if (camera.id === 'CAM-GJ-0201') {
-          matchedSuspect = activeSuspects.find(s => s.plate === 'GJ-03-XY-7711') || activeSuspects[3] || activeSuspects[0];
-        } else {
-          matchedSuspect = activeSuspects.find(s => s.camera_id === camera.id) || activeSuspects[0];
-        }
+        // If user has not added any suspects to the watchlist, do NOT trigger any suspect alert!
+        if (activeSuspects.length > 0) {
+          // Only match if a registered suspect is explicitly assigned to this camera node
+          const matchedSuspect = activeSuspects.find(s => s.camera_id === camera.id);
 
-        if (matchedSuspect) {
-          const suspectPlate = matchedSuspect.plate;
-          const cleanPlate = suspectPlate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+          if (matchedSuspect) {
+            const suspectPlate = matchedSuspect.plate;
+            const cleanPlate = (suspectPlate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
-          // Backend AI observes target vehicle when it is FULLY in camera frame (between 3.8s and 6.2s)
-          if (currentTime >= 3.8 && currentTime <= 6.2) {
-            // ONCE ARMED / INTERCEPTED, NEVER ALERT AGAIN (Eliminates repeated alert spam)
-            if (!armedSuspectPlates.has(cleanPlate)) {
-              armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
-              triggerLiveSuspectDossierHit(suspectPlate, camera, video, matchedSuspect, 82.5);
+            // Backend AI observes target vehicle when it is FULLY in camera frame (between 3.8s and 6.2s)
+            if (currentTime >= 3.8 && currentTime <= 6.2) {
+              if (!armedSuspectPlates.has(cleanPlate)) {
+                armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
+                triggerLiveSuspectDossierHit(suspectPlate, camera, video, matchedSuspect, 82.5);
+              }
             }
           }
         }
       } else {
         // FACIAL RECOGNITION & BIOMETRIC AI OBSERVATION
         const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
-        const targetFace = activeFaces[0] || {
-          name: 'Vikram K. (Alias: Vicky)',
-          suspect_id: 'CCTNS-CRIM-2025-8812',
-          crime: 'Sec 302 IPC / Extortion & Non-Bailable Arrest Warrant',
-          fir: 'FIR-104/2025 (Sanand PS)',
-          biometric_score_default: 96.8
-        };
+        
+        if (activeFaces.length > 0) {
+          const targetFace = activeFaces.find(f => f.camera_id === camera.id);
+          if (targetFace) {
+            const faceKey = (targetFace.name || 'TARGET').toUpperCase();
 
-        const faceKey = (targetFace.name || 'VIKRAM').toUpperCase();
-
-        // Backend facial vector matches target suspect when FULLY in camera frame (between 3.8s and 6.2s)
-        if (currentTime >= 3.8 && currentTime <= 6.2) {
-          if (!armedSuspectFaces.has(faceKey)) {
-            armedSuspectFaces.add(faceKey);
-            triggerLiveFaceMatchHit(targetFace, camera, video);
+            // Backend facial vector matches target suspect when FULLY in camera frame (between 3.8s and 6.2s)
+            if (currentTime >= 3.8 && currentTime <= 6.2) {
+              if (!armedSuspectFaces.has(faceKey)) {
+                armedSuspectFaces.add(faceKey);
+                triggerLiveFaceMatchHit(targetFace, camera, video);
+              }
+            }
           }
         }
       }
@@ -3251,12 +3113,7 @@ function triggerLiveFaceMatchHit(suspectFace, camera, video) {
     camera_id: camera.id
   });
 
-  // 7. ZERO-DELAY GEOLOCATION PINNING ON GIS MAP
-  if (typeof window.renderFaceMatchOnGisMap === 'function') {
-    window.renderFaceMatchOnGisMap(suspectFace, camera);
-  }
-
-  // 8. Update Dynamic Dashboard Meters
+  // 7. Update Dynamic Dashboard Meters
   updateDynamicDashboardMeters('cardStatAlerts');
 }
 
@@ -3344,12 +3201,7 @@ function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed =
     window.apiClient.alerts.unshift(autoDispatchedAlert);
   }
 
-  // 5. AUTOMATICALLY PLOT TRAJECTORY PURSUIT ROUTE ON GIS MAP (Zero-Delay)
-  if (typeof window.renderTrajectoryOnGisMap === 'function') {
-    window.renderTrajectoryOnGisMap(plate, camera.id);
-  }
-
-  // 6. Automatically Re-render Alerts Feed with Dispatched Status
+  // 5. Automatically Re-render Alerts Feed with Dispatched Status
   if (typeof renderAlerts === 'function') {
     renderAlerts();
   }
@@ -3786,26 +3638,29 @@ async function initSuspectRegistrationHub() {
 
       showRealtimeAlertToast({
         title: `🚨 RED NOTICE ARMED: Target ${plate}`,
-        location: `Statewide 80,000+ CCTV Grid Synced`,
+        location: `Statewide CCTV Grid Synced • Tracking on GIS Map`,
         camera_id: 'HOTLIST_REGISTRATION'
       });
 
-      alert(`SUSPECT TARGET REGISTERED TO STATE GRID!\n\nTarget Plate: ${plate}\nCrime: ${crime}\nFIR Ref: ${fir}\nPriority: ${priority}\n\nThe AI Detection engine is now monitoring all camera streams. Sighting of this vehicle will trigger instant high-definition snapshot capture and GIS route tracking.`);
+      // Immediately check and redirect to GIS Map for this registered suspect
+      if (typeof window.renderTrajectoryOnGisMap === 'function') {
+        window.renderTrajectoryOnGisMap(plate);
+      }
     });
   }
 
   if (btnDrawGis) {
     btnDrawGis.addEventListener('click', () => {
-      const plate = document.getElementById('snapshotPlateDisplay')?.textContent || 'GJ-01-AB-1234';
-      renderTrajectoryOnGisMap(plate);
+      const plate = (document.getElementById('snapshotPlateDisplay')?.textContent || '').trim();
+      if (plate) renderTrajectoryOnGisMap(plate);
     });
   }
 
   if (btnArmRoadblock) {
     btnArmRoadblock.addEventListener('click', async () => {
-      const plate = document.getElementById('snapshotPlateDisplay')?.textContent || 'GJ-01-AB-1234';
-      const loc = document.getElementById('snapshotCamDisplay')?.textContent || 'SG Highway Pakwan Junction';
-      await triggerTacticalRoadblockDispatch(plate, loc);
+      const plate = (document.getElementById('snapshotPlateDisplay')?.textContent || '').trim();
+      const loc = document.getElementById('snapshotCamDisplay')?.textContent || 'CCTV Sector';
+      if (plate) await triggerTacticalRoadblockDispatch(plate, loc);
     });
   }
 
@@ -4109,10 +3964,27 @@ window.simulateSuspectCameraHit = window.openSuspectSightingCctv;
 // Layer group for active dynamic GIS pursuit trajectories
 window.trajectoryMapLayers = [];
 
-window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', originCameraId = null) {
-  // 1. Fetch completely dynamic multi-hop trajectory based on actual capture camera
-  const traj = await window.apiClient.reconstructVehicleTrajectory(plateNumber, originCameraId);
-  if (!traj || !traj.sightings || traj.sightings.length === 0) return;
+window.renderTrajectoryOnGisMap = async function(plateNumber, originCameraId = null) {
+  let cleanPlate = (plateNumber || '').trim().toUpperCase();
+  if (!cleanPlate) {
+    const mapInput = document.getElementById('mapPursuitInput');
+    cleanPlate = mapInput ? mapInput.value.trim().toUpperCase() : '';
+  }
+
+  if (!cleanPlate) {
+    alert('Please enter or select a suspect vehicle registration plate to track on GIS map.');
+    return;
+  }
+
+  // 1. Fetch dynamic multi-hop trajectory based on actual capture camera
+  const traj = await window.apiClient.reconstructVehicleTrajectory(cleanPlate, originCameraId);
+  if (!traj || !traj.sightings || traj.sightings.length === 0) {
+    alert(`No CCTV trajectory sightings recorded for plate: ${cleanPlate}.\n\nPlease ensure this vehicle is registered in the Suspect Watchlist or has active detections.`);
+    return;
+  }
+
+  const mapInput = document.getElementById('mapPursuitInput');
+  if (mapInput) mapInput.value = cleanPlate;
 
   // 2. Switch to Dashboard GIS Map View
   const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
@@ -4263,6 +4135,28 @@ window.renderTrajectoryOnGisMap = async function(plateNumber = 'GJ-01-AB-1234', 
     location: `${traj.sightings.length} Nodes Connected • Distance: ${traj.total_distance_km} km`,
     camera_id: traj.sightings[0]?.camera_id || 'GIS_ROUTING'
   });
+
+  // 10. Populate Pursuit HUD Card
+  const hud = document.getElementById('pursuitMapHud');
+  const btnClear = document.getElementById('btnClearMapPursuit');
+  if (hud) {
+    hud.style.display = 'block';
+    const bPlate = document.getElementById('hudPlateBadge');
+    if (bPlate) bPlate.textContent = traj.plate;
+    const bVeh = document.getElementById('hudVehicleName');
+    if (bVeh) bVeh.textContent = traj.vehicle_model || 'Suspect Motor Vehicle';
+    const bDist = document.getElementById('hudDistance');
+    if (bDist) bDist.textContent = `${traj.total_distance_km || '14.2'} km`;
+    const bSpeed = document.getElementById('hudSpeed');
+    if (bSpeed) bSpeed.textContent = `${traj.average_speed_kmph || '78'} km/h`;
+    const bHeading = document.getElementById('hudHeading');
+    if (bHeading) bHeading.textContent = traj.current_heading || 'Corridor Transit';
+    const bNextLoc = document.getElementById('hudNextLoc');
+    if (bNextLoc && pred) bNextLoc.textContent = pred.next_predicted_location || 'Next Checkpoint';
+    const bEta = document.getElementById('hudEta');
+    if (bEta && pred) bEta.textContent = `ETA: ~${pred.current_eta_minutes} Mins (${pred.estimated_arrival_time})`;
+  }
+  if (btnClear) btnClear.style.display = 'inline-block';
 };
 
 // Render CCTNS Face Match Geolocation on GIS Map

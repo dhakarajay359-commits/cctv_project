@@ -894,95 +894,29 @@ class NirikshanApiClient {
     ];
 
     // 7. ACTIVE STATE SUSPECT & INTERCEPTION WATCHLIST (AUTHORITY REGISTERED)
-    this.suspectWatchlist = [
-      {
-        id: 'WCH-001',
-        plate: 'GJ-01-AB-1234',
-        vehicle_type: 'Hyundai Creta 1.5 (White)',
-        crime: 'Armed Bank Robbery & Kidnapping (Sec 392/364 IPC)',
-        fir: 'FIR-892/2026 (Satellite PS)',
-        suspect_name: 'Vikram Ramsinh Solanki',
-        priority: 'CRITICAL',
-        registered_by: 'Inspector V. R. Jadeja',
-        department_id: 'dept-police',
-        camera_id: 'CAM-GJ-0101',
-        assigned_units: 'PCR Cheetah #04 & Falcon #09',
-        active: true,
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
-      },
-      {
-        id: 'WCH-002',
-        plate: 'GJ-05-CD-9988',
-        vehicle_type: 'Toyota Fortuner 4x4 (Black)',
-        crime: 'Organized Crime Extortion & Arms Act (Sec 384/386 IPC)',
-        fir: 'FIR-412/2026 (Crime Branch Surat / Ahmedabad)',
-        suspect_name: 'Dharmesh @ Montu Sindhi',
-        priority: 'CRITICAL',
-        registered_by: 'DSP Crime Branch A. K. Varma',
-        department_id: 'dept-police',
-        camera_id: 'CAM-GJ-0102',
-        assigned_units: 'Riverfront Tactical Strike Team & Interceptor 07',
-        active: true,
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString()
-      },
-      {
-        id: 'WCH-003',
-        plate: 'MP-09-HH-5541',
-        vehicle_type: 'Tata Prima Multi-Axle Carrier',
-        crime: 'Inter-State PDS Grain Siphoning & Toll Evasion',
-        fir: 'FIR-104/2026 (Civil Supplies Vigilance)',
-        suspect_name: 'Pravin Khimji Patel',
-        priority: 'HIGH',
-        registered_by: 'Enforcement Officer R. Mehta',
-        department_id: 'dept-civil',
-        camera_id: 'CAM-GJ-0501',
-        assigned_units: 'Dahod Border Patrol Squad #02',
-        active: true,
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString()
-      },
-      {
-        id: 'WCH-004',
-        plate: 'GJ-03-XY-7711',
-        vehicle_type: 'Mahindra Scorpio-N (Deep Red)',
-        crime: 'Highway Gold Consignment Hijacking (Sec 395 IPC)',
-        fir: 'FIR-519/2026 (Bagodara RTO Checkpost PS)',
-        suspect_name: 'Rajendra Bhavsinh Zala',
-        priority: 'CRITICAL',
-        registered_by: 'Inspector K. S. Rathod',
-        department_id: 'dept-police',
-        camera_id: 'CAM-GJ-0201',
-        assigned_units: 'Saurashtra Highway Interceptor Flying Squad #03',
-        active: true,
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString()
+    try {
+      const savedWatchlist = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_suspect_watchlist') : null;
+      if (savedWatchlist !== null) {
+        this.suspectWatchlist = JSON.parse(savedWatchlist);
+      } else {
+        // Empty by default: only armed when the user enters/registers real suspect data
+        this.suspectWatchlist = [];
       }
-    ];
+    } catch (e) {
+      this.suspectWatchlist = [];
+    }
 
     // 8. CCTNS/NAFIS BIOMETRIC FACIAL WATCHLIST
-    this.facialWatchlist = [
-      {
-        id: 'FCW-001',
-        suspect_id: 'CCTNS-CRIM-2025-8812',
-        name: 'Vikram K. (Alias: Vicky)',
-        alias: 'Vicky Sanand',
-        crime: 'Sec 302 IPC / Extortion & Armed Robbery',
-        fir: 'FIR 104/2025 (Sanand PS)',
-        priority: 'CRITICAL',
-        biometric_score_default: 96.8,
-        camera_id: 'CAM-GJ-0302',
-        active: true
-      },
-      {
-        id: 'FCW-002',
-        suspect_id: 'NAFIS-MIS-2026-441',
-        name: 'Aryan M.',
-        alias: 'Missing Child Alert',
-        crime: 'Operation Muskaan (Missing Child Hotlist)',
-        fir: 'MIS-22/2026 (Vadodara Central)',
-        priority: 'HIGH',
-        biometric_score_default: 95.4,
-        active: true
+    try {
+      const savedFaces = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_facial_watchlist') : null;
+      if (savedFaces !== null) {
+        this.facialWatchlist = JSON.parse(savedFaces);
+      } else {
+        this.facialWatchlist = [];
       }
-    ];
+    } catch (e) {
+      this.facialWatchlist = [];
+    }
   }
 
   // --- USER AUTH & RBAC SCOPING ---
@@ -2017,6 +1951,7 @@ class NirikshanApiClient {
     };
 
     this.suspectWatchlist.unshift(newRecord);
+    try { localStorage.setItem('nirikshan_suspect_watchlist', JSON.stringify(this.suspectWatchlist)); } catch(e){}
     this.logAudit('SUSPECT_VEHICLE_REGISTERED', `Target: ${cleanPlate} | Offense: ${newRecord.crime}`);
 
     // Automatically generate Critical Hot-Pursuit Alert on Kafka Event Bus
@@ -2044,6 +1979,7 @@ class NirikshanApiClient {
     if (idx !== -1) {
       const removed = this.suspectWatchlist[idx];
       this.suspectWatchlist.splice(idx, 1);
+      try { localStorage.setItem('nirikshan_suspect_watchlist', JSON.stringify(this.suspectWatchlist)); } catch(e){}
       this.logAudit('SUSPECT_WATCHLIST_REMOVED', `Target Plate: ${plateNumber}`);
       return { status: 'removed', record: removed };
     }
@@ -2085,10 +2021,12 @@ class NirikshanApiClient {
   // MULTI-DEPARTMENT CROSS-JURISDICTION TRAJECTORY RECONSTRUCTION &
   // PREDICTIVE INTERCEPTION ENGINE (CROSS-DEPT VEHICLE PURSUIT)
   // =========================================================================
-  async reconstructVehicleTrajectory(plateNumber = 'GJ-01-AB-1234', originCameraId = null) {
-    this.logAudit('CROSS_DEPT_TRAJECTORY_RECONSTRUCTION', `Plate: ${plateNumber} (Origin: ${originCameraId || 'Auto-Detected'})`);
+  async reconstructVehicleTrajectory(plateNumber, originCameraId = null) {
+    if (!plateNumber) return null;
     const cleanPlate = (plateNumber || '').replace(/\s+/g, '').toUpperCase();
-    const plateFormatted = cleanPlate.length > 3 ? cleanPlate : 'GJ-01-AB-1234';
+    if (!cleanPlate) return null;
+    this.logAudit('CROSS_DEPT_TRAJECTORY_RECONSTRUCTION', `Plate: ${cleanPlate} (Origin: ${originCameraId || 'Auto-Detected'})`);
+    const plateFormatted = cleanPlate;
 
     // 1. Locate the Capture Camera or select dynamically based on plate RTO prefix or origin ID
     let originCam = null;
@@ -2104,17 +2042,21 @@ class NirikshanApiClient {
       }
     }
 
-    // Default to first camera or district matching camera
+    // Check if plate is registered in suspect watchlist
+    if (!originCam && this.suspectWatchlist) {
+      const matchingWatch = this.suspectWatchlist.find(w => (w.plate || '').replace(/\s+/g, '').toUpperCase() === plateFormatted);
+      if (matchingWatch && matchingWatch.camera_id) {
+        originCam = await this.getCameraById(matchingWatch.camera_id);
+      }
+    }
+
+    // Default to first camera in active registry if available, else null
     if (!originCam) {
-      originCam = this.cameras[0] || {
-        id: 'CAM-GJ-0101',
-        name: 'SG Highway Pakwan Crossroad Overbridge',
-        district: 'Ahmedabad (Urban)',
-        department_id: 'dept-police',
-        lat: 23.0305,
-        lng: 72.5076,
-        direction: 'Northbound SG Corridor'
-      };
+      if (this.cameras && this.cameras.length > 0) {
+        originCam = this.cameras[0];
+      } else {
+        return null;
+      }
     }
 
     // 2. Discover geographically adjacent cameras in the network to form a realistic dynamic route
