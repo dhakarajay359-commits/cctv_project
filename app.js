@@ -262,9 +262,7 @@ async function refreshAllData() {
   await renderRegistryTable();
   await renderLiveWall();
   await renderAnalyticsTable();
-  if (typeof renderSuspectWatchlistTable === 'function') {
-    await renderSuspectWatchlistTable();
-  }
+
   await renderAlerts();
   await renderAdminView();
   await updateDynamicDashboardMeters();
@@ -1390,16 +1388,16 @@ window.inspectCameraFovRange = async function(camId) {
 
   // 4A. Draw Multi-Tier DORI Distance Dashed Rings & Measurement Labels
   // 4A. Draw Multi-Tier DORI Distance Dashed Rings & Measurement Labels
-  // Detection Distance (120m / 280m)
-  const detectCircle = L.circle([camLat, camLng], {
-    radius: dori.detection_range_meters || 120,
+  // Optical Coverage Distance Ring (120m / 280m)
+  const coverageCircle = L.circle([camLat, camLng], {
+    radius: (dori.optical_range_meters || 120),
     color: '#00f2fe',
     weight: 2,
     dashArray: '5, 5',
     fillColor: '#00f2fe',
     fillOpacity: 0.08
   }).addTo(leafletMapInstance);
-  mapFovLayers.push(detectCircle);
+  mapFovLayers.push(coverageCircle);
 
   // Recognition Distance (65m / 140m)
   const recogCircle = L.circle([camLat, camLng], {
@@ -1413,15 +1411,15 @@ window.inspectCameraFovRange = async function(camId) {
   mapFovLayers.push(recogCircle);
 
   // Distance Measurement Label Directly on Map
-  const detectLabel = L.marker([camLat + 0.0010, camLng], {
+  const coverageLabel = L.marker([camLat + 0.0010, camLng], {
     icon: L.divIcon({
       className: 'onmap-marker-wrap',
-      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe; font-weight:800;">◄── ${dori.detection_range_meters || 120}m Optical Coverage Radius ──►</div>`,
+      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe; font-weight:800;">◄── ${(dori.optical_range_meters || 120)}m Optical Coverage Radius ──►</div>`,
       iconSize: [260, 20],
       iconAnchor: [130, 10]
     })
   }).addTo(leafletMapInstance);
-  mapFovLayers.push(detectLabel);
+  mapFovLayers.push(coverageLabel);
 
   // 4B. Draw Optical FOV Range Cone (Cyan Conical Sector for Present Camera)
   const fovPolygon = L.polygon(analysis.coverage_cone_polygon, {
@@ -1441,12 +1439,12 @@ window.inspectCameraFovRange = async function(camId) {
   const metersToDegLat = 1 / 111000;
   const metersToDegLng = 1 / (111000 * Math.cos(camLat * (Math.PI / 180)));
   const pRad = (presentAzimuth - 90) * (Math.PI / 180);
-  const pVecLat = camLat + Math.cos(pRad) * (dori.detection_range_meters * 0.75) * metersToDegLat;
-  const pVecLng = camLng + Math.sin(pRad) * (dori.detection_range_meters * 0.75) * metersToDegLng;
+  const pVecLat = camLat + Math.cos(pRad) * ((dori.optical_range_meters || 120) * 0.75) * metersToDegLat;
+  const pVecLng = camLng + Math.sin(pRad) * ((dori.optical_range_meters || 120) * 0.75) * metersToDegLng;
 
   const presentDirLine = L.polyline([[camLat, camLng], [pVecLat, pVecLng]], {
     color: presentCamColor,
-    weight: 3,
+    weight: 2,
     dashArray: '5, 5'
   }).addTo(leafletMapInstance);
   mapFovLayers.push(presentDirLine);
@@ -1455,7 +1453,7 @@ window.inspectCameraFovRange = async function(camId) {
     icon: L.divIcon({
       className: 'onmap-marker-wrap',
       html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:${presentCamColor}; border-color:${presentCamColor}; font-size:9px; font-weight:800; padding:2px 7px;">
-        ▲ Present Camera: Facing ${presentCardinal} (${presentAzimuth}°) &bull; ${dori.detection_range_meters}m Range &bull; Covers ~${presentCoveredArea.toLocaleString()} m²
+        ▲ Present Camera: Facing ${presentCardinal} (${presentAzimuth}°) &bull; ${(dori.optical_range_meters || 120)}m Range &bull; Covers ~${presentCoveredArea.toLocaleString()} m²
       </div>`,
       iconSize: [360, 20],
       iconAnchor: [180, 10]
@@ -1470,7 +1468,7 @@ window.inspectCameraFovRange = async function(camId) {
       <span>Facing Direction: <strong style="color: #2563eb;">${presentCardinal} (${presentAzimuth}°)</strong></span><br/>
       <span>Active Covered Area: <strong>~${presentCoveredArea.toLocaleString()} sq.m</strong></span>
       <div style="margin-top: 4px; font-size: 11px; color: #64748b;">
-        &bull; Max Detection Range: <strong>${dori.detection_range_meters}m</strong><br/>
+        &bull; Max Optical Range: <strong>${(dori.optical_range_meters || 120)}m</strong><br/>
         &bull; Recognition Range: <strong>${dori.recognition_range_meters}m</strong><br/>
         &bull; Identification Range: <strong>${dori.identification_range_meters}m</strong>
       </div>
@@ -1555,7 +1553,7 @@ window.inspectCameraFovRange = async function(camId) {
           </div>
           <div style="font-size: 11px; color: #0f172a; margin-top: 3px; line-height: 1.45;">
             <div>&bull; <strong>Facing Direction:</strong> <span style="color: #9333ea; font-weight: 700;">${presentCardinal} (${presentAzimuth}°)</span></div>
-            <div>&bull; <strong>Detection Range:</strong> ${dori.detection_range_meters}m Detection Arc</div>
+            <div>&bull; <strong>Optical Range:</strong> ${(dori.optical_range_meters || 120)}m Coverage Arc</div>
             <div>&bull; <strong>Active Covered Area:</strong> ~${presentCoveredArea.toLocaleString()} m² in forward cone</div>
             <div style="color: #a21caf; font-size: 10px; margin-top: 2px;">
               <i class="fa-solid fa-info-circle"></i> Camera points away from this approach, creating an unmonitored blind zone.
@@ -1647,7 +1645,7 @@ window.inspectCameraFovRange = async function(camId) {
     document.getElementById('fovHudCamId').textContent = analysis.camera_id;
     document.getElementById('fovHudCamName').textContent = analysis.camera_name;
     document.getElementById('fovHudDirection').textContent = `${presentCardinal} (${presentAzimuth}°) • Area: ~${presentCoveredArea.toLocaleString()} m²`;
-    document.getElementById('fovHudRange').textContent = `${dori.detection_range_meters}m Detection / ${dori.recognition_range_meters}m Recog`;
+    document.getElementById('fovHudRange').textContent = `${(dori.optical_range_meters || 120)}m Range / ${dori.recognition_range_meters}m Recog`;
     document.getElementById('fovHudDistrict').textContent = `${analysis.district} • ${getDeptName(analysis.department_id)}`;
     
     document.getElementById('fovBlindSpotDesc').innerHTML = `
@@ -1889,7 +1887,7 @@ window.openCameraDetail = async function(camId) {
 
   if (idRangeEl) idRangeEl.textContent = `${fovData.optical_specs.dori_standards.identification_range_meters} Meters`;
   if (recRangeEl) recRangeEl.textContent = `${fovData.optical_specs.dori_standards.recognition_range_meters} Meters`;
-  if (detRangeEl) detRangeEl.textContent = `${fovData.optical_specs.dori_standards.detection_range_meters} Meters`;
+  if (detRangeEl) detRangeEl.textContent = `${(fovData.optical_specs.dori_standards.optical_range_meters || 120)} Meters`;
   if (blindDescEl) blindDescEl.textContent = `${fovData.blind_spot_analysis.location_description} (~${fovData.blind_spot_analysis.uncovered_area_sqm.toLocaleString()} sq.m unmonitored). Recommend ${fovData.blind_spot_analysis.recommended_hardware}.`;
 
   const inspectFovBtn = document.getElementById('btnDrawerInspectFov');
@@ -2626,50 +2624,7 @@ async function initLiveWallView() {
     });
   }
 
-  const btnTransit = document.getElementById('btnTriggerSuspectTransit');
-  if (btnTransit) {
-    btnTransit.addEventListener('click', async () => {
-      await window.simulateSuspectTransit();
-    });
-  }
 
-  const btnCloseDrawer = document.getElementById('btnCloseLiveWallDrawer');
-  if (btnCloseDrawer) {
-    btnCloseDrawer.addEventListener('click', () => {
-      const drawer = document.getElementById('liveWallSuspectCaptureDrawer');
-      if (drawer) drawer.style.display = 'none';
-    });
-  }
-
-  const btnArmDrawerRoadblock = document.getElementById('btnLiveWallDrawerArmRoadblock');
-  if (btnArmDrawerRoadblock) {
-    btnArmDrawerRoadblock.addEventListener('click', async () => {
-      const plate = (document.getElementById('liveWallDrawerPlate')?.textContent || '').trim();
-      const loc = (document.getElementById('liveWallDrawerCam')?.textContent || '').trim();
-      if (plate) await triggerTacticalRoadblockDispatch(plate, loc);
-    });
-  }
-
-  const btnDrawerGis = document.getElementById('btnLiveWallDrawGis');
-  if (btnDrawerGis) {
-    btnDrawerGis.addEventListener('click', () => {
-      const plate = (document.getElementById('liveWallDrawerPlate')?.textContent || '').trim();
-      if (plate) renderTrajectoryOnGisMap(plate);
-    });
-  }
-
-  const btnOpenForensic = document.getElementById('btnLiveWallDrawerOpenForensic');
-  if (btnOpenForensic) {
-    btnOpenForensic.addEventListener('click', () => {
-      const anprNav = document.querySelector('.main-nav-btn[data-view="view-anpr"]');
-      if (anprNav) anprNav.click();
-      const snapCard = document.getElementById('suspectCaptureSnapshotCard');
-      if (snapCard) {
-        snapCard.style.display = 'block';
-        snapCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
-  }
 
   if (btnStopAll) {
     btnStopAll.addEventListener('click', async () => {
@@ -2716,7 +2671,7 @@ window.inspectLiveFeedFov = async function(camId) {
   document.getElementById('liveFovCamTitle').textContent = `${analysis.camera_id} • ${analysis.camera_name}`;
   document.getElementById('liveFovId').textContent = `${analysis.optical_specs.dori_standards.identification_range_meters}m`;
   document.getElementById('liveFovRec').textContent = `${analysis.optical_specs.dori_standards.recognition_range_meters}m`;
-  document.getElementById('liveFovDet').textContent = `${analysis.optical_specs.dori_standards.detection_range_meters}m`;
+  document.getElementById('liveFovDet').textContent = `${(analysis.optical_specs.dori_standards.optical_range_meters || 120)}m`;
   
   const blind = analysis.blind_spot_analysis;
   document.getElementById('liveFovBlindDesc').textContent = `${blind.location_description} (~${blind.uncovered_area_sqm.toLocaleString()} sq.m unmonitored).`;
@@ -2840,8 +2795,8 @@ function startSessionInactivityTimer() {
   }, 1000);
 }
 
-// Helper to grab 100% REAL photographic snapshot directly from the active live camera video stream
-function captureCrispVehicleSnapshot(video, plateText = null, camName = null, camObj = null, bbox = null, suspectInfo = null) {
+// Helper to grab a clean frame snapshot directly from an active video element
+function captureCrispVehicleSnapshot(video, plateText = null, camName = null, camObj = null) {
   let sourceVideo = video;
   if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
     if (camObj && camObj.id) {
@@ -2860,12 +2815,10 @@ function captureCrispVehicleSnapshot(video, plateText = null, camName = null, ca
   offCanvas.height = h;
   const ctx = offCanvas.getContext('2d');
 
-  // 1. Capture current live frame exactly as shown without seeking
   if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
     try {
       ctx.drawImage(sourceVideo, 0, 0, w, h);
     } catch (e) {
-      console.warn('Live video frame grab fallback:', e);
       ctx.fillStyle = '#020617';
       ctx.fillRect(0, 0, w, h);
     }
@@ -2874,292 +2827,18 @@ function captureCrispVehicleSnapshot(video, plateText = null, camName = null, ca
     ctx.fillRect(0, 0, w, h);
   }
 
-  // 2. Draw target bounding box on the snapshot image if provided
-  if (bbox) {
-    const scaleX = w / 640;
-    const scaleY = h / 360;
-    const bx = (bbox.x || 160) * scaleX;
-    const by = (bbox.y || 140) * scaleY;
-    const bw = (bbox.w || 165) * scaleX;
-    const bh = (bbox.h || 92) * scaleY;
-    const bracketLen = Math.min(36, bw * 0.22);
-
-    ctx.save();
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = Math.max(3.5, Math.round(w * 0.004));
-    ctx.shadowColor = 'rgba(239, 68, 68, 0.95)';
-    ctx.shadowBlur = 16;
-
-    // Tactical corner brackets
-    ctx.beginPath();
-    ctx.moveTo(bx, by + bracketLen); ctx.lineTo(bx, by); ctx.lineTo(bx + bracketLen, by);
-    ctx.moveTo(bx + bw - bracketLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bracketLen);
-    ctx.moveTo(bx, by + bh - bracketLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + bracketLen, by + bh);
-    ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
-    ctx.stroke();
-
-    // Red Label Tag
-    const tagH = Math.max(24, Math.round(h * 0.045));
-    const crimeLabel = (suspectInfo && suspectInfo.crime) ? ` [${suspectInfo.crime.slice(0, 24)}]` : '';
-    const labelText = `🚨 BOLO TARGET: ${plateText || bbox.plate || 'SUSPECT'}${crimeLabel}`;
-    ctx.font = `bold ${Math.round(tagH * 0.52)}px "Inter", sans-serif`;
-    const tagW = ctx.measureText(labelText).width + 18;
-
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(bx, by - tagH, tagW, tagH);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(labelText, bx + 8, by - Math.round(tagH * 0.28));
-
-    // Optical plate box on vehicle
-    const pbx = bx + bw * 0.24;
-    const pby = by + bh - Math.round(tagH * 1.15);
-    const pbw = bw * 0.52;
-    const pbh = Math.round(tagH * 0.95);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(pbx, pby, pbw, pbh);
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(pbx, pby, pbw, pbh);
-    ctx.fillStyle = '#0284c7';
-    ctx.fillRect(pbx, pby, Math.round(pbw * 0.1), pbh);
-    ctx.fillStyle = '#020617';
-    ctx.font = `bold ${Math.round(pbh * 0.65)}px "Inter", monospace`;
-    ctx.fillText(plateText || bbox.plate || 'IND', pbx + Math.round(pbw * 0.14), pby + Math.round(pbh * 0.72));
-
-    ctx.restore();
-  }
-
-  // 3. Official CCTV Forensic OSD Overlay
-  const nodeLabel = camObj ? `${camObj.id} • ${camObj.name}` : (camName || 'NIRIKSHAN STATEWIDE NODE');
-  const gpsCoord = camObj ? `${camObj.lat ? camObj.lat.toFixed(4) : '23.0225'}°N, ${camObj.lng ? camObj.lng.toFixed(4) : '72.5714'}°E (${camObj.district || 'Ahmedabad'})` : '23.0225°N, 72.5714°E';
-  const fpsVal = camObj && camObj.fps ? camObj.fps : 25.0;
-  const now = new Date();
-  const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
-  const sealHash = `#SHA256-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
-
-  // Top OSD Banner
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
-  ctx.fillRect(0, 0, w, Math.round(h * 0.07));
-
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = `bold ${Math.round(h * 0.03)}px "Inter", sans-serif`;
-  ctx.fillText(`📹 CCTV FEED: ${nodeLabel}`, Math.round(w * 0.02), Math.round(h * 0.045));
-
-  ctx.fillStyle = '#ef4444';
-  ctx.font = `bold ${Math.round(h * 0.026)}px "Inter", sans-serif`;
-  const liveTxt = '🚨 CRITICAL INTERCEPTION MATCH';
-  const liveTxtW = ctx.measureText(liveTxt).width;
-  ctx.fillText(liveTxt, w - liveTxtW - Math.round(w * 0.02), Math.round(h * 0.045));
-
-  // Bottom OSD Banner
-  const botH = Math.round(h * 0.065);
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
-  ctx.fillRect(0, h - botH, w, botH);
-
-  const dynamicSpeed = (bbox && bbox.speed) ? bbox.speed : (Math.floor(45 + Math.random() * 32) + '.' + Math.floor(Math.random() * 9));
-  const dynamicOcr = (bbox && bbox.conf) ? (bbox.conf * 100).toFixed(1) : (96 + Math.random() * 3.8).toFixed(1);
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = `${Math.round(h * 0.024)}px "Inter", sans-serif`;
-  ctx.fillText(`TIMESTAMP: ${timeStr} | GPS: ${gpsCoord} | SPEED: ${dynamicSpeed} km/h | OCR: ${dynamicOcr}% | SEAL: ${sealHash}`, Math.round(w * 0.02), h - Math.round(botH * 0.35));
-
-  // Only draw OCR plate crop if a specific plate was identified
-  let plateCropUrl = null;
-  const cleanPlateText = (plateText && plateText.trim() !== '' && plateText !== 'TARGET-VEHICLE') 
-    ? plateText.toUpperCase() 
-    : ((window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.length > 0) 
-        ? window.apiClient.suspectWatchlist[0].plate.toUpperCase() 
-        : 'LIVE-UNIDENTIFIED');
-  {
-    const plateCanvas = document.createElement('canvas');
-    plateCanvas.width = 240;
-    plateCanvas.height = 60;
-    const pCtx = plateCanvas.getContext('2d');
-    pCtx.fillStyle = '#f8fafc';
-    pCtx.fillRect(0, 0, 240, 60);
-    pCtx.strokeStyle = '#020617';
-    pCtx.lineWidth = 2.5;
-    pCtx.strokeRect(2, 2, 236, 56);
-    // Blue IND Flag Strip
-    pCtx.fillStyle = '#0284c7';
-    pCtx.fillRect(4, 4, 26, 52);
-    // Chromium Hologram Emblem
-    pCtx.fillStyle = '#cbd5e1';
-    pCtx.beginPath();
-    pCtx.arc(17, 18, 5.5, 0, Math.PI * 2);
-    pCtx.fill();
-    pCtx.fillStyle = '#ffffff';
-    pCtx.font = 'bold 8px sans-serif';
-    pCtx.fillText('IND', 7, 38);
-    // Real stamped alphanumeric plate text
-    pCtx.fillStyle = '#020617';
-    pCtx.font = 'bold 22px "Inter", "DIN Alternate", monospace';
-    pCtx.fillText(cleanPlateText, 38, 38);
-    plateCropUrl = plateCanvas.toDataURL('image/png');
-  }
-
+  const dataUrl = offCanvas.toDataURL('image/jpeg', 0.92);
   return {
-    fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.95),
-    plateCropUrl: plateCropUrl || offCanvas.toDataURL('image/jpeg', 0.8),
-    sealHash: sealHash
+    fullSnapshotUrl: dataUrl,
+    plateCropUrl: dataUrl,
+    vehicleCropUrl: dataUrl
   };
 }
 
-// Track last triggered suspect hit timestamp to prevent spamming popups
-let lastSuspectAlertTimestamp = 0;
-
-// Helper to grab 100% REAL photographic snapshot from CCTV recording frame (ZERO 2D canvas drawing)
-function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 • GIFT City Fin-Tech Tower 1 Concourse') {
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = 640;
-  offCanvas.height = 360;
-  const ctx = offCanvas.getContext('2d');
-
-  let sourceVideo = video;
-  if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
-    sourceVideo = document.getElementById('video_CAM-GJ-0302') || document.getElementById('video_CAM-GJ-0104') || document.querySelector('.live-stream-video');
-  }
-
-  // Ensure full-frame capture: If video is at start (empty corridor), seek to 4.2s where suspect is fully in frame
-  if (sourceVideo && (sourceVideo.currentTime < 3.2 || sourceVideo.currentTime > 7.2)) {
-    try { sourceVideo.currentTime = 4.2; } catch(e){}
-  }
-
-  // 1. Grab 100% PURE REAL CAMERA FRAME FROM RECORDING (Zero canvas artifice / No drawn avatar)
-  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
-    try {
-      ctx.drawImage(sourceVideo, 0, 0, offCanvas.width, offCanvas.height);
-    } catch (e) {
-      console.warn('Live face video frame grab fallback:', e);
-    }
-  } else {
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 360);
-    bgGrad.addColorStop(0, '#0f172a');
-    bgGrad.addColorStop(1, '#020617');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 640, 360);
-  }
-
-  // 2. Target biometric bounding box overlaid on snapshot
-  const fBoxX = 385;
-  const fBoxY = 70;
-  const fBoxW = 85;
-  const fBoxH = 105;
-
-  ctx.strokeStyle = '#f43f5e';
-  ctx.lineWidth = 2.5;
-  const corner = 16;
-  // Top-left
-  ctx.beginPath(); ctx.moveTo(fBoxX, fBoxY + corner); ctx.lineTo(fBoxX, fBoxY); ctx.lineTo(fBoxX + corner, fBoxY); ctx.stroke();
-  // Top-right
-  ctx.beginPath(); ctx.moveTo(fBoxX + fBoxW - corner, fBoxY); ctx.lineTo(fBoxX + fBoxW, fBoxY); ctx.lineTo(fBoxX + fBoxW, fBoxY + corner); ctx.stroke();
-  // Bottom-left
-  ctx.beginPath(); ctx.moveTo(fBoxX, fBoxY + fBoxH - corner); ctx.lineTo(fBoxX, fBoxY + fBoxH); ctx.lineTo(fBoxX + corner, fBoxY + fBoxH); ctx.stroke();
-  // Bottom-right
-  ctx.beginPath(); ctx.moveTo(fBoxX + fBoxW, fBoxY + fBoxH - corner); ctx.lineTo(fBoxX + fBoxW, fBoxY + fBoxH); ctx.lineTo(fBoxX + corner, fBoxY + fBoxH); ctx.stroke();
-
-  // 5-Point Biometric Facial Landmark Mesh Dots on the real face
-  ctx.fillStyle = '#00f2fe';
-  const landmarks = [
-    [fBoxX + 26, fBoxY + 36], // Left eye
-    [fBoxX + 58, fBoxY + 36], // Right eye
-    [fBoxX + 42, fBoxY + 56], // Nose tip
-    [fBoxX + 30, fBoxY + 76], // Left mouth corner
-    [fBoxX + 54, fBoxY + 76]  // Right mouth corner
-  ];
-  landmarks.forEach(([lx, ly]) => {
-    ctx.beginPath();
-    ctx.arc(lx, ly, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0, 242, 254, 0.5)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-
-  // Connecting Landmark Vector Lines
-  ctx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.moveTo(landmarks[0][0], landmarks[0][1]);
-  ctx.lineTo(landmarks[1][0], landmarks[1][1]);
-  ctx.lineTo(landmarks[2][0], landmarks[2][1]);
-  ctx.lineTo(landmarks[0][0], landmarks[0][1]);
-  ctx.moveTo(landmarks[2][0], landmarks[2][1]);
-  ctx.lineTo(landmarks[3][0], landmarks[3][1]);
-  ctx.lineTo(landmarks[4][0], landmarks[4][1]);
-  ctx.lineTo(landmarks[2][0], landmarks[2][1]);
-  ctx.stroke();
-
-  // Classification Header Tag
-  const faceName = suspectFace.name || 'Vikram K. (Alias: Vicky)';
-  ctx.fillStyle = 'rgba(244, 63, 94, 0.95)';
-  ctx.fillRect(fBoxX - 10, fBoxY - 20, 160, 18);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 8.5px "Inter", sans-serif';
-  ctx.fillText(`🚨 CCTNS HIT: ${faceName.slice(0, 14)}`, fBoxX - 6, fBoxY - 7);
-
-  // Confidence & Biometric Score Label
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.85)';
-  ctx.fillRect(fBoxX - 10, fBoxY + fBoxH + 4, 160, 16);
-  ctx.fillStyle = '#00f2fe';
-  ctx.font = 'bold 7.5px "Inter", sans-serif';
-  ctx.fillText(`BIOMETRIC CONF: ${suspectFace.biometric_score_default || 96.8}%`, fBoxX - 6, fBoxY + fBoxH + 15);
-
-  // Top OSD Metadata
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.9)';
-  ctx.fillRect(0, 0, 640, 26);
-  ctx.fillRect(0, 336, 640, 24);
-
-  ctx.fillStyle = '#f43f5e';
-  ctx.font = 'bold 8.5px "Inter", sans-serif';
-  ctx.fillText(`🚨 NAFIS / CCTNS RED NOTICE MATCH • FACIAL EMBEDDING VECTOR`, 10, 17);
-
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = 'bold 8.5px "Inter", sans-serif';
-  ctx.fillText(`📹 ${camName}`, 360, 17);
-
-  // Bottom OSD Telemetry
-  const now = new Date();
-  const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '8px "Inter", sans-serif';
-  ctx.fillText(`PTS: ${timeStr} | 512-DIM VECTOR HASH: #0x${Math.random().toString(16).substring(2, 12).toUpperCase()} | GPS: 23.1610°N, 72.6840°E`, 10, 351);
-
-  // 3. High-Definition 128x128 Photographic Crop of the Real Face from Video
-  const faceCanvas = document.createElement('canvas');
-  faceCanvas.width = 128;
-  faceCanvas.height = 128;
-  const fCtx = faceCanvas.getContext('2d');
-
-  if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
-    try {
-      // Zoomed face crop from the exact bounding box in the real video
-      fCtx.drawImage(sourceVideo, 375, 60, 105, 125, 0, 0, 128, 128);
-    } catch(e){
-      fCtx.drawImage(sourceVideo, 0, 0, 128, 128);
-    }
-  } else {
-    fCtx.fillStyle = '#1e293b';
-    fCtx.fillRect(0, 0, 128, 128);
-  }
-
-  // Border & Corner brackets on micro-crop
-  fCtx.strokeStyle = '#f43f5e';
-  fCtx.lineWidth = 3;
-  fCtx.strokeRect(0, 0, 128, 128);
-
-  return {
-    fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.95),
-    faceCropUrl: faceCanvas.toDataURL('image/png')
-  };
+function captureCrispFaceSnapshot(video, subject = null, camName = null) {
+  return captureCrispVehicleSnapshot(video);
 }
 
-// Sets to track armed/already intercepted suspects to completely eliminate repeated alerts
-const armedSuspectPlates = new Set();
-const armedSuspectFaces = new Set();
-
-// Clean Surveillance State
-window.activeSuspectTransits = new Map();
-window.simulateSuspectTransit = function() {};
 function startCanvasLiveStream() {}
 
 window.togglePlayPauseCell = function(camId) {
@@ -3284,23 +2963,9 @@ async function renderLiveWall() {
 
   displayCams.forEach((cam, idx) => {
     // User Directive: Always pull and display all live CCTV camera feeds on the video wall automatically!
-    const isSessionActive = true;
-    const activeTransit = (window.activeSuspectTransits && window.activeSuspectTransits.get(cam.id));
-    const hasAnprHit = !!activeTransit;
-    const activeFace = (window.apiClient && window.apiClient.facialWatchlist)
-      ? window.apiClient.facialWatchlist.find(f => f.active && f.camera_id === cam.id)
-      : null;
-    const isFaceHit = !!activeFace;
     const cell = document.createElement('div');
     cell.className = 'wall-feed-cell';
     cell.setAttribute('data-cam-id', cam.id);
-
-    let overlayHtml = '';
-    if (hasAnprHit && activeTransit) {
-      overlayHtml = `<div class="anpr-overlay-tag" style="background: #dc2626; color: #fff; font-weight: 800;"><i class="fa-solid fa-triangle-exclamation"></i> 🚨 INTERCEPT TARGET: ${activeTransit.suspect.plate}</div>`;
-    } else if (isFaceHit && activeFace) {
-      overlayHtml = `<div class="anpr-overlay-tag face-match"><i class="fa-solid fa-user-shield"></i> CCTNS Match: ${activeFace.name} (Flagged)</div>`;
-    }
 
     const camNum = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || (idx + 1);
 
@@ -3649,55 +3314,9 @@ async function initAnalyticsView() {
   await renderAnalyticsTable();
 }
 
-async function initSuspectRegistrationHub() {}
-async function renderSuspectWatchlistTable() {}
 
-window.testSuspectCctvTransit = async function(plate) {
-  const list = await window.apiClient.getSuspectWatchlist();
-  const suspect = list.find(s => s.plate === plate) || { plate: plate, crime: 'Armed Robbery Warrant' };
-  await window.simulateSuspectTransit(suspect);
-};
 
-window.populateSuspectPreset = function(plate, crime, fir, name, priority) {
-  const plateEl = document.getElementById('regSuspectPlate');
-  const crimeEl = document.getElementById('regSuspectCrime');
-  const firEl = document.getElementById('regSuspectFir');
-  const nameEl = document.getElementById('regSuspectName');
-  const prioEl = document.getElementById('regSuspectPriority');
-
-  if (plateEl) plateEl.value = plate;
-  if (crimeEl) crimeEl.value = crime;
-  if (firEl) firEl.value = fir;
-  if (nameEl) nameEl.value = name;
-  if (prioEl) prioEl.value = priority;
-
-  const form = document.getElementById('suspectRegistrationForm');
-  if (form) {
-    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-};
-
-window.removeSuspectTarget = async function(plate) {
-  await window.apiClient.removeSuspectVehicle(plate);
-  await renderSuspectWatchlistTable();
-  await updateDynamicDashboardMeters('cardStatAlerts');
-};
-
-window.clearAllSuspectWatchlist = async function() {
-  if (window.apiClient && typeof window.apiClient.clearSuspectWatchlist === 'function') {
-    await window.apiClient.clearSuspectWatchlist();
-  }
-  if (window.activeSuspectTransits) {
-    window.activeSuspectTransits.clear();
-  }
-  await renderSuspectWatchlistTable();
-  showRealtimeAlertToast({
-    title: 'Watchlist Cleared',
-    location: 'All targets decommissioned from watchlist registry'
-  });
-};
-
-// 1. SIGHTING ACTION: Directly Opens Live CCTV Optical Video of this Suspect
+// 1. SIGHTING ACTION: Directly Opens Live CCTV Optical Video
 window.liveCctvClockInterval = null;
 window.currentLiveZoomScale = 1.0;
 
@@ -3804,88 +3423,37 @@ function initLiveCctvModal() {
   }
 }
 
-window.openSuspectSightingCctv = async function(plate) {
-  const suspect = await window.apiClient.isPlateSuspect(plate);
-  if (!suspect) {
-    alert(`Plate ${plate} is not currently registered in the Suspect Watchlist.`);
-    return;
-  }
-
-  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-
-  // Find camera where sighted
-  let targetCam = null;
-  if (suspect.camera_id) {
-    targetCam = await window.apiClient.getCameraById(suspect.camera_id);
-  }
-  if (!targetCam) {
-    targetCam = window.apiClient.cameras[0] || null;
-  }
-  if (!targetCam) {
-    alert(`No CCTV camera feed connected for vehicle ${plate}.`);
-    return;
-  }
+window.openLiveCameraModal = async function(camId) {
+  const targetCam = await window.apiClient.getCameraById(camId) || window.apiClient.cameras[0];
+  if (!targetCam) return;
 
   const modal = document.getElementById('liveCctvModal');
   const title = document.getElementById('liveCctvModalTitle');
   const video = document.getElementById('liveCctvVideoElement');
-  const targetPlateText = document.getElementById('liveTargetPlateText');
   const camNameOsd = document.getElementById('liveCctvCamNameOsd');
   const streamUri = document.getElementById('liveCctvStreamUri');
   const camJunction = document.getElementById('liveCamJunctionText');
   const camGps = document.getElementById('liveCamGpsText');
-  const camSuspect = document.getElementById('liveCamSuspectText');
+  const camStatus = document.getElementById('liveCamStatusText');
   const camFov = document.getElementById('liveCamFovText');
 
   if (title) title.innerHTML = `Live CCTV Stream: <span style="color: #38bdf8;">${targetCam.id}</span> &bull; ${targetCam.name}`;
   if (camNameOsd) camNameOsd.textContent = `${targetCam.id} • ${targetCam.name}`;
-  if (targetPlateText) targetPlateText.innerHTML = `<i class="fa-solid fa-crosshairs" style="color:#ffffff;"></i> LIVE TARGET LOCK: ${plate} (98.9% MATCH)`;
   if (streamUri) streamUri.textContent = `rtsp://10.240.12.${Math.floor(Math.random() * 80 + 10)}:554/live/${targetCam.id.toLowerCase()}`;
   if (camJunction) camJunction.textContent = `${targetCam.name} (${targetCam.district})`;
   if (camGps) camGps.textContent = `${targetCam.lat.toFixed(6)}° N, ${targetCam.lng.toFixed(6)}° E`;
-  if (camSuspect) camSuspect.textContent = `${suspect.suspect_name} — Offense: ${suspect.crime}`;
-  if (camFov) camFov.textContent = `Facing North-East (45°) • 110m Detection Arc`;
+  if (camStatus) camStatus.textContent = 'Active Continuous Monitor';
+  if (camFov) camFov.textContent = `Facing North-East (45°) • 110m Range`;
 
-  // Start continuous real CCTV video stream
   if (video) {
     const camNum = parseInt(targetCam.id.replace(/[^0-9]/g, ''), 10) || 1;
     video.src = `/stream/${camNum}`;
-    video.style.transform = 'scale(1.0)';
     video.currentTime = 0;
     video.play().catch(() => {});
   }
 
-  // Steady Real-Time Clock with seconds precision (Standard CCTV OSD, no milliseconds flicker)
-  const updateLiveClock = () => {
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const y = now.getFullYear();
-    const m = pad(now.getMonth() + 1);
-    const d = pad(now.getDate());
-    const hh = pad(now.getHours());
-    const mm = pad(now.getMinutes());
-    const ss = pad(now.getSeconds());
-    const clockEl = document.getElementById('liveCctvRealtimeClock');
-    if (clockEl) {
-      clockEl.textContent = `${y}-${m}-${d} ${hh}:${mm}:${ss} IST`;
-    }
-  };
-
-  updateLiveClock();
-  if (window.liveCctvClockInterval) clearInterval(window.liveCctvClockInterval);
-  window.liveCctvClockInterval = setInterval(updateLiveClock, 1000);
-
   if (modal) modal.classList.add('open');
-
-  showRealtimeAlertToast({
-    title: `LIVE CCTV BROADCAST: ${plate}`,
-    location: `Live streaming video from ${targetCam.name} (${targetCam.district})`,
-    camera_id: `${targetCam.id} • LIVE RTSP`,
-    kafka_topic: 'nirikshan.cctv.stream.live'
-  });
 };
-
-window.simulateSuspectCameraHit = window.openSuspectSightingCctv;
 
 // Layer group for active dynamic GIS pursuit trajectories
 window.trajectoryMapLayers = [];
@@ -3898,14 +3466,14 @@ window.renderTrajectoryOnGisMap = async function(plateNumber, originCameraId = n
   }
 
   if (!cleanPlate) {
-    alert('Please enter or select a suspect vehicle registration plate to track on GIS map.');
+    alert('Please enter a vehicle registration plate to track on GIS map.');
     return;
   }
 
   // 1. Fetch dynamic multi-hop trajectory based on actual capture camera
   const traj = await window.apiClient.reconstructVehicleTrajectory(cleanPlate, originCameraId);
   if (!traj || !traj.sightings || traj.sightings.length === 0) {
-    alert(`No CCTV trajectory sightings recorded for plate: ${cleanPlate}.\n\nPlease ensure this vehicle is registered in the Suspect Watchlist or has active detections.`);
+    alert(`No CCTV trajectory sightings recorded for plate: ${cleanPlate}.`);
     return;
   }
 
@@ -4070,7 +3638,7 @@ window.renderTrajectoryOnGisMap = async function(plateNumber, originCameraId = n
     const bPlate = document.getElementById('hudPlateBadge');
     if (bPlate) bPlate.textContent = traj.plate;
     const bVeh = document.getElementById('hudVehicleName');
-    if (bVeh) bVeh.textContent = traj.vehicle_model || 'Suspect Motor Vehicle';
+    if (bVeh) bVeh.textContent = traj.vehicle_model || 'Motor Vehicle';
     const bDist = document.getElementById('hudDistance');
     if (bDist) bDist.textContent = `${traj.total_distance_km || '14.2'} km`;
     const bSpeed = document.getElementById('hudSpeed');
@@ -4085,105 +3653,7 @@ window.renderTrajectoryOnGisMap = async function(plateNumber, originCameraId = n
   if (btnClear) btnClear.style.display = 'inline-block';
 };
 
-// Render CCTNS Face Match Geolocation on GIS Map
-window.renderFaceMatchOnGisMap = async function(suspectFace, camera) {
-  // 1. Switch to Dashboard GIS Map View
-  const dashNavBtn = document.querySelector('.main-nav-btn[data-view="view-dashboard"]');
-  if (dashNavBtn && !dashNavBtn.classList.contains('active')) {
-    dashNavBtn.click();
-  }
 
-  if (!leafletMapInstance) return;
-  setTimeout(() => leafletMapInstance.invalidateSize(), 120);
-
-  // 2. Clear existing pursuit layers
-  if (window.trajectoryMapLayers) {
-    window.trajectoryMapLayers.forEach(l => {
-      try { leafletMapInstance.removeLayer(l); } catch(e){}
-    });
-  }
-  window.trajectoryMapLayers = [];
-
-  const camLat = camera.lat || 23.1610;
-  const camLng = camera.lng || 72.6840;
-  const camName = camera.name || 'GIFT City Fin-Tech Tower 1 Concourse';
-  const districtName = camera.district || 'Gandhinagar (Capital Zone)';
-  const faceName = suspectFace.name || 'Vikram K. (Alias: Vicky)';
-
-  // 3. Draw Tactical Geofence Police Cordon Circle (800m Radius)
-  const cordonCircle = L.circle([camLat, camLng], {
-    color: '#f43f5e',
-    fillColor: '#f43f5e',
-    fillOpacity: 0.22,
-    weight: 2.5,
-    dashArray: '8, 8',
-    radius: 800
-  }).addTo(leafletMapInstance);
-  window.trajectoryMapLayers.push(cordonCircle);
-
-  // 4. Place Fugitive Geolocation Marker Pin
-  const fugitiveIcon = L.divIcon({
-    className: 'fugitive-gis-pin',
-    html: `
-      <div style="
-        background: #f43f5e;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: 3px solid #ffffff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-size: 16px;
-      "><i class="fa-solid fa-user-secret"></i></div>
-    `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
-  });
-
-  const fugitiveMarker = L.marker([camLat, camLng], { icon: fugitiveIcon }).addTo(leafletMapInstance);
-  fugitiveMarker.bindPopup(`
-    <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; min-width: 260px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <strong style="color: #f43f5e; font-size: 13px;"><i class="fa-solid fa-user-secret"></i> CCTNS WANTED FUGITIVE</strong>
-        <span style="font-size: 10px; background: rgba(244,63,94,0.2); color:#f43f5e; padding: 2px 5px; border-radius: 3px; font-weight:800;">RED NOTICE</span>
-      </div>
-      <h3 style="color:#ffffff; font-size: 14px; margin: 2px 0;">${faceName}</h3>
-      <div style="margin: 4px 0; padding: 6px; background: rgba(2,6,23,0.7); border-radius: 4px; font-size: 11px;">
-        <span style="color: #00f2fe;"><i class="fa-solid fa-location-dot"></i> Area: <strong>${camName}</strong></span><br/>
-        <span style="color: #fbbf24;"><i class="fa-solid fa-city"></i> Zone: <strong>${districtName}</strong></span><br/>
-        <span style="color: #94a3b8;"><i class="fa-solid fa-compass"></i> GPS: <strong>${camLat.toFixed(4)}°N, ${camLng.toFixed(4)}°E</strong></span><br/>
-        <span style="color: #f43f5e;"><i class="fa-solid fa-gavel"></i> Warrant: <strong>${suspectFace.crime || 'Sec 302 IPC / Extortion'}</strong></span>
-      </div>
-      <div style="margin-top: 6px; display:flex; gap: 4px;">
-        <button onclick="dispatchPcrUnit('ALT-FACE-99')" style="
-          flex: 1;
-          background: linear-gradient(135deg, #f43f5e, #e11d48);
-          color: #ffffff;
-          border: none;
-          padding: 6px 8px;
-          border-radius: 4px;
-          font-weight: 700;
-          cursor: pointer;
-          font-size: 11px;
-        "><i class="fa-solid fa-shield-halved"></i> Seal Perimeter</button>
-      </div>
-    </div>
-  `).openPopup();
-  window.trajectoryMapLayers.push(fugitiveMarker);
-
-  // 5. Smoothly Fly and Zoom into GIFT City / Geolocation Area
-  leafletMapInstance.setView([camLat, camLng], 15, { animate: true });
-
-  // 6. Floating Real-time Toast
-  showRealtimeAlertToast({
-    title: `📍 FUGITIVE GEOLOCATED: ${faceName}`,
-    location: `${camName} (${districtName}) • Geofence Armed`,
-    camera_id: camera.id
-  });
-};
 
 function initTrajectoryPursuitLab() {}
 
@@ -4208,7 +3678,7 @@ async function renderAnalyticsTable() {
         <td colspan="7" style="text-align: center; padding: 2.5rem; color: #94a3b8;">
           <i class="fa-solid fa-satellite-dish text-cyan" style="font-size: 1.6rem; margin-bottom: 8px; display: block;"></i>
           <strong style="color: #f8fafc;">Scanning Real-Time CCTV Streams</strong><br/>
-          <span style="font-size: 0.76rem;">No incidents logged yet. Dynamic ANPR detections and suspect interceptions will populate here automatically.</span>
+          <span style="font-size: 0.76rem;">No incidents logged yet. Dynamic events and traffic logs will populate here.</span>
         </td>
       </tr>
     `;
@@ -4231,8 +3701,8 @@ async function renderAnalyticsTable() {
       }
     } else if (evt.type === 'face' || evt.type === 'face_match') {
       typeTag = `<span class="node-status-pill degraded" style="background: rgba(244,63,94,0.15); color: var(--accent-rose); border-color: var(--accent-rose);">FACE MATCH</span>`;
-      detailText = `<strong>Match: ${p.match_name || p.suspect_name || 'Suspect Target'}</strong> (${p.similarity || (p.match_confidence ? p.match_confidence*100 : 94.6)}%)<br/><span style="font-size:0.7rem; color:var(--text-muted);">${p.cctns_id || p.gallery_id || 'CCTNS Wanted Database'}</span>`;
-      dbIntercept = `<span class="vahan-badge alert">CCTNS WANTED HIT</span>`;
+      detailText = `<strong>Match: ${p.match_name || p.subject_name || 'Flagged Subject'}</strong> (${p.similarity || (p.match_confidence ? p.match_confidence*100 : 94.6)}%)<br/><span style="font-size:0.7rem; color:var(--text-muted);">${p.cctns_id || p.gallery_id || 'CCTNS Database'}</span>`;
+      dbIntercept = `<span class="vahan-badge alert">CCTNS RECORD HIT</span>`;
     } else if (evt.type === 'crowd' || evt.type === 'loitering') {
       typeTag = `<span class="node-status-pill offline" style="background: rgba(245,158,11,0.15); color: var(--accent-amber); border-color: var(--accent-amber);">CROWD / LOITER</span>`;
       detailText = `<strong>Crowd Density: ${p.density || 'High Risk'}</strong> (${p.dwell_time_mins || p.duration_seconds || 18}s dwell)<br/><span style="font-size:0.7rem; color:var(--text-muted);">Threshold Exceeded</span>`;
@@ -4393,7 +3863,7 @@ Tamper-Proof Digital Seal: SHA-256 (Ed25519 Gujarat PKI Verified)
 
 Evidence Files Included:
 - Raw CCTV Video Chunk (Ring Buffer Node: Edge-NVR-Gandhinagar-04)
-- Synchronized AI Frame Detections & Bounding Box Telemetry
+- Optical Camera Geometry & Frame Telemetry
 - Optical Camera Geometry Calibration Profile
 - Chain of Custody Audit Log (Immutable Hyperledger Ledger)
 
@@ -4445,14 +3915,14 @@ window.openClipModal = async function(evtId) {
   }
 
   // Determine Event Category & Appropriate Video Asset
-  const isFaceOrPerson = evt.type === 'face_recognition' || evt.type === 'crowd_surge' || (evt.payload_json && (evt.payload_json.match_name || evt.payload_json.suspect_name));
+  const isFaceOrPerson = evt.type === 'face_recognition' || evt.type === 'crowd_surge' || (evt.payload_json && (evt.payload_json.match_name || evt.payload_json.subject_name));
   
   if (isFaceOrPerson) {
-    const suspect = evt.payload_json?.match_name || evt.payload_json?.suspect_name || 'Vikram P. (Alias: Vicky)';
+    const subject = evt.payload_json?.match_name || evt.payload_json?.subject_name || 'Subject Record';
     const score = evt.payload_json?.similarity || 94.2;
     
-    if (bboxTag) bboxTag.innerHTML = `<i class="fa-solid fa-user-check"></i> FACE: ${suspect} (${score}%)`;
-    if (metaTarget) metaTarget.textContent = suspect;
+    if (bboxTag) bboxTag.innerHTML = `<i class="fa-solid fa-user-check"></i> FACE: ${subject} (${score}%)`;
+    if (metaTarget) metaTarget.textContent = subject;
     if (metaConf) metaConf.textContent = `${score}% Biometric Similarity`;
     
     // Position natural face/person bounding box
@@ -4608,54 +4078,33 @@ async function renderAlerts() {
       if (match) plateNo = match[1].replace(/\s+/g, '').toUpperCase();
     }
     if (!plateNo || plateNo === 'TARGET-VEHICLE') {
-      plateNo = (window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.length > 0)
-        ? window.apiClient.suspectWatchlist[0].plate.toUpperCase()
-        : 'LIVE-UNIDENTIFIED';
+      plateNo = 'LIVE-UNIDENTIFIED';
     }
 
     if (!snapshotUrl) {
-      if (isFaceAlert) {
-        const targetFace = { name: alert.target_vehicle || 'Target Suspect', biometric_score_default: alert.ocr_confidence || 95.0 };
-        const generated = captureCrispFaceSnapshot(null, targetFace, alert.location || 'Surveillance Node');
-        snapshotUrl = generated.fullSnapshotUrl;
-        plateCropUrl = generated.faceCropUrl;
-      } else {
-        const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'Surveillance Node');
-        snapshotUrl = generated.fullSnapshotUrl;
-        plateCropUrl = generated.plateCropUrl;
-      }
+      const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'Surveillance Node');
+      snapshotUrl = generated.fullSnapshotUrl;
+      plateCropUrl = generated.plateCropUrl;
       alert.snapshot_url = snapshotUrl;
       alert.plate_crop_url = plateCropUrl;
-    } else if (!plateCropUrl) {
-      if (snapshotUrl && snapshotUrl.includes('/captures/suspect_')) {
-        plateCropUrl = snapshotUrl.replace('/captures/suspect_', '/captures/plate_');
-      } else {
-        const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'Surveillance Node');
-        plateCropUrl = generated.plateCropUrl;
-      }
     }
 
-    let vehicleCropUrl = alert.vehicle_crop_url;
-    if (!vehicleCropUrl && snapshotUrl && snapshotUrl.includes('/captures/suspect_')) {
-      vehicleCropUrl = snapshotUrl.replace('/captures/suspect_', '/captures/vehicle_');
-    }
-
-    const isRealCctv = false;
+    let vehicleCropUrl = alert.vehicle_crop_url || snapshotUrl;
 
     let snapshotHtml = `
       <div style="display: flex; gap: 1rem; align-items: stretch; background: #f8fafc; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; margin: 0.6rem 0; flex-wrap: wrap;">
         
         <!-- 1. FULL CCTV SCENE EVIDENCE -->
-        <div style="width: 175px; height: 104px; border-radius: 4px; overflow: hidden; border: 2px solid ${isRealCctv ? '#dc2626' : '#cbd5e1'}; position: relative; background: #060a12; flex-shrink: 0;">
-          <img src="${snapshotUrl}" alt="Suspect CCTV Scene" style="width: 100%; height: 100%; object-fit: cover;" />
-          <span style="position: absolute; bottom: 2px; right: 4px; background: ${isRealCctv ? 'rgba(220,38,38,0.92)' : 'rgba(0,0,0,0.85)'}; color: #ffffff; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">${isRealCctv ? '🔴 REAL CCTV SCENE' : (isFaceAlert ? 'CCTNS 4K BIOMETRIC' : 'ANPR 1080p CAPTURE')}</span>
+        <div style="width: 175px; height: 104px; border-radius: 4px; overflow: hidden; border: 2px solid #cbd5e1; position: relative; background: #060a12; flex-shrink: 0;">
+          <img src="${snapshotUrl}" alt="CCTV Scene" style="width: 100%; height: 100%; object-fit: cover;" />
+          <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: #ffffff; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">LIVE OPTICAL CAPTURE</span>
         </div>
 
-        ${vehicleCropUrl && !isFaceAlert ? `
-          <!-- 2. HIGH-DEFINITION SUSPECT VEHICLE CLOSE-UP -->
-          <div style="width: 175px; height: 104px; border-radius: 4px; overflow: hidden; border: 2px solid #ef4444; position: relative; background: #060a12; flex-shrink: 0; box-shadow: 0 2px 8px rgba(239,68,68,0.25);">
-            <img src="${vehicleCropUrl}" alt="Suspect Vehicle Close-up" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none';" />
-            <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(185,28,28,0.95); color: #ffffff; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">🚗 VEHICLE CLOSE-UP</span>
+        ${vehicleCropUrl ? `
+          <!-- 2. VEHICLE CLOSE-UP -->
+          <div style="width: 175px; height: 104px; border-radius: 4px; overflow: hidden; border: 2px solid #0284c7; position: relative; background: #060a12; flex-shrink: 0; box-shadow: 0 2px 8px rgba(2,132,199,0.15);">
+            <img src="${vehicleCropUrl}" alt="Vehicle Close-up" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none';" />
+            <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(2,132,199,0.95); color: #ffffff; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">OPTICAL CLOSE-UP</span>
           </div>
         ` : ''}
 
@@ -4835,7 +4284,7 @@ function showRealtimeAlertToast(alert) {
 
   const imgSnippet = alert.snapshot_url ? `
     <div style="margin-top: 0.45rem; border-radius: 4px; overflow: hidden; border: 1px solid #ef4444; max-height: 95px;">
-      <img src="${alert.snapshot_url}" style="width: 100%; height: 95px; object-fit: cover; display: block;" alt="Captured Suspect">
+      <img src="${alert.snapshot_url}" style="width: 100%; height: 95px; object-fit: cover; display: block;" alt="Captured Event">
     </div>
   ` : '';
 
@@ -4900,7 +4349,7 @@ async function initIntegrationView() {
       box.innerHTML = `
         <div class="result-field-grid">
           <div class="res-item"><label>Registration Plate:</label> <span class="text-cyan">${d.plate}</span></div>
-          <div class="res-item"><label>Vehicle Status:</label> <span class="${d.status.includes('STOLEN') || d.status.includes('SUSPECT') ? 'text-rose' : 'text-green'}">${d.status}</span></div>
+          <div class="res-item"><label>Vehicle Status:</label> <span class="${d.status.includes('FLAGGED') || d.status.includes('STOLEN') ? 'text-rose' : 'text-green'}">${d.status}</span></div>
           <div class="res-item"><label>Registered Owner:</label> <span>${d.registered_owner}</span></div>
           <div class="res-item"><label>Make / Model:</label> <span>${d.vehicle_make_model}</span></div>
           <div class="res-item"><label>RTO Authority:</label> <span>${d.rto_office}</span></div>
@@ -4917,7 +4366,7 @@ async function initIntegrationView() {
       const input = document.getElementById('egujcopQueryInput');
       const q = (input?.value || '').trim();
       if (!q) {
-        alert('Please enter a suspect name, alias, or CCTNS ID to search.');
+        alert('Please enter a name, alias, or CCTNS ID to search.');
         input?.focus();
         return;
       }
@@ -4931,7 +4380,7 @@ async function initIntegrationView() {
         const d = res.data;
         box.innerHTML = `
           <div class="result-field-grid">
-            <div class="res-item"><label>Suspect Name:</label> <span class="text-rose">${d.name} (${d.alias})</span></div>
+            <div class="res-item"><label>Subject Name:</label> <span class="text-rose">${d.name} (${d.alias})</span></div>
             <div class="res-item"><label>CCTNS Case ID:</label> <span class="text-cyan">${d.cctns_id}</span></div>
             <div class="res-item"><label>Warrant Status:</label> <span class="text-rose">${d.status} &bull; ${d.warrant_type}</span></div>
             <div class="res-item"><label>Issuing Court:</label> <span>${d.issuing_court}</span></div>
@@ -5040,10 +4489,9 @@ async function initAdminView() {
       const confirmed = confirm(
         '⚠️ CLEAR ALL CCTV INTELLIGENCE DATA\n\n' +
         'This will permanently wipe:\n' +
-        ' • All suspect watchlist entries\n' +
         ' • All ANPR / analytics events\n' +
         ' • All alerts and dispatch records\n' +
-        ' • All facial watchlist entries\n' +
+        ' • All facial entries\n' +
         ' • All audit logs and session data\n' +
         ' • All browser-persisted data (localStorage)\n' +
         '\nThe technology stack, camera list, UI, and workflow remain completely intact.\n\n' +
@@ -5431,8 +4879,8 @@ function initAdapterWizard() {
       grid.innerHTML = `
         <div class="norm-spec-item"><label>Normalized Vendor:</label> <span>${probeResults.normalized_schema.vendor_normalized}</span></div>
         <div class="norm-spec-item"><label>Device Model:</label> <span>${probeResults.normalized_schema.model_normalized}</span></div>
-        <div class="norm-spec-item"><label>Detected Codec / FPS:</label> <span>${probeResults.normalized_schema.codec_detected} @ ${probeResults.normalized_schema.fps_detected} FPS</span></div>
-        <div class="norm-spec-item"><label>Stream Resolution:</label> <span>${probeResults.normalized_schema.resolution_detected}</span></div>
+        <div class="norm-spec-item"><label>Codec / FPS:</label> <span>${probeResults.normalized_schema.codec || 'H.264'} @ ${probeResults.normalized_schema.fps || 25} FPS</span></div>
+        <div class="norm-spec-item"><label>Stream Resolution:</label> <span>${probeResults.normalized_schema.resolution || '1080p'}</span></div>
         <div class="norm-spec-item"><label>Ping Latency:</label> <span class="text-green">${probeResults.normalized_schema.ping_latency_ms} ms (Optimal)</span></div>
         <div class="norm-spec-item"><label>Edge Ring Buffer Storage:</label> <span>${probeResults.normalized_schema.edge_ring_buffer_status}</span></div>
       `;

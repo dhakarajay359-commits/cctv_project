@@ -363,7 +363,7 @@ class CCTVEnhancer:
         curr_gray = cv2.cvtColor(curr_frame[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
         prev_gray = cv2.cvtColor(prev_frame[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
 
-        # Detect salient corners directly in the cropped ROI patch
+        # Extract salient feature points directly in the cropped ROI patch
         p0 = cv2.goodFeaturesToTrack(
             prev_gray,
             maxCorners=40,

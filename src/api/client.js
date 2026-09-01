@@ -252,25 +252,6 @@ class NirikshanApiClient {
     // 7. System Audit Trail (Clean log)
     this.auditLogs = [];
 
-    // 8. ACTIVE STATE SUSPECT & INTERCEPTION WATCHLIST (AUTHORITY REGISTERED)
-    try {
-      const savedWatchlist = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_suspect_watchlist') : null;
-      if (savedWatchlist !== null) {
-        const parsed = JSON.parse(savedWatchlist);
-        // Exclude dummy test samples and hardcoded records
-        this.suspectWatchlist = Array.isArray(parsed) ? parsed.filter(s => 
-          s.plate !== 'GJ-01-AB-1234' && 
-          s.plate !== 'MP-09-HH-5541' && 
-          s.plate !== 'GJ-27-EA-5500' &&
-          s.plate !== 'GJ-01-AX-9999'
-        ) : [];
-      } else {
-        this.suspectWatchlist = [];
-      }
-    } catch (e) {
-      this.suspectWatchlist = [];
-    }
-
     // 9. CCTNS/NAFIS BIOMETRIC FACIAL WATCHLIST (Clean default)
     try {
       const savedFaces = (typeof localStorage !== 'undefined') ? localStorage.getItem('nirikshan_facial_watchlist') : null;
@@ -347,9 +328,9 @@ class NirikshanApiClient {
       normalized_schema: {
         vendor_normalized: metadata.manufacturer,
         model_normalized: metadata.model,
-        resolution_detected: stream.resolution,
-        fps_detected: stream.fps,
-        codec_detected: stream.codec,
+        resolution: stream.resolution,
+        fps: stream.fps,
+        codec: stream.codec,
         ping_latency_ms: health.ping_ms,
         edge_ring_buffer_status: `${health.ring_buffer_used_gb} GB / ${health.ring_buffer_total_gb} GB`
       }
@@ -688,7 +669,7 @@ class NirikshanApiClient {
           direction_name: 'N/A',
           cardinal_heading: 'North',
           coverage_area_sqm: 0,
-          dori_standards: { detection_range_meters: 0, recognition_range_meters: 0, identification_range_meters: 0 }
+          dori_standards: { optical_range_meters: 0, recognition_range_meters: 0, identification_range_meters: 0 }
         },
         coverage_cone_polygon: [],
         blind_spot_analysis: {
@@ -836,7 +817,7 @@ class NirikshanApiClient {
         cardinal_heading: presentCardinal,
         coverage_area_sqm: presentCoveredArea,
         dori_standards: {
-          detection_range_meters: maxRangeMeters,
+          optical_range_meters: maxRangeMeters,
           recognition_range_meters: recognitionRangeMeters,
           identification_range_meters: identificationRangeMeters
         }
@@ -1002,12 +983,10 @@ class NirikshanApiClient {
     this.cameras = [];
     this.alerts = [];
     this.events = [];
-    this.suspectWatchlist = [];
     this.facialWatchlist = [];
     this.auditLogs = [];
     try {
       localStorage.removeItem('nirikshan_camera_inventory');
-      localStorage.removeItem('nirikshan_suspect_watchlist');
       localStorage.removeItem('nirikshan_facial_watchlist');
     } catch(e) {}
     this.districts.forEach(dist => {
@@ -1200,8 +1179,8 @@ class NirikshanApiClient {
   }
 
   // =========================================================================
-  // PHASE 4 — ANALYTICS ENGINE & EVENT DETECTION PIPELINE
-  // ANPR Inference, Multi-Modal Vision Indexing, and Camera-Wise Filtering
+  // PHASE 4 — SURVEILLANCE TELEMETRY & EVENT PIPELINE
+  // Multi-Modal Vision Indexing and Camera-Wise Filtering
   // =========================================================================
   async runAnprInference(inputData = {}, cameraId = '') {
     const cam = await this.getCameraById(cameraId);
@@ -1315,7 +1294,6 @@ class NirikshanApiClient {
 
     if (dbSource === 'vahan') {
       const cleanPlate = (queryParam || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      const suspect = await this.isPlateSuspect(cleanPlate);
 
       // Parse RTO district dynamically from plate prefix
       const rtoCode = cleanPlate.substring(0, 4);
@@ -1341,23 +1319,23 @@ class NirikshanApiClient {
         source: 'VAHAN 4.0 National Vehicle Registry',
         reg_number: queryParam.toUpperCase(),
         issuing_rto: issuingRto,
-        owner_name: suspect ? (suspect.suspect_name || 'Suspect Registered in BOLO Watchlist') : 'Verified Citizen Registered Owner',
+        owner_name: 'Verified Registered Owner',
         chassis: chassisNo,
         engine: engineNo,
         fitness_valid_upto: '2028-10-31',
         insurance_status: 'Active (National Insurance Co.)',
-        is_stolen: !!suspect,
-        stolen_fir_no: suspect ? (suspect.fir || 'FIR Registered in Crime Database') : null,
-        crime_record: suspect ? suspect.crime : 'No Adverse Police Flag'
+        is_stolen: false,
+        stolen_fir_no: null,
+        crime_record: 'No Adverse Police Flag'
       };
     } else if (dbSource === 'egujcop') {
       return {
         source: 'eGujCop / CCTNS Criminal Gallery',
         matched_id: queryParam,
-        suspect_name: 'Vikram K. (Alias Vicky)',
+        subject_name: 'Vikram K. (Alias Vicky)',
         active_warrants: 2,
         fir_history: ['FIR 104/2025 Sec 302 IPC', 'FIR 55/2024 Arms Act'],
-        status: 'WANTED - RED NOTICE',
+        status: 'FLAGGED - RED NOTICE',
         last_known_station: 'Ahmedabad Crime Branch'
       };
     } else if (dbSource === 'nafis') {
@@ -1374,21 +1352,7 @@ class NirikshanApiClient {
     return { error: 'Unknown database connector' };
   }
 
-  async getSuspectWatchlist() {
-    return [];
-  }
 
-  async isPlateSuspect(plateNumber) {
-    return null;
-  }
-
-  async addSuspectVehicle(payload) {
-    return { status: 'success' };
-  }
-
-  async removeSuspectVehicle(plateNumber) {
-    return { status: 'success' };
-  }
 
   // =========================================================================
   // MULTI-DEPARTMENT TRAJECTORY RECONSTRUCTION
@@ -1416,7 +1380,7 @@ class NirikshanApiClient {
       target_location: loc,
       target_plate: cleanPlate,
       kafka_topic: 'gujarat.police.intercept.roadblock',
-      message: `🚨 IMMEDIATE INTERCEPT ORDER: Vehicle ${cleanPlate} approaching ${loc} at 92 km/h. Hydraulic barrier active. Intercept and detain suspect.`,
+      message: `🚨 IMMEDIATE INTERCEPT ORDER: Vehicle ${cleanPlate} approaching ${loc} at 92 km/h. Hydraulic barrier active. Intercept vehicle.`,
       status: 'ESCALATED_DISPATCHED',
       pcr_assigned: 'Highway Flying Squad #11 & Border Toll Police Unit'
     };
@@ -1450,28 +1414,7 @@ class NirikshanApiClient {
     const cleanPlate = (plateNumber || '').replace(/\s+/g, '').toUpperCase();
     if (!cleanPlate) return { status: 'not_found', message: 'No registration number provided' };
 
-    // Check dynamic suspect watchlist first
-    if (this.suspectWatchlist) {
-      const matchSuspect = this.suspectWatchlist.find(s => (s.plate || '').replace(/\s+/g, '').toUpperCase() === cleanPlate);
-      if (matchSuspect) {
-        return {
-          status: 'found',
-          source: 'VAHAN 4.0 National Vehicle Registry',
-          data: {
-            plate: cleanPlate,
-            registered_owner: matchSuspect.suspect_name || 'Flagged Target',
-            vehicle_make_model: matchSuspect.vehicle_type || 'Commercial / Private Vehicle',
-            fuel_type: 'DIESEL / BS-VI',
-            registration_date: new Date().toISOString().split('T')[0],
-            rto_office: `${cleanPlate.substring(0, 5)} Regional Transport Office`,
-            chassis_no: 'VAHAN-HOTLIST-' + cleanPlate.replace(/[^A-Z0-9]/g, ''),
-            status: 'FLAGGED_SUSPECT',
-            fir_no: matchSuspect.fir || 'FIR-2026-HOTLIST',
-            crime_section: matchSuspect.crime || 'State AI Surveillance Watchlist'
-          }
-        };
-      }
-    }
+
 
     return {
       status: 'found',
@@ -1491,20 +1434,20 @@ class NirikshanApiClient {
   }
 
   // 2. eGujCop & CCTNS Crime Registry (POST /api/integration/egujcop/lookup)
-  async lookupEGujCop(suspectQuery) {
-    this.logAudit('INTEGRATION_GATEWAY_EGUJCOP_QUERY', suspectQuery);
-    const q = (suspectQuery || '').toLowerCase();
+  async lookupEGujCop(query) {
+    this.logAudit('INTEGRATION_GATEWAY_EGUJCOP_QUERY', query);
+    const q = (query || '').toLowerCase();
 
     const egujcopDatabase = [
       {
         cctns_id: 'CCTNS-GJ-2025-00918',
         name: 'Vikram K. Rathod',
         alias: 'Vicky',
-        status: 'WANTED_FUGITIVE',
+        status: 'FLAGGED_RECORD',
         warrant_type: 'Non-Bailable Warrant (NBW)',
         issuing_court: 'Sessions Court, Ahmedabad City',
         fir_reference: 'FIR-2025-CR-1102 (Satellite PS)',
-        charges: 'IPC 307 (Attempt to Murder), IPC 392 (Robbery)',
+        charges: 'IPC 307, IPC 392',
         reward_inr: 50000,
         interpol_red_notice: false,
         facial_embedding_id: 'EMB-FACE-GJ-88412'
@@ -1513,11 +1456,11 @@ class NirikshanApiClient {
         cctns_id: 'CCTNS-GJ-2024-04182',
         name: 'Haresh B. Solanki',
         alias: 'Harry',
-        status: 'PROCLAIMED_OFFENDER',
-        warrant_type: 'Arrest Warrant (Inter-State)',
+        status: 'PROCLAIMED_RECORD',
+        warrant_type: 'Warrant (Inter-State)',
         issuing_court: 'Chief Judicial Magistrate, Dahod',
         fir_reference: 'FIR-2024-CR-0891 (Dahod Town PS)',
-        charges: 'Essential Commodities Act Section 7 (Grain Diversion)',
+        charges: 'Essential Commodities Act Section 7',
         reward_inr: 25000
       }
     ];
@@ -1535,7 +1478,7 @@ class NirikshanApiClient {
     return {
       status: 'no_match',
       source: 'eGujCop / CCTNS State Criminal Registry',
-      query: suspectQuery,
+      query: query,
       message: 'No active warrants or wanted person record found in State CCTNS database.'
     };
   }
@@ -1844,16 +1787,12 @@ class NirikshanApiClient {
     // 1. Clear all in-memory arrays
     this.events.length = 0;
     this.alerts.length = 0;
-    this.suspectWatchlist.length = 0;
-    this.facialWatchlist.length = 0;
     this.auditLogs.length = 0;
     this.consentRecords.length = 0;
     if (this.streamingSessions) this.streamingSessions.length = 0;
 
     // 2. Clear all persisted localStorage keys
     const keysToRemove = [
-      'nirikshan_suspect_watchlist',
-      'nirikshan_facial_watchlist',
       'nirikshan_camera_inventory',
       'nirikshan_events',
       'nirikshan_alerts',
@@ -1863,11 +1802,7 @@ class NirikshanApiClient {
     ];
     keysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
 
-    // 3. Clear app-level runtime state (armed plates)
-    if (window.activeSuspectTransits) window.activeSuspectTransits.clear();
-    if (window.armedSuspectPlates) window.armedSuspectPlates.clear();
-
-    // 4. Tell the server to wipe temporary caches
+    // 3. Tell the server to wipe temporary caches
     try {
       await fetch('/api/clear-all-data', { method: 'POST' });
     } catch(e) {}
@@ -1875,7 +1810,7 @@ class NirikshanApiClient {
     this.logAudit('SYSTEM_DATA_PURGE', 'All CCTV intelligence databases cleared by administrator');
     return {
       status: 'cleared',
-      cleared: ['events', 'alerts', 'suspects', 'faces', 'audit_logs', 'sessions', 'anpr_log', 'localStorage'],
+      cleared: ['events', 'alerts', 'audit_logs', 'sessions', 'localStorage'],
       timestamp: new Date().toISOString()
     };
   }

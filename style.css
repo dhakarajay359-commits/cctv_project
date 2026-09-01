@@ -2474,35 +2474,7 @@ path.district-coverage-dashed-line {
   background: rgba(56, 189, 248, 0.05);
 }
 
-/* NATURAL SUSPECT WATCHLIST TABLE STYLING */
-.suspect-watchlist-table {
-  width: 100%;
-  font-size: 0.78rem;
-  border-collapse: collapse;
-  background: #ffffff;
-}
 
-.suspect-watchlist-table th {
-  background: #f8fafc;
-  color: #475569;
-  font-size: 0.70rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 10px 14px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.suspect-watchlist-table td {
-  padding: 11px 14px;
-  border-bottom: 1px solid #f1f5f9;
-  background: #ffffff;
-  vertical-align: middle;
-}
-
-.suspect-watchlist-table tr:hover td {
-  background: #f8fafc;
-}
 
 .drawer-actions-row {
   display: flex;
@@ -3080,7 +3052,7 @@ video,
   display: none !important;
 }
 
-/* PHASE 4 — ANPR ENGINE & EVENT DETECTION STYLES */
+/* PHASE 4 — SURVEILLANCE & EVENT LOG STYLES */
 .anpr-lab-card {
   background: #ffffff;
   border: 1px solid var(--border-color);
@@ -4979,17 +4951,7 @@ video,
   }
 }
 
-/* =========================================================================
-   AUTHORITY SUSPECT REGISTRATION & LIVE SNAPSHOT DOSSIER STYLES
-   ========================================================================= */
-#suspectCaptureSnapshotCard {
-  border: 1px solid var(--border-color);
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  position: relative;
-  overflow: hidden;
-}
+
 
 .sample-chip {
   background: rgba(255, 255, 255, 0.04);
@@ -5431,9 +5393,7 @@ video,
   width: fit-content;
 }
 
-/* =========================================================================
-   SYSTEMATIC 7-LAYER NIRIKSHAN ARCHITECTURE STACK STYLES
-   ========================================================================= */
+/* PHASE 4 — SURVEILLANCE & EVENT LOG STYLES */
 
 /* Security & Governance Top Ribbon */
 .security-thread-banner {

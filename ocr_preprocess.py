@@ -1,7 +1,7 @@
 """
 ocr_preprocess.py
 
-Post-Detection OCR Preprocessing for Low-Resolution / Degraded CCTV License Plates
+OCR Preprocessing for Low-Resolution / Degraded CCTV License Plates
 Spec:
   - 3x Cubic Upscaling
   - HSV Yellow Mask Filtering
@@ -18,7 +18,7 @@ def preprocess_cctv_plate(crop_img):
     Enhances small (15x25px to 30x40px), degraded, or glare-affected night license plates.
 
     Args:
-        crop_img (np.ndarray): Cropped BGR bounding box from YOLO detection.
+        crop_img (np.ndarray): Cropped optical plate region from camera frame.
 
     Returns:
         binary (np.ndarray): High-contrast binarized plate image ready for Tesseract/PaddleOCR.
