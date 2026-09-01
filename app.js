@@ -2963,6 +2963,7 @@ async function renderLiveWall() {
 
   displayCams.forEach((cam, idx) => {
     // User Directive: Always pull and display all live CCTV camera feeds on the video wall automatically!
+    const isSessionActive = true;
     const cell = document.createElement('div');
     cell.className = 'wall-feed-cell';
     cell.setAttribute('data-cam-id', cam.id);
@@ -2994,7 +2995,6 @@ async function renderLiveWall() {
                 <span style="font-size: 0.7rem; color: #64748b;">Awaiting live stream input</span>
               </div>
             `}
-            ${overlayHtml}
           </div>
         `
         : `
