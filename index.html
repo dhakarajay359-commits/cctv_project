@@ -18,9 +18,25 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=2.7.9">
+  <link rel="stylesheet" href="style.css?v=4.2.0">
 </head>
 <body class="dark-theme">
+  <!-- Microsecond Hardware-Accelerated CCTV Optical Quality Improver & HLC Anti-Glare Shader -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none; overflow: hidden;" aria-hidden="true">
+    <defs>
+      <filter id="cctv-clarity-enhancer" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <!-- 1. HLC (Highlight Compensation) Knee Compression: Suppresses blinding headlight bloom/washout -->
+        <feComponentTransfer result="hlc_tone">
+          <feFuncR type="table" tableValues="0.0 0.14 0.28 0.44 0.60 0.74 0.85 0.91 0.94 0.96" />
+          <feFuncG type="table" tableValues="0.0 0.14 0.28 0.44 0.60 0.74 0.85 0.91 0.94 0.96" />
+          <feFuncB type="table" tableValues="0.0 0.14 0.28 0.44 0.60 0.74 0.85 0.91 0.94 0.96" />
+        </feComponentTransfer>
+        <!-- 2. High-Pass Unsharp Convolution: Sharpens vehicle silhouettes & license plates between headlights -->
+        <feConvolveMatrix in="hlc_tone" order="3" kernelMatrix="0 -0.4 0 -0.4 2.6 -0.4 0 -0.4 0" preserveAlpha="true" />
+      </filter>
+    </defs>
+  </svg>
+
   <div class="app-layout" id="appLayout">
     <!-- MODERN SIDE PANEL NAVIGATION -->
     <aside class="app-sidebar" id="appSidebar">
@@ -76,7 +92,7 @@
           <button class="main-nav-btn" data-view="view-alerts" data-title="Alerts & Routing">
             <span class="btn-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
             <span class="btn-text">Alerts & Routing</span>
-            <span class="nav-badge" id="activeAlertBadge">2</span>
+            <span class="nav-badge" id="activeAlertBadge" style="display: none;">0</span>
           </button>
           <button class="main-nav-btn" data-view="view-integration" data-title="Cross-DB Gateway">
             <span class="btn-icon"><i class="fa-solid fa-database"></i></span>
@@ -168,14 +184,14 @@
           <div class="stat-icon blue"><i class="fa-solid fa-video"></i></div>
           <div class="stat-data">
             <div class="stat-header-row">
-              <div class="stat-number" id="dashTotalCams">14</div>
+              <div class="stat-number" id="dashTotalCams">0</div>
               <span class="stat-badge blue" id="dashCamDeltaBadge"><i class="fa-solid fa-arrow-trend-up"></i> Live Grid</span>
             </div>
             <div class="stat-title">Integrated Cameras</div>
             <div class="stat-meter-track">
-              <div class="stat-meter-fill blue" id="dashCamMeterFill" style="width: 100%;"></div>
+              <div class="stat-meter-fill blue" id="dashCamMeterFill" style="width: 0%;"></div>
             </div>
-            <div class="stat-subtext" id="dashCamSubtext">14 Active Grid Nodes Synced</div>
+            <div class="stat-subtext" id="dashCamSubtext">0 Active Grid Nodes Synced</div>
           </div>
         </div>
 
@@ -183,14 +199,14 @@
           <div class="stat-icon green"><i class="fa-solid fa-signal"></i></div>
           <div class="stat-data">
             <div class="stat-header-row">
-              <div class="stat-number text-green" id="dashOnlineRate">100%</div>
-              <span class="stat-badge green" id="dashUptimeBadge"><i class="fa-solid fa-circle-check"></i> Optimal</span>
+              <div class="stat-number text-green" id="dashOnlineRate">0%</div>
+              <span class="stat-badge green" id="dashUptimeBadge"><i class="fa-solid fa-circle-check"></i> Grid Health</span>
             </div>
             <div class="stat-title">Health Uptime (Heartbeat)</div>
             <div class="stat-meter-track">
-              <div class="stat-meter-fill green" id="dashUptimeMeterFill" style="width: 100%;"></div>
+              <div class="stat-meter-fill green" id="dashUptimeMeterFill" style="width: 0%;"></div>
             </div>
-            <div class="stat-subtext" id="dashUptimeSubtext">14 Online &bull; 0 Offline</div>
+            <div class="stat-subtext" id="dashUptimeSubtext">0 Online &bull; 0 Offline</div>
           </div>
         </div>
 
@@ -198,14 +214,14 @@
           <div class="stat-icon amber"><i class="fa-solid fa-car-burst"></i></div>
           <div class="stat-data">
             <div class="stat-header-row">
-              <div class="stat-number text-amber" id="dashAnprHits">1,482</div>
+              <div class="stat-number text-amber" id="dashAnprHits">0</div>
               <span class="stat-badge amber" id="dashAnprBadge"><i class="fa-solid fa-camera"></i> Active ANPR</span>
             </div>
-            <div class="stat-title">24h ANPR Detections</div>
+            <div class="stat-title">24h Camera Activity</div>
             <div class="stat-meter-track">
-              <div class="stat-meter-fill amber" id="dashAnprMeterFill" style="width: 82%;"></div>
+              <div class="stat-meter-fill amber" id="dashAnprMeterFill" style="width: 0%;"></div>
             </div>
-            <div class="stat-subtext" id="dashAnprSubtext">99.4% OCR Conf &bull; VAHAN Verified</div>
+            <div class="stat-subtext" id="dashAnprSubtext">0 ANPR Readings Recorded</div>
           </div>
         </div>
 
@@ -213,14 +229,14 @@
           <div class="stat-icon rose"><i class="fa-solid fa-bell"></i></div>
           <div class="stat-data">
             <div class="stat-header-row">
-              <div class="stat-number text-rose" id="dashActiveAlerts">2 Active</div>
+              <div class="stat-number text-rose" id="dashActiveAlerts">0 Active</div>
               <span class="stat-badge rose" id="dashAlertsBadge"><i class="fa-solid fa-triangle-exclamation"></i> L1 Event</span>
             </div>
             <div class="stat-title">Cross-DB Critical Hits</div>
             <div class="stat-meter-track">
-              <div class="stat-meter-fill rose" id="dashAlertsMeterFill" style="width: 50%;"></div>
+              <div class="stat-meter-fill rose" id="dashAlertsMeterFill" style="width: 0%;"></div>
             </div>
-            <div class="stat-subtext" id="dashAlertsSubtext">2 PCR Interceptors En Route</div>
+            <div class="stat-subtext" id="dashAlertsSubtext">0 Active Critical Incidents</div>
           </div>
         </div>
       </div>
@@ -403,14 +419,8 @@
             <!-- Editable Cross-Dept Pursuit Input on GIS Map -->
             <div class="map-pursuit-quick-bar">
               <label><i class="fa-solid fa-route text-rose"></i> Plate:</label>
-              <input type="text" id="mapPursuitInput" list="pursuitPlateList" class="map-pursuit-input" value="GJ-01-AB-1234" placeholder="Enter Vehicle No...">
+              <input type="text" id="mapPursuitInput" list="pursuitPlateList" class="map-pursuit-input" value="" placeholder="Enter or scan vehicle number...">
               <datalist id="pursuitPlateList">
-                <option value="GJ-01-AB-1234">GJ-01-AB-1234 (Stolen Creta)</option>
-                <option value="MP-09-HH-5541">MP-09-HH-5541 (Overweight Truck)</option>
-                <option value="MH-04-AZ-8890">MH-04-AZ-8890 (Expired Transit Permit)</option>
-                <option value="GJ-05-KP-7712">GJ-05-KP-7712 (Surat Diamond Corridor Hit)</option>
-                <option value="DL-01-TA-9901">DL-01-TA-9901 (Interstate Transit Alert)</option>
-                <option value="GJ-27-E-4567">GJ-27-E-4567 (Ahmedabad East Alert)</option>
               </datalist>
               <button class="btn-trace-pursuit" id="btnRenderMapPursuit">
                 <i class="fa-solid fa-crosshairs"></i> Trace on Map
@@ -426,22 +436,22 @@
             <div class="hud-top">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="hud-live-pill"><span class="dot-sm" style="background: var(--accent-rose);"></span> LIVE PURSUIT VECTOR</span>
-                <strong id="hudPlateBadge" style="font-family: var(--font-mono); color: var(--accent-cyan);">GJ-01-AB-1234</strong>
+                <strong id="hudPlateBadge" style="font-family: var(--font-mono); color: var(--accent-cyan);">--</strong>
               </div>
               <button class="hud-close-btn" id="btnCloseHud">&times;</button>
             </div>
             <div class="hud-body">
               <div class="hud-stat-grid">
-                <div><span>Vehicle:</span> <strong id="hudVehicleName">Hyundai Creta (White)</strong></div>
-                <div><span>Total Transit:</span> <strong class="text-cyan" id="hudDistance">74.2 km</strong></div>
-                <div><span>Avg Speed:</span> <strong class="text-amber" id="hudSpeed">81.5 km/h</strong></div>
-                <div><span>Heading:</span> <strong class="text-green" id="hudHeading">325° NW</strong></div>
+                <div><span>Vehicle:</span> <strong id="hudVehicleName">--</strong></div>
+                <div><span>Total Transit:</span> <strong class="text-cyan" id="hudDistance">-- km</strong></div>
+                <div><span>Avg Speed:</span> <strong class="text-amber" id="hudSpeed">-- km/h</strong></div>
+                <div><span>Heading:</span> <strong class="text-green" id="hudHeading">--</strong></div>
               </div>
               <div class="hud-next-box">
                 <span class="hud-next-label"><i class="fa-solid fa-forward-step"></i> Next Predicted Roadblock:</span>
-                <strong id="hudNextLoc">Forest Dept Sanctuary North Inter-State Corridor</strong>
+                <strong id="hudNextLoc">--</strong>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem;">
-                  <span class="text-amber" id="hudEta">ETA: ~14 Mins (18:52 IST)</span>
+                  <span class="text-amber" id="hudEta">ETA: --</span>
                   <button class="action-btn primary" id="btnArmRoadblockFromHud" style="font-size: 0.68rem; padding: 0.2rem 0.5rem; background: linear-gradient(135deg, #f43f5e, #be123c);">
                     <i class="fa-solid fa-shield-halved"></i> Arm Roadblock
                   </button>
@@ -457,13 +467,13 @@
                 <span class="hud-live-pill" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-weight: 700;">
                   <i class="fa-solid fa-satellite-dish"></i> OPTICAL FOV &amp; BLIND-SPOT HUD
                 </span>
-                <strong id="fovHudCamId" style="font-family: var(--font-mono); color: #0f172a;">CAM-GJ-0101</strong>
+                <strong id="fovHudCamId" style="font-family: var(--font-mono); color: #0f172a;">--</strong>
               </div>
               <button class="hud-close-btn" id="btnCloseFovHud">&times;</button>
             </div>
             <div class="hud-body">
               <div class="hud-stat-grid">
-                <div><span>Camera:</span> <strong id="fovHudCamName">SG Highway Overbridge</strong></div>
+                <div><span>Camera:</span> <strong id="fovHudCamName">--</strong></div>
                 <div><span>Direction / FOV:</span> <strong style="color: #2563eb;" id="fovHudDirection">Northbound (90°)</strong></div>
                 <div><span>DORI Range:</span> <strong style="color: #059669;" id="fovHudRange">280m Max / 140m Recog</strong></div>
                 <div><span>District / Dept:</span> <strong style="color: #d97706;" id="fovHudDistrict">Ahmedabad • Police</strong></div>
@@ -473,7 +483,7 @@
               <div class="blind-spot-alert-box" id="fovBlindSpotBox">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <span style="font-size: 0.72rem; font-weight: 800; color: #dc2626; text-transform: uppercase;">
-                    <i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE DETECTED
+                    <i class="fa-solid fa-triangle-exclamation"></i> UNCOVERED BLIND ZONE IDENTIFIED
                   </span>
                   <span class="node-status-pill offline" style="font-size: 0.62rem; padding: 0.1rem 0.4rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-weight: 700;">GAP DEFICIT</span>
                 </div>
@@ -647,8 +657,8 @@
     <div class="camera-detail-drawer" id="camDetailDrawer">
       <div class="drawer-top-bar">
         <div class="drawer-title-wrap">
-          <span class="cam-id-pill" id="detailCamId">CAM-GJ-0101</span>
-          <h3 id="detailCamName">SG Highway Iskcon Crossroad Overbridge</h3>
+          <span class="cam-id-pill" id="detailCamId">--</span>
+          <h3 id="detailCamName">Camera Details</h3>
         </div>
         <button class="close-drawer-btn" id="closeDetailDrawerBtn">&times;</button>
       </div>
@@ -777,9 +787,18 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <span class="bw-label"><i class="fa-solid fa-stopwatch text-amber"></i> Auto-Stop:</span>
           <strong class="bw-val text-amber" id="liveWallInactivityTimer">04:45</strong>
         </div>
-        <button class="action-btn" id="btnStopAllSessions" style="margin-left: auto; font-size: 0.75rem; color: var(--accent-rose);">
-          <i class="fa-solid fa-power-off"></i> Terminate All Streams
-        </button>
+        <div class="bw-stat-item" id="gatewatchStatusWrap" style="background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; padding: 0.25rem 0.6rem; border-radius: 4px;">
+          <span class="bw-label" style="color: #94a3b8;"><i class="fa-solid fa-shield-halved text-green"></i> Stream Gatewatch:</span>
+          <strong class="bw-val text-green" id="lblGatewatchStatus" style="font-size: 0.76rem;">All Feeds Clean</strong>
+        </div>
+        <div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;">
+          <button class="action-btn primary" id="btnPullAllSessions" style="font-size: 0.75rem; background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 700;">
+            <i class="fa-solid fa-play"></i> Pull All Active Feeds
+          </button>
+          <button class="action-btn" id="btnStopAllSessions" style="font-size: 0.75rem; color: var(--accent-rose);">
+            <i class="fa-solid fa-power-off"></i> Terminate All
+          </button>
+        </div>
       </div>
 
       <!-- Compact Live Optical Range & Blind-Spot Analyzer Panel -->
@@ -789,7 +808,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
             <span class="node-status-pill" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem;">
               <i class="fa-solid fa-satellite-dish"></i> OPTICAL COVERAGE & BLIND-SPOT ANALYZER
             </span>
-            <strong id="liveFovCamTitle" style="color: var(--text-primary); font-size: 0.85rem; font-weight: 700;">CAM-GJ-0101 &bull; SG Highway Iskcon Overbridge</strong>
+            <strong id="liveFovCamTitle" style="color: var(--text-primary); font-size: 0.85rem; font-weight: 700;">Select Camera for Optical Coverage Analysis</strong>
           </div>
           <button class="action-btn" id="btnCloseLiveFovPanel" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: #f8fafc; border: 1px solid var(--border-color); color: var(--text-secondary);">&times; Close</button>
         </div>
@@ -810,7 +829,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
                 <strong style="color: #059669; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;" id="liveFovRec">110m</strong>
               </div>
               <div style="background: #ffffff; padding: 0.4rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                <span style="font-size: 0.68rem; color: var(--text-muted); display: block; font-weight: 600;">Max Detection</span>
+                <span style="font-size: 0.68rem; color: var(--text-muted); display: block; font-weight: 600;">Max Range</span>
                 <strong style="color: #2563eb; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;" id="liveFovDet">280m</strong>
               </div>
             </div>
@@ -884,246 +903,10 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     <section id="view-analytics" class="app-view">
       <div class="view-header-bar">
         <div>
-          <h2><i class="fa-solid fa-microscope"></i> Vision Analytics Engine &amp; ANPR Event Detection</h2>
+          <h2><i class="fa-solid fa-chart-line"></i> Surveillance Analytics &amp; Event Logs</h2>
         </div>
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- AUTHORITY SUSPECT REGISTRATION & ACTIVE INTERCEPTION WATCHLIST HUB -->
-      <!-- ========================================================================= -->
-      <div class="anpr-lab-card" style="margin-top: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-        <div class="anpr-lab-header" style="margin-bottom: 0.8rem;">
-          <div class="anpr-lab-title">
-            <i class="fa-solid fa-shield-halved text-cyan" style="font-size: 1.4rem;"></i>
-            <div>
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span class="phase-tag-badge" style="background: rgba(37,99,235,0.12); border-color: rgba(37,99,235,0.3); color: #38bdf8; margin-bottom: 0;">
-                  <i class="fa-solid fa-shield"></i> Law Enforcement Registry
-                </span>
-              </div>
-              <h3 style="margin-top: 0.35rem; font-size: 1.15rem;">Suspect Vehicle Registration &amp; Crime Hotlist Management</h3>
-            </div>
-          </div>
-        </div>
-
-        <!-- Registration Form Grid -->
-        <form id="suspectRegistrationForm" style="margin-top: 0.8rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 160px; gap: 0.75rem; align-items: end; background: #ffffff; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Vehicle Plate Number *</label>
-            <input type="text" id="regSuspectPlate" class="custom-input" placeholder="e.g. GJ-01-AB-1234" required style="font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;">
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Crime Category / Offense *</label>
-            <input type="text" id="regSuspectCrime" class="custom-input" placeholder="e.g. Armed Robbery / Kidnapping" required>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">FIR Reference &amp; Station</label>
-            <input type="text" id="regSuspectFir" class="custom-input" placeholder="e.g. FIR-892/2026 (Satellite PS)">
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Suspect Name / Alias</label>
-            <input type="text" id="regSuspectName" class="custom-input" placeholder="e.g. Vikram Ramsinh Solanki">
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Threat Priority</label>
-            <select id="regSuspectPriority" class="custom-select">
-              <option value="CRITICAL">Critical (Red Notice)</option>
-              <option value="HIGH">High (Arrest Warrant)</option>
-              <option value="MEDIUM">Medium (BOLO Tracking)</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Target CCTV Node</label>
-            <select id="regSuspectCamera" class="custom-select">
-              <option value="ALL">All Live CCTV Cameras (Grid Broadcast)</option>
-              <option value="CAM-GJ-0101">CAM-GJ-0101 &bull; SG Highway Overbridge</option>
-              <option value="CAM-GJ-0102">CAM-GJ-0102 &bull; Ashram Road Riverfront</option>
-              <option value="CAM-GJ-0201">CAM-GJ-0201 &bull; Jamnagar Bedi Port</option>
-              <option value="CAM-GJ-0301">CAM-GJ-0301 &bull; Dwarka Temple Plaza</option>
-              <option value="CAM-GJ-0401">CAM-GJ-0401 &bull; Gir Sasan Gate #4</option>
-              <option value="CAM-GJ-0501">CAM-GJ-0501 &bull; Dahod NH-47 Checkpost</option>
-              <option value="CAM-GJ-0601">CAM-GJ-0601 &bull; Valsad Bhilad Toll</option>
-            </select>
-          </div>
-          <button type="submit" class="action-btn primary" id="btnRegisterSuspect" style="height: 38px; font-weight: 700; font-size: 0.8rem;">
-            <i class="fa-solid fa-plus"></i> Register Suspect
-          </button>
-        </form>
-
-
-        <!-- Active Suspect Watchlist Table -->
-        <div style="margin-top: 0.8rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <h4 style="font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.04em;">
-              <i class="fa-solid fa-list-check text-cyan"></i> Active State Hotlist Targets Armed on AI Grid:
-            </h4>
-            <span id="activeSuspectCountBadge" style="font-size: 0.72rem; color: var(--accent-rose); font-family: var(--font-mono); font-weight: 700;">
-              2 Active Targets Armed
-            </span>
-          </div>
-          <div style="overflow-x: auto; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-            <table class="suspect-watchlist-table" id="suspectWatchlistTable" style="width: 100%; font-size: 0.78rem; border-collapse: collapse;">
-              <thead>
-                <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                  <th style="padding: 10px 14px; text-align: left; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">Plate Number</th>
-                  <th style="padding: 10px 14px; text-align: left; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">Crime Category &amp; Offense</th>
-                  <th style="padding: 10px 14px; text-align: left; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">FIR Reference</th>
-                  <th style="padding: 10px 14px; text-align: left; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">Suspect Driver</th>
-                  <th style="padding: 10px 14px; text-align: center; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">Priority</th>
-                  <th style="padding: 10px 14px; text-align: center; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">Status</th>
-                  <th style="padding: 10px 14px; text-align: right; color: #475569; font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; background: #f8fafc;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="suspectWatchlistTableBody">
-                <!-- Dynamically Rendered by app.js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- LIVE SUSPECT CAPTURE FORENSIC SNAPSHOT DOSSIER (TRIGGERED ON HIT) -->
-        <div id="suspectCaptureSnapshotCard" style="display: none; margin-top: 1.2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.2rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap;">
-              <!-- Simulated High-Definition Snapshot Crop -->
-              <div style="position: relative; width: 180px; height: 110px; background: #060a12; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                <canvas id="snapshotPreviewCanvas" width="180" height="110" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
-                <div style="position: absolute; top: 4px; left: 4px; background: #dc2626; color: #fff; font-size: 0.6rem; font-weight: 800; padding: 2px 4px; border-radius: 2px; font-family: var(--font-mono);">
-                  SNAPSHOT CROP
-                </div>
-                <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.8); color: #38bdf8; font-size: 0.58rem; padding: 2px 4px; border-radius: 2px; font-family: var(--font-mono);">
-                  25.0 FPS &bull; 1080p
-                </div>
-              </div>
-
-              <!-- Suspect Incident Metadata -->
-              <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
-                  <span class="node-status-pill offline" style="background: #dc2626; color: #ffffff; font-weight: 800; font-size: 0.72rem; padding: 0.2rem 0.55rem; border: none;">
-                    🚨 LIVE INTERCEPTION MATCH
-                  </span>
-                  <span style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);" id="snapshotTimestamp">Just Now</span>
-                </div>
-                <h3 style="font-size: 1.2rem; color: #0f172a; margin-top: 0.2rem;">
-                  Target Vehicle: <span id="snapshotPlateDisplay" style="color: #dc2626; font-family: var(--font-mono); font-weight: 800;">GJ-01-AB-1234</span>
-                </h3>
-                <p id="snapshotCrimeDisplay" style="font-size: 0.82rem; color: #334155; margin-top: 0.2rem;">
-                  Wanted For: <strong style="color: #0f172a;">Armed Bank Robbery &amp; Kidnapping</strong> &bull; FIR: <span id="snapshotFirDisplay">FIR-892/2026</span>
-                </p>
-                <div style="display: flex; gap: 0.8rem; margin-top: 0.4rem; font-size: 0.75rem; flex-wrap: wrap;">
-                  <span style="color: #059669; font-weight: 600;"><i class="fa-solid fa-video"></i> Node: <strong id="snapshotCamDisplay" style="color: #0f172a;">CAM-GJ-0101 &bull; SG Highway</strong></span>
-                  <span style="color: #d97706; font-weight: 600;"><i class="fa-solid fa-gauge-high"></i> Speed: <strong id="snapshotSpeedDisplay" style="color: #0f172a;">81.5 km/h</strong></span>
-                  <span style="color: #4f46e5; font-weight: 600;"><i class="fa-solid fa-fingerprint"></i> OCR Confidence: <strong id="snapshotOcrDisplay" style="color: #0f172a;">99.4%</strong></span>
-                  <span style="color: #64748b; font-family: var(--font-mono);">Sec 65B Hash: <strong id="snapshotHashDisplay" style="color: #334155;">#SHA256-8F29BC</strong></span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Instant Dispatch & GIS Actions -->
-            <div style="display: flex; flex-direction: column; gap: 0.4rem; min-width: 200px;">
-              <button type="button" class="action-btn primary" id="btnSnapshotDrawGisRoute" style="background: #2563eb; color: #ffffff; border: 1px solid #2563eb; font-weight: 700; font-size: 0.8rem; padding: 0.45rem 0.8rem;">
-                <i class="fa-solid fa-map-location-dot"></i> Draw Route on GIS Map
-              </button>
-              <button type="button" class="action-btn" id="btnSnapshotArmRoadblock" style="background: #dc2626; color: #ffffff; border: 1px solid #dc2626; font-weight: 700; font-size: 0.8rem; padding: 0.45rem 0.8rem;">
-                <i class="fa-solid fa-shield-halved"></i> Arm Forward Roadblock
-              </button>
-              <button type="button" class="action-btn" id="btnDismissSnapshot" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; text-align: center; background: #ffffff; border: 1px solid var(--border-color); color: var(--text-secondary);">
-                Dismiss Notification
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================================================= -->
-      <!-- CROSS-DEPARTMENT VEHICLE PURSUIT & PREDICTIVE TRAJECTORY LAB -->
-      <!-- ========================================================================= -->
-      <div class="anpr-lab-card" style="margin-top: 1.2rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-sm); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-        <div class="anpr-lab-header">
-          <div class="anpr-lab-title">
-            <i class="fa-solid fa-route text-rose" style="font-size: 1.4rem;"></i>
-            <div>
-              <h3 style="color: #0f172a; font-weight: 700;">Cross-Department Trajectory Reconstruction &amp; Predictive Interception</h3>
-            </div>
-          </div>
-          <div class="anpr-lab-presets">
-            <div class="search-bar-wrap" style="min-width: 200px;">
-              <i class="fa-solid fa-car"></i>
-              <input type="text" id="trajectoryPlateInput" class="custom-input" placeholder="Enter Suspect Registration Number (e.g. GJ-01-XX-0000)">
-            </div>
-            <button class="action-btn primary" id="btnTraceTrajectory" style="background: #dc2626; color: #ffffff; border: 1px solid #dc2626; font-weight: 700;">
-              <i class="fa-solid fa-compass"></i> Trace Route
-            </button>
-            <button class="action-btn" id="btnViewOnGisMap" style="background: #ffffff; border: 1px solid var(--border-color); color: #2563eb; font-weight: 600;">
-              <i class="fa-solid fa-map-location-dot"></i> View on GIS Map
-            </button>
-          </div>
-        </div>
-
-        <!-- Trajectory Reconstruction Interactive Dashboard Output -->
-        <div id="trajectoryResultsContainer" style="display: none; margin-top: 1rem;">
-          <!-- Trajectory Summary Banner -->
-          <div class="gap-summary-banner" style="margin-bottom: 1.2rem;">
-            <div class="gap-metric-box">
-              <span class="gap-label">Target Stolen Vehicle</span>
-              <strong class="text-rose" id="trajVehicleModel">-</strong>
-              <span style="font-size: 0.7rem; color: var(--text-muted);" id="trajFirRef">-</span>
-            </div>
-            <div class="gap-metric-box">
-              <span class="gap-label">Total Multi-Dept Transit</span>
-              <span class="gap-val text-cyan" id="trajTotalDist">-</span>
-            </div>
-            <div class="gap-metric-box">
-              <span class="gap-label">Average Transit Speed</span>
-              <span class="gap-val text-amber" id="trajAvgSpeed">-</span>
-            </div>
-            <div class="gap-metric-box">
-              <span class="gap-label">Current Heading Vector</span>
-              <span class="gap-val text-green" id="trajHeading">-</span>
-            </div>
-          </div>
-
-          <!-- Chronological Multi-Department Sighting Trail -->
-          <h4 style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.8rem; text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.05em;">
-            <i class="fa-solid fa-timeline text-cyan"></i> Chronological Cross-Jurisdiction Camera Sighting Trail:
-          </h4>
-          <div class="trajectory-steps-timeline" id="trajectoryTimelineList">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <!-- AI Predictive Interception Card -->
-          <div class="predictive-intercept-card">
-            <div class="pred-intercept-top">
-              <div>
-                <div class="pred-header-badges">
-                  <span class="pred-vector-pill">
-                    <span class="dot-sm" style="background: #ef4444;"></span> AI PREDICTIVE INTERCEPT VECTOR
-                  </span>
-                  <span class="pred-confidence-badge" id="predConfidenceBadge"><i class="fa-solid fa-satellite-dish"></i> 96.2% Confidence</span>
-                </div>
-                <h3 class="pred-title" id="predNextLocTitle">Next Predicted Location: -</h3>
-                <p class="pred-desc" id="predStrategyDesc">
-                  Trajectory details will be projected here upon route trace.
-                </p>
-              </div>
-
-              <div class="pred-eta-box">
-                <span class="pred-eta-label">Estimated Time of Arrival:</span>
-                <span class="pred-eta-val" id="predEtaTime">-</span>
-              </div>
-            </div>
-
-            <div class="pred-intercept-bottom">
-              <span class="pred-squad-text" id="predForwardUnit">
-                <i class="fa-solid fa-car-on text-cyan"></i> Forward Squad: <strong>Inter-State Border Flying Squad #11</strong> (Pre-Positioned)
-              </span>
-              <button class="action-btn primary pred-action-btn" id="btnDispatchForwardRoadblock">
-                <i class="fa-solid fa-shield-halved"></i> Arm Automated Roadblock & Forward Intercept
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- CAMERA-WISE MULTI-PARAMETER SEARCH TOOLBAR -->
       <div class="analytics-filter-toolbar">
@@ -1134,13 +917,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
 
         <select id="analyticsCameraFilter" class="custom-select" style="max-width: 220px;">
           <option value="ALL">All Camera Nodes</option>
-          <option value="CAM-GJ-0101">CAM-GJ-0101 &bull; SG Highway Overbridge</option>
-          <option value="CAM-GJ-0102">CAM-GJ-0102 &bull; Ashram Road Riverfront</option>
-          <option value="CAM-GJ-0201">CAM-GJ-0201 &bull; Jamnagar Bedi Port</option>
-          <option value="CAM-GJ-0301">CAM-GJ-0301 &bull; Dwarka Temple Plaza</option>
-          <option value="CAM-GJ-0401">CAM-GJ-0401 &bull; Gir Sasan Gate #4</option>
-          <option value="CAM-GJ-0501">CAM-GJ-0501 &bull; Dahod NH-47 Checkpost</option>
-          <option value="CAM-GJ-0601">CAM-GJ-0601 &bull; Valsad Bhilad Toll</option>
         </select>
 
         <select id="analyticsTypeFilter" class="custom-select" style="max-width: 180px;">
@@ -1287,7 +1063,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
                 </span>
               </div>
               <h3 id="liveCctvModalTitle" style="color: #ffffff; margin: 0.2rem 0 0 0; font-size: 1.1rem; font-weight: 800;">
-                Live CCTV Stream: CAM-GJ-0101
+                Live CCTV Stream
               </h3>
             </div>
           </div>
@@ -1299,12 +1075,12 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <div class="live-cctv-viewport" id="liveCctvViewport" style="position: relative; aspect-ratio: 16/9; background: #000; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b;">
             <video id="liveCctvVideoElement" playsinline loop muted autoplay style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;"></video>
             
-            <!-- Live Real-Time OSD Clock (Ticking down to Milliseconds) -->
+            <!-- Live Real-Time OSD Clock -->
             <div class="live-cctv-osd-tl">
               <span class="live-rec-badge"><span class="pulse-red-dot"></span> LIVE</span>
-              <span id="liveCctvRealtimeClock" style="font-family: var(--font-mono); font-weight: 700; font-size: 0.76rem; letter-spacing: 0.04em;">2026-08-29 16:35:42 IST</span>
+              <span id="liveCctvRealtimeClock" style="font-family: var(--font-mono); font-weight: 700; font-size: 0.76rem; letter-spacing: 0.04em;">--:--:--</span>
               <span style="margin: 0 4px; opacity: 0.5;">|</span>
-              <span id="liveCctvCamNameOsd" style="font-family: var(--font-mono); font-size: 0.74rem; color: #38bdf8;">CAM-GJ-0102 &bull; SG Highway</span>
+              <span id="liveCctvCamNameOsd" style="font-family: var(--font-mono); font-size: 0.74rem; color: #38bdf8;">Awaiting Camera Feed</span>
             </div>
 
             <!-- Live Network Stats (Top Right) -->
@@ -1320,7 +1096,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <div class="bbox-corner br"></div>
               <div class="live-target-label" id="liveTargetLabel">
                 <i class="fa-solid fa-crosshairs" style="color: #ffffff;"></i>
-                <span id="liveTargetPlateText">LIVE TARGET: GJ-01-AB-1234 (98.9%)</span>
+                <span id="liveTargetPlateText">REAL-TIME ANPR OPTICAL MONITORING</span>
               </div>
             </div>
           </div>
@@ -1361,8 +1137,8 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <div id="liveCamGpsText" style="font-size: 0.82rem; font-weight: 700; font-family: var(--font-mono); color: #38bdf8; margin-top: 2px;">23.184200° N, 72.631500° E</div>
             </div>
             <div style="background: #0f172a; border: 1px solid #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px;">
-              <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Suspect Target</span>
-              <div id="liveCamSuspectText" style="font-size: 0.82rem; font-weight: 800; color: #ef4444; margin-top: 2px;">Vikram P. (Alias: Vicky)</div>
+              <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Surveillance Mode</span>
+              <div id="liveCamSuspectText" style="font-size: 0.82rem; font-weight: 800; color: #10b981; margin-top: 2px;">Active Continuous Monitor</div>
             </div>
             <div style="background: #0f172a; border: 1px solid #1e293b; padding: 0.6rem 0.85rem; border-radius: 6px;">
               <span style="font-size: 0.66rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Optical Orientation</span>
@@ -1389,12 +1165,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <h2><i class="fa-solid fa-bell"></i> Real-Time Alerts &amp; PCR Interceptor Dispatch</h2>
         </div>
         <div class="alert-header-actions" style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
-          <button class="action-btn" id="btnSimulateStolenHit" style="background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.35); color: #ef4444; font-size: 0.78rem; font-weight: 600; padding: 0.42rem 0.85rem;">
-            <i class="fa-solid fa-bolt"></i> Simulate Live ANPR Vehicle Intercept
-          </button>
-          <button class="action-btn" id="btnSimulateFaceHit" style="background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.35); color: #38bdf8; font-size: 0.78rem; font-weight: 600; padding: 0.42rem 0.85rem;">
-            <i class="fa-solid fa-user-shield"></i> Simulate CCTNS Face Scan Intercept
-          </button>
           <button class="action-btn" id="btnClearAllAlerts" style="background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.78rem; font-weight: 600; padding: 0.42rem 0.85rem;">
             <i class="fa-solid fa-trash-can"></i> Clear All Alerts
           </button>
@@ -1405,11 +1175,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
       <div class="gap-summary-banner">
         <div class="gap-metric-box">
           <span class="gap-label">Active Unresolved Alerts</span>
-          <span class="gap-val text-rose" id="alertsTotalCount">3 Active</span>
+          <span class="gap-val text-rose" id="alertsTotalCount">0 Active</span>
         </div>
         <div class="gap-metric-box">
           <span class="gap-label">PCR Units On-Scene / En Route</span>
-          <span class="gap-val text-cyan" id="alertsDispatchedCount">2 Interceptors</span>
+          <span class="gap-val text-cyan" id="alertsDispatchedCount">0 Dispatched</span>
         </div>
         <div class="gap-metric-box">
           <span class="gap-label">Avg Incident Dispatch Latency</span>
@@ -1511,7 +1281,12 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <h2><i class="fa-solid fa-scale-balanced"></i> Security, RBAC &amp; Department Governance</h2>
         </div>
         <div class="admin-header-actions">
-          <button class="action-btn primary" id="btnOpenGrantConsentModal"><i class="fa-solid fa-signature"></i> Grant New Citizen Consent</button>
+          <button class="action-btn" id="btnOpenGrantConsentModal"><i class="fa-solid fa-signature"></i> Grant New Citizen Consent</button>
+          <button class="action-btn" id="btnClearAllData"
+            style="background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.4); color: #ef4444; font-weight: 700;"
+            title="Wipe all CCTV intelligence data from all containers. Technology and workflow remain intact.">
+            <i class="fa-solid fa-trash-can"></i> Clear All CCTV Data
+          </button>
         </div>
       </div>
 
@@ -1847,18 +1622,18 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           </div>
         </div>
 
-        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Normalized Event & Detection Feeds <i class="fa-solid fa-arrow-down"></i></div>
+        <div class="stack-arrow"><i class="fa-solid fa-arrow-down"></i> Normalized Event & Telemetry Feeds <i class="fa-solid fa-arrow-down"></i></div>
 
         <!-- L3 -->
         <div class="layer-card l3-card">
           <div class="layer-badge-col"><span class="layer-id-badge">L3</span></div>
           <div class="layer-info-col">
             <div class="layer-heading">
-              <h3>L3 &bull; Vision Analytics Engine</h3>
-              <span class="layer-tag ai-tag">AI / ML Tier</span>
+              <h3>L3 &bull; Surveillance Analytics Engine</h3>
+              <span class="layer-tag ai-tag">Processing Tier</span>
             </div>
-            <p><strong>Deep Vision Inference & Tagging:</strong> ANPR OCR, facial embedding vectors, crowd surge detection, vehicle classification, and loitering triggers.</p>
-            <div class="layer-meta-chips"><span>ANPR + Optical OCR</span><span>Face Match Service</span><span>Elasticsearch Index</span></div>
+            <p><strong>CCTV Stream Indexing & Tagging:</strong> Optical processing, stream timestamps, camera health telemetry, and incident triggers.</p>
+            <div class="layer-meta-chips"><span>Stream Telemetry</span><span>Audit Log</span><span>Elasticsearch Index</span></div>
           </div>
         </div>
 
@@ -1872,7 +1647,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <h3>L4 &bull; Integration Gateway (National Databases)</h3>
               <span class="layer-tag gateway-tag">Intelligence Tier</span>
             </div>
-            <p><strong>Secure API Bridge to National Databases:</strong> Instantly cross-references detection vectors against VAHAN 4.0, SARTHI 4.0, eGujCop/CCTNS, and NAFIS in < 2.5s.</p>
+            <p><strong>Secure API Bridge to National Databases:</strong> Instantly cross-references inquiry records against VAHAN 4.0, SARTHI 4.0, eGujCop/CCTNS, and NAFIS in &lt; 2.5s.</p>
             <div class="layer-meta-chips"><span>VAHAN 4.0</span><span>SARTHI 4.0</span><span>eGujCop / CCTNS</span><span>AFIS / NAFIS</span></div>
           </div>
         </div>
@@ -2000,6 +1775,10 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <div class="form-group">
           <label>Camera Name / Location Identifier:</label>
           <input type="text" id="newCamName" class="custom-input" placeholder="e.g. Jamnagar Bedi Port Access Gate" required>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-link text-cyan"></i> Live CCTV Stream Link / Feed URL (RTSP / HLS / WebRTC / HTTP Video):</label>
+          <input type="text" id="newCamStreamUrl" class="custom-input" placeholder="e.g. https://... or rtsp://... or http://...">
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -2292,7 +2071,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
             <span style="font-size: 0.7rem; color: #64748b; display: block; font-weight: 700;">TARGET VEHICLE:</span>
             <div class="ind-plate-box" style="margin-top: 0.2rem;">
               <span class="ind-side">IND</span>
-              <strong id="tacticalModalPlate">GJ-01-AB-1234</strong>
+              <strong id="tacticalModalPlate">--</strong>
             </div>
           </div>
           <div style="text-align: right;">
@@ -2524,12 +2303,13 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     </div>
   </div>
 
-  <!-- Leaflet GIS Map JS -->
+  <!-- Video Streaming (HLS.js) & Leaflet GIS Map JS -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  
+
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
-  <script src="src/api/client.js?v=2.7.9"></script>
-  <script src="app.js?v=2.7.9"></script>
+  <script src="src/api/client.js?v=4.7.0"></script>
+  <script src="app.js?v=5.6.0"></script>
 </body>
 </html>

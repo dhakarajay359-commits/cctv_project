@@ -1,13 +1,114 @@
+# ==============================================================================
+# NIRIKSHAN PLATFORM - GIT IGNORE
+# ==============================================================================
+
+# Operating System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-node_modules/
+desktop.ini
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
 dist/
-*.log
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.mypy_cache/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+
+# Deep Learning Weights & Large Model Artifacts
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.weights
+*.bin
+*.h5
+*.pb
+*.ckpt
+
+# Video & High-Resolution Forensic Surveillance Captures
+forensic_captures/
+captures/
+recordings/
+*.mp4
+*.avi
+*.mkv
+*.h264
+*.ts
+*.m3u8
+*.flv
+
+# Node.js & Web Assets
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+coverage/
+
+# Environment Variables, Secrets & Certificates
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+*.crt
+
+# IDE & Editor Configurations
 .vscode/
 .idea/
-__pycache__/
-*.pyc
-*.pyo
-desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+
+# Temporary & Log Files
+*.log
+logs/
+temp/
+tmp/
+cookies.txt
+runs/
+raw_data/
+evidentiary_audits/
+*.png
+*.jpg
+*.jpeg
+

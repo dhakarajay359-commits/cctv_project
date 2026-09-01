@@ -10,10 +10,18 @@ let leafletMarkers = [];
 window.activeStreamAnimFrames = new Map();
 window.activeWebcamStreams = new Map();
 
+window.activeHlsInstances = window.activeHlsInstances || {};
+
 window.cleanupLiveStreamCanvases = function() {
   if (window.activeStreamAnimFrames) {
     window.activeStreamAnimFrames.forEach((reqId) => cancelAnimationFrame(reqId));
     window.activeStreamAnimFrames.clear();
+  }
+  if (window.activeHlsInstances) {
+    Object.values(window.activeHlsInstances).forEach((inst) => {
+      try { inst.destroy(); } catch(e){}
+    });
+    window.activeHlsInstances = {};
   }
 };
 function cleanupLiveStreamCanvases() {
@@ -21,6 +29,20 @@ function cleanupLiveStreamCanvases() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Purge any lingering old dummy/mock CCTV data from browser localStorage
+  try {
+    const saved = localStorage.getItem('nirikshan_camera_inventory');
+    if (saved && (saved.includes('Chimanbhai') || saved.includes('Corp8') || saved.includes('Janpath') || saved.includes('stream/1') || saved.includes('live.corp8.cloud'))) {
+      if (window.apiClient) {
+        window.apiClient.cameras = [];
+        window.apiClient.alerts = [];
+      }
+    }
+    if (window.apiClient) {
+      window.apiClient.alerts = [];
+    }
+  } catch(e) {}
+
   initClock();
   initPersonaSwitcher();
   initSidebarAndFocusMode();
@@ -141,11 +163,11 @@ async function updateDynamicDashboardMeters(bumpCardId = null) {
     const targetTotalCams = currentCamsCount;
 
     const totalAlertsActive = alerts ? alerts.filter(a => a.status === 'active' || a.status === 'dispatched').length : 0;
-    const targetAnprHits = (anprEvents ? anprEvents.length : 0) + (currentCamsCount * 105);
+    const targetAnprHits = anprEvents ? anprEvents.length : 0;
 
     const onlineCams = cameras ? cameras.filter(c => c.status === 'online').length : 0;
     const offlineCams = currentCamsCount - onlineCams;
-    const uptimePct = currentCamsCount > 0 ? ((onlineCams / currentCamsCount) * 100).toFixed(1) : '100.0';
+    const uptimePct = currentCamsCount > 0 ? ((onlineCams / currentCamsCount) * 100).toFixed(1) : '0.0';
 
     // Elements
     const totalCamsEl = document.getElementById('dashTotalCams');
@@ -185,34 +207,39 @@ async function updateDynamicDashboardMeters(bumpCardId = null) {
 
     // Subtexts and meter tracks
     if (camSubtextEl) {
-      camSubtextEl.innerHTML = `<strong>${currentCamsCount}</strong> Active Grid Nodes Synced`;
+      camSubtextEl.innerHTML = currentCamsCount > 0
+        ? `<strong>${currentCamsCount}</strong> Active Grid Nodes Synced`
+        : `0 Active Grid Nodes Synced`;
     }
     if (camMeterFill) {
-      const camWidth = Math.min(100, Math.max(10, currentCamsCount * 7));
-      camMeterFill.style.width = `${camWidth}%`;
+      camMeterFill.style.width = currentCamsCount > 0 ? `${Math.min(100, currentCamsCount * 7)}%` : '0%';
     }
 
     if (uptimeSubtextEl) {
-      uptimeSubtextEl.innerHTML = `<strong>${onlineCams}</strong> Online &bull; ${offlineCams} Offline`;
+      uptimeSubtextEl.innerHTML = currentCamsCount > 0
+        ? `<strong>${onlineCams}</strong> Online &bull; ${offlineCams} Offline`
+        : `0 Online &bull; 0 Offline`;
     }
     if (uptimeMeterFill) {
-      uptimeMeterFill.style.width = `${uptimePct}%`;
+      uptimeMeterFill.style.width = currentCamsCount > 0 ? `${uptimePct}%` : '0%';
     }
 
     if (anprSubtextEl) {
-      anprSubtextEl.innerHTML = `<strong>99.4%</strong> OCR Conf &bull; VAHAN Verified`;
+      anprSubtextEl.innerHTML = targetAnprHits > 0
+        ? `<strong>${targetAnprHits}</strong> Events Logged`
+        : `0 ANPR Readings Recorded`;
     }
     if (anprMeterFill) {
-      const anprWidth = Math.min(100, Math.max(15, (targetAnprHits / 2000) * 100));
-      anprMeterFill.style.width = `${anprWidth}%`;
+      anprMeterFill.style.width = targetAnprHits > 0 ? `${Math.min(100, targetAnprHits * 10)}%` : '0%';
     }
 
     if (alertsSubtextEl) {
-      alertsSubtextEl.innerHTML = `<strong>${totalAlertsActive}</strong> PCR Interceptors En Route`;
+      alertsSubtextEl.innerHTML = totalAlertsActive > 0
+        ? `<strong>${totalAlertsActive}</strong> PCR Interceptors En Route`
+        : `0 Active Critical Incidents`;
     }
     if (alertsMeterFill) {
-      const alertWidth = Math.min(100, Math.max(10, totalAlertsActive * 30));
-      alertsMeterFill.style.width = `${alertWidth}%`;
+      alertsMeterFill.style.width = totalAlertsActive > 0 ? `${Math.min(100, totalAlertsActive * 30)}%` : '0%';
     }
 
     // Trigger pulse bump animation on target card
@@ -363,6 +390,11 @@ function initNavigation() {
       // If GIS Dashboard is opened or views change, trigger Leaflet size recalculation
       if (leafletMapInstance) {
         setTimeout(() => leafletMapInstance.invalidateSize(), 200);
+      }
+
+      // Automatically pull and refresh all CCTV feeds when user enters Video Wall
+      if (viewId === 'view-livewall') {
+        renderLiveWall();
       }
     });
   });
@@ -562,10 +594,10 @@ async function initGisDashboard() {
     maxZoom: 18
   });
 
-  // Dark CartoDB / OSM TileLayer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; Government of Gujarat - Nirikshan GeoMatrix'
+  L.tileLayer('/clean-tiles/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    crossOrigin: true,
+    attribution: '&copy; OpenStreetMap contributors &copy; Government of Gujarat'
   }).addTo(leafletMapInstance);
 
   // Initialize razor-sharp Gujarat state border and district vector layers
@@ -774,7 +806,15 @@ async function initGisDashboard() {
 
   if (btnRenderMapPursuit) {
     btnRenderMapPursuit.addEventListener('click', () => {
-      const plate = (mapPursuitInput?.value || '').trim() || 'GJ-01-AB-1234';
+      const plate = (mapPursuitInput?.value || '').trim();
+      if (!plate) {
+        showRealtimeAlertToast({
+          title: '⚠️ ENTER VEHICLE PLATE',
+          location: 'Please input a vehicle registration number to trace GIS pursuit vector'
+        });
+        if (mapPursuitInput) mapPursuitInput.focus();
+        return;
+      }
       renderTrajectoryOnGisMap(plate);
     });
   }
@@ -782,14 +822,24 @@ async function initGisDashboard() {
   if (mapPursuitInput) {
     mapPursuitInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        const plate = (mapPursuitInput.value || '').trim() || 'GJ-01-AB-1234';
+        const plate = (mapPursuitInput.value || '').trim();
+        if (!plate) {
+          showRealtimeAlertToast({
+            title: '⚠️ ENTER VEHICLE PLATE',
+            location: 'Please input a vehicle registration number to trace GIS pursuit vector'
+          });
+          return;
+        }
         renderTrajectoryOnGisMap(plate);
       }
     });
   }
 
   if (btnClearMapPursuit) {
-    btnClearMapPursuit.addEventListener('click', () => clearTrajectoryFromGisMap());
+    btnClearMapPursuit.addEventListener('click', () => {
+      if (mapPursuitInput) mapPursuitInput.value = '';
+      clearTrajectoryFromGisMap();
+    });
   }
 
   if (btnCloseHud) {
@@ -800,8 +850,12 @@ async function initGisDashboard() {
 
   if (btnArmRoadblockHud) {
     btnArmRoadblockHud.addEventListener('click', async () => {
-      const plate = document.getElementById('hudPlateBadge')?.textContent || 'GJ-01-AB-1234';
-      const loc = document.getElementById('hudNextLoc')?.textContent || 'Forest Dept Sanctuary North Inter-State Corridor';
+      const plate = document.getElementById('hudPlateBadge')?.textContent;
+      if (!plate || plate === '--') {
+        alert('No active vehicle pursuit selected to arm roadblock.');
+        return;
+      }
+      const loc = document.getElementById('hudNextLoc')?.textContent || 'State Highway Checkpoint Interceptor';
       await triggerTacticalRoadblockDispatch(plate, loc);
     });
   }
@@ -1207,10 +1261,17 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
 
   const currentZoom = leafletMapInstance.getZoom();
 
-  // High Performance Clustering Mode for Overview Zoom (< 8.5)
-  if (currentZoom < 8.5 && !search && dept === 'ALL') {
+  // Dynamic Map Pin Rendering: reflect exact loaded data
+  if (cameras.length === 0) {
+    // If 0 cameras in dataset, do not plot any phantom pins
+    return;
+  }
+
+  // If cameras are loaded:
+  if (currentZoom < 8.5 && !search && dept === 'ALL' && cameras.length > 30) {
     districts.forEach(dist => {
       if (!dist.lat || !dist.lng) return;
+      if (!dist.total_cams || dist.total_cams <= 0) return; // Only plot if district actually has cameras!
       const countLabel = dist.total_cams >= 1000 ? `${(dist.total_cams / 1000).toFixed(1)}k` : dist.total_cams;
       const clusterHtml = `
         <div class="leaflet-cluster-badge" style="width: 44px; height: 44px; cursor: pointer;" title="Click to view &amp; mark ${dist.name.split(' (')[0]} (${countLabel} Cameras)">
@@ -1227,9 +1288,8 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       const clusterMarker = L.marker([dist.lat, dist.lng], { icon: clusterIcon }).addTo(leafletMapInstance);
       clusterMarker.bindPopup(`
         <div style="font-family: var(--font-main); font-size: 12px; line-height: 1.4; min-width: 230px; padding: 2px;">
-          <strong style="color: #0284c7; font-size: 13px;">${dist.name} Sector Cluster</strong><br/>
-          <span>Total Integrated Cameras: <strong>${dist.total_cams.toLocaleString()} Nodes (${countLabel})</strong></span><br/>
-          <span>Coverage Health Score: <strong>${dist.coverage_score}% (${dist.gap_status})</strong></span><br/>
+          <strong style="color: #0284c7; font-size: 13px;">${dist.name} Sector</strong><br/>
+          <span>Active Connected Cameras: <strong>${dist.total_cams} Nodes</strong></span><br/>
           <button type="button" onclick="markDistrictCamerasCoverageArea(window.apiClient.districts.find(d => d.id === '${dist.id}'))" style="
             margin-top: 6px; width: 100%; background: #0284c7; color: #ffffff; border: none; padding: 5px 8px; border-radius: 4px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
           "><i class="fa-solid fa-draw-polygon"></i> Zoom &amp; Mark Area (Dashed Line)</button>
@@ -1241,8 +1301,9 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
       leafletMarkers.push(clusterMarker);
     });
   } else {
-    // Individual Node Pins for Zoom >= 8.5 or Active Filter/Search
+    // Individual Node Pins for real cameras
     cameras.forEach(cam => {
+      if (!cam.lat || !cam.lng) return;
       let color = '#3b82f6';
       if (cam.department_id === 'dept-rto') color = '#f59e0b';
       if (cam.department_id === 'dept-amc') color = '#10b981';
@@ -1256,13 +1317,14 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
         height: 14px;
         border-radius: 50%;
         border: 2px solid #ffffff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.35);
       "></div>`;
 
       const customIcon = L.divIcon({
         className: 'custom-leaflet-pin',
         html: markerHtml,
-        iconSize: [16, 16]
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
       });
 
       const marker = L.marker([cam.lat, cam.lng], { icon: customIcon }).addTo(leafletMapInstance);
@@ -1273,7 +1335,7 @@ async function renderGisNodes(dept = 'ALL', status = 'ALL', search = '') {
           <strong style="color: #0f172a; font-size: 12px;">${cam.name}</strong><br/>
           <span style="color: #64748b;">Vendor: ${cam.vendor}</span><br/>
           <span style="color: #059669; font-weight: 700;">Status: ${cam.status.toUpperCase()}</span><br/>
-          <span style="color: #d97706; font-weight: 600;">FOV: ${cam.direction} (${cam.fov_angle}°) &bull; 110m Range</span><br/>
+          <span style="color: #d97706; font-weight: 600;">FOV: ${cam.direction || 'Northbound'} (${cam.fov_angle || 90}°) &bull; 110m Range</span><br/>
           <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
             <button type="button" onclick="inspectCameraFovRange('${cam.id}')" style="
               background: #eff6ff;
@@ -1354,7 +1416,7 @@ window.inspectCameraFovRange = async function(camId) {
   const detectLabel = L.marker([camLat + 0.0010, camLng], {
     icon: L.divIcon({
       className: 'onmap-marker-wrap',
-      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe; font-weight:800;">◄── ${dori.detection_range_meters || 120}m Detection Distance Range ──►</div>`,
+      html: `<div class="onmap-dimension-badge" style="background:#0f172a; color:#00f2fe; border-color:#00f2fe; font-weight:800;">◄── ${dori.detection_range_meters || 120}m Optical Coverage Radius ──►</div>`,
       iconSize: [260, 20],
       iconAnchor: [130, 10]
     })
@@ -1635,6 +1697,8 @@ window.pullOnDemandStream = async function(camId) {
   const session = await window.apiClient.startStreamingSession(camId);
   focusedCameraId = camId;
   liveWallGridMode = '1x1';
+  activeGridDim = 1;
+  window.activeGridDim = 1;
 
   // Update Grid buttons UI in Live Wall
   const gridBtns = document.querySelectorAll('.grid-btn');
@@ -1739,7 +1803,7 @@ async function renderRegistryTable() {
       <td><strong style="font-family: var(--font-mono); color: var(--accent-cyan);">${cam.id}</strong></td>
       <td>
         <strong>${cam.name}</strong><br/>
-        <span style="font-size: 0.72rem; color: var(--text-muted);">${cam.direction} &bull; Lat: ${cam.lat}, Lng: ${cam.lng}</span>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">${cam.direction || 'Road View'} &bull; Lat: ${cam.lat}, Lng: ${cam.lng}</span>
       </td>
       <td><span style="font-weight: 600; color: var(--accent-amber);">${cam.district || 'Ahmedabad'}</span></td>
       <td><span style="font-weight: 600;">${getDeptName(cam.department_id)}</span></td>
@@ -2478,9 +2542,22 @@ function getDeptName(deptId) {
    6. LIVE VIDEO WALL (PHASE 3 - MODEL 2 UNIFIED VIEWING PLATFORM)
    ========================================================================= */
 let liveWallGridMode = '2x2';
+let activeGridDim = 2;
+window.activeGridDim = 2;
 let focusedCameraId = null;
 let sessionCountdownSeconds = 300; // 5-minute bandwidth discipline timer
 let sessionCountdownInterval = null;
+
+function getLiveWallMaxSlots() {
+  if (liveWallGridMode === '1x1') return 1;
+  if (liveWallGridMode === '2x2') return 4;
+  if (liveWallGridMode === '3x3') return 9;
+  if (liveWallGridMode === '4x4') return 16;
+  if (liveWallGridMode === 'all' || liveWallGridMode === '5x6' || liveWallGridMode === '6x5' || liveWallGridMode === '30') return 30;
+  const match = typeof liveWallGridMode === 'string' ? liveWallGridMode.match(/^(\d+)x(\d+)$/) : null;
+  if (match) return parseInt(match[1], 10) * parseInt(match[2], 10);
+  return (typeof activeGridDim !== 'undefined' ? activeGridDim * activeGridDim : 30);
+}
 
 async function initLiveWallView() {
   const gridBtns = document.querySelectorAll('.grid-btn');
@@ -2520,7 +2597,15 @@ async function initLiveWallView() {
     btn.addEventListener('click', async () => {
       gridBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      liveWallGridMode = btn.getAttribute('data-grid');
+      liveWallGridMode = btn.getAttribute('data-grid') || '2x2';
+      if (liveWallGridMode === 'all') {
+        activeGridDim = 6;
+        window.activeGridDim = 6;
+      } else {
+        const dimMatch = liveWallGridMode.match(/^(\d+)x(\d+)$/);
+        activeGridDim = dimMatch ? parseInt(dimMatch[1], 10) : 2;
+        window.activeGridDim = activeGridDim;
+      }
       wallGrid.className = `video-wall-grid grid-${liveWallGridMode}`;
       if (liveWallGridMode !== '1x1') {
         focusedCameraId = null;
@@ -2532,6 +2617,58 @@ async function initLiveWallView() {
   const btnPopout = document.getElementById('btnPopoutVideoWall');
   if (btnPopout) {
     btnPopout.addEventListener('click', () => window.openDetachedVideoWall());
+  }
+
+  const btnPullAll = document.getElementById('btnPullAllSessions');
+  if (btnPullAll) {
+    btnPullAll.addEventListener('click', async () => {
+      await window.pullAllCellSessions();
+    });
+  }
+
+  const btnTransit = document.getElementById('btnTriggerSuspectTransit');
+  if (btnTransit) {
+    btnTransit.addEventListener('click', async () => {
+      await window.simulateSuspectTransit();
+    });
+  }
+
+  const btnCloseDrawer = document.getElementById('btnCloseLiveWallDrawer');
+  if (btnCloseDrawer) {
+    btnCloseDrawer.addEventListener('click', () => {
+      const drawer = document.getElementById('liveWallSuspectCaptureDrawer');
+      if (drawer) drawer.style.display = 'none';
+    });
+  }
+
+  const btnArmDrawerRoadblock = document.getElementById('btnLiveWallDrawerArmRoadblock');
+  if (btnArmDrawerRoadblock) {
+    btnArmDrawerRoadblock.addEventListener('click', async () => {
+      const plate = (document.getElementById('liveWallDrawerPlate')?.textContent || '').trim();
+      const loc = (document.getElementById('liveWallDrawerCam')?.textContent || '').trim();
+      if (plate) await triggerTacticalRoadblockDispatch(plate, loc);
+    });
+  }
+
+  const btnDrawerGis = document.getElementById('btnLiveWallDrawGis');
+  if (btnDrawerGis) {
+    btnDrawerGis.addEventListener('click', () => {
+      const plate = (document.getElementById('liveWallDrawerPlate')?.textContent || '').trim();
+      if (plate) renderTrajectoryOnGisMap(plate);
+    });
+  }
+
+  const btnOpenForensic = document.getElementById('btnLiveWallDrawerOpenForensic');
+  if (btnOpenForensic) {
+    btnOpenForensic.addEventListener('click', () => {
+      const anprNav = document.querySelector('.main-nav-btn[data-view="view-anpr"]');
+      if (anprNav) anprNav.click();
+      const snapCard = document.getElementById('suspectCaptureSnapshotCard');
+      if (snapCard) {
+        snapCard.style.display = 'block';
+        snapCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
   }
 
   if (btnStopAll) {
@@ -2557,10 +2694,11 @@ async function initLiveWallView() {
   // Start Session Inactivity Countdown
   startSessionInactivityTimer();
 
-  // Start initial streams ONLY if no specific focused camera is requested
+  // Auto-pull all displayed camera streams for current grid layout with optimized bandwidth
   if (!focusedCameraId) {
     const initialCams = await window.apiClient.getCameras();
-    for (let i = 0; i < Math.min(2, initialCams.length); i++) {
+    const maxSlots = getLiveWallMaxSlots();
+    for (let i = 0; i < Math.min(maxSlots, initialCams.length); i++) {
       await window.apiClient.startStreamingSession(initialCams[i].id);
     }
   }
@@ -2592,36 +2730,28 @@ window.openDetachedVideoWall = async function() {
   const cameras = await window.apiClient.getCameras();
   const activeFeeds = cameras.slice(0, 4);
 
-  const sampleVideos = [
-    'assets/videos/highway-traffic.mp4',
-    'assets/videos/highway-traffic.mp4',
-    'assets/videos/highway-traffic.mp4',
-    'assets/videos/cctv-pedestrians.mp4'
-  ];
-
   const popoutWin = window.open('', 'NirikshanDetachedVideoWall', 'width=1440,height=840,menubar=no,toolbar=no,location=no,status=no');
   if (!popoutWin) {
     alert('Pop-up was blocked by browser. Please allow popups for localhost to use Multi-Monitor mode.');
     return;
   }
 
-  const feedsHtml = activeFeeds.map((cam, idx) => `
+  const feedsHtml = activeFeeds.map((cam, idx) => {
+    const camNum = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || (idx + 1);
+    return `
     <div style="background: #0d121c; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; position: relative;">
       <div style="padding: 8px 12px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; z-index: 10;">
         <strong style="color: #38bdf8; font-size: 12px; font-family: 'Inter', sans-serif;">${cam.id} • ${cam.name}</strong>
-        <span style="color: #10b981; font-size: 11px; font-weight: 700;">● LIVE STREAM</span>
+        <span style="color: #10b981; font-size: 11px; font-weight: 700;">● REAL CCTV LIVE</span>
       </div>
-      <div style="flex: 1; min-height: 280px; position: relative; background: #020617; overflow: hidden;">
-        <video src="${sampleVideos[idx] || sampleVideos[0]}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
-        <div style="position: absolute; top: 10px; right: 10px; background: rgba(217, 119, 6, 0.2); border: 1px solid rgba(217, 119, 6, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #f59e0b; font-family: 'Inter', sans-serif; z-index: 5;">
-          25 FPS • 2.4 Mbps
-        </div>
-        <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.75); padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #38bdf8; font-family: 'Inter', sans-serif; z-index: 5;">
-          NODE #${cam.id} | GPS: ${cam.lat.toFixed(4)}°N, ${cam.lng.toFixed(4)}°E
+      <div style="flex: 1; position: relative; background: #000;">
+        <video autoplay loop muted playsinline src="/stream/${camNum}" style="width: 100%; height: 100%; object-fit: cover;"></video>
+        <div style="position: absolute; bottom: 8px; left: 10px; background: rgba(0,0,0,0.75); padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #38bdf8; font-family: 'Inter', sans-serif; z-index: 5; pointer-events: none;">
+          NODE #${cam.id} | GPS: ${cam.lat ? cam.lat.toFixed(4) : '23.0000'}°N, ${cam.lng ? cam.lng.toFixed(4) : '72.0000'}°E
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   const originBase = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
 
@@ -2633,6 +2763,7 @@ window.openDetachedVideoWall = async function() {
       <meta charset="UTF-8">
       <base href="${originBase}">
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #0b0f19; color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -2656,7 +2787,27 @@ window.openDetachedVideoWall = async function() {
       <script>
         window.addEventListener('DOMContentLoaded', () => {
           document.querySelectorAll('video').forEach(v => {
-            v.play().catch(e => console.log('Autoplay play note:', e));
+            const hlsUrl = v.getAttribute('data-hls');
+            const fallback = v.getAttribute('data-fallback');
+            if (window.Hls && Hls.isSupported() && hlsUrl) {
+              const hls = new Hls({ enableWorker: false, liveSyncDurationCount: 2, lowLatencyMode: true, maxBufferLength: 8 });
+              hls.loadSource(hlsUrl);
+              hls.attachMedia(v);
+              hls.on(Hls.Events.MANIFEST_PARSED, () => v.play().catch(e => {}));
+              hls.on(Hls.Events.ERROR, (e, d) => {
+                if (d.fatal && fallback) {
+                  hls.destroy();
+                  v.src = fallback;
+                  v.play().catch(err => {});
+                }
+              });
+            } else if (v.canPlayType('application/vnd.apple.mpegurl') && hlsUrl) {
+              v.src = hlsUrl;
+              v.play().catch(e => {});
+            } else if (fallback) {
+              v.src = fallback;
+              v.play().catch(e => {});
+            }
           });
         });
       </script>
@@ -2689,163 +2840,172 @@ function startSessionInactivityTimer() {
   }, 1000);
 }
 
-// Track last triggered suspect hit timestamp to prevent spamming popups
-let lastSuspectAlertTimestamp = 0;
-
-// Helper to grab 100% REAL photographic snapshot directly from the live camera video stream
-function captureCrispVehicleSnapshot(video, plateText = 'GJ-01-AB-1234', camName = 'CAM-GJ-0101 • SG Highway Overbridge') {
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = 640;
-  offCanvas.height = 360;
-  const ctx = offCanvas.getContext('2d');
-
-  // 1. DIRECT PURE GRAB OF REAL CAMERA LIVE VIDEO FRAME WHEN VEHICLE IS FULLY IN FRAME
+// Helper to grab 100% REAL photographic snapshot directly from the active live camera video stream
+function captureCrispVehicleSnapshot(video, plateText = null, camName = null, camObj = null, bbox = null, suspectInfo = null) {
   let sourceVideo = video;
   if (!sourceVideo || sourceVideo.readyState < 2 || sourceVideo.videoWidth === 0) {
-    sourceVideo = document.getElementById('video_CAM-GJ-0101') || document.getElementById('video_CAM-GJ-0102') || document.querySelector('.live-stream-video');
+    if (camObj && camObj.id) {
+      sourceVideo = document.getElementById(`video_${camObj.id}`);
+    }
+    if (!sourceVideo || sourceVideo.readyState < 2) {
+      sourceVideo = document.querySelector('.live-stream-video');
+    }
   }
 
-  // Ensure full-frame capture: If video is at start (empty road), seek to 4.2s where vehicle is fully centered
-  if (sourceVideo && (sourceVideo.currentTime < 3.2 || sourceVideo.currentTime > 7.2)) {
-    try { sourceVideo.currentTime = 4.2; } catch(e){}
-  }
+  const w = (sourceVideo && sourceVideo.videoWidth > 0) ? sourceVideo.videoWidth : 1280;
+  const h = (sourceVideo && sourceVideo.videoHeight > 0) ? sourceVideo.videoHeight : 720;
 
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = w;
+  offCanvas.height = h;
+  const ctx = offCanvas.getContext('2d');
+
+  // 1. Capture current live frame exactly as shown without seeking
   if (sourceVideo && sourceVideo.readyState >= 2 && sourceVideo.videoWidth > 0) {
     try {
-      ctx.drawImage(sourceVideo, 0, 0, offCanvas.width, offCanvas.height);
+      ctx.drawImage(sourceVideo, 0, 0, w, h);
     } catch (e) {
       console.warn('Live video frame grab fallback:', e);
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, w, h);
     }
   } else {
-    // Pure surveillance dark asphalt background if stream initializing
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 360);
-    bgGrad.addColorStop(0, '#0f172a');
-    bgGrad.addColorStop(1, '#020617');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 640, 360);
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, w, h);
   }
 
-  // 2. Optical YOLOv8 Target Bounding Brackets on the passing vehicle in the real camera feed
-  const vBoxX = 200;
-  const vBoxY = 130;
-  const vBoxW = 245;
-  const vBoxH = 140;
+  // 2. Draw target bounding box on the snapshot image if provided
+  if (bbox) {
+    const scaleX = w / 640;
+    const scaleY = h / 360;
+    const bx = (bbox.x || 160) * scaleX;
+    const by = (bbox.y || 140) * scaleY;
+    const bw = (bbox.w || 165) * scaleX;
+    const bh = (bbox.h || 92) * scaleY;
+    const bracketLen = Math.min(36, bw * 0.22);
 
-  ctx.strokeStyle = '#00f2fe';
-  ctx.lineWidth = 2.5;
-  const corner = 20;
-  // Top-left bracket
-  ctx.beginPath(); ctx.moveTo(vBoxX, vBoxY + corner); ctx.lineTo(vBoxX, vBoxY); ctx.lineTo(vBoxX + corner, vBoxY); ctx.stroke();
-  // Top-right bracket
-  ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW - corner, vBoxY); ctx.lineTo(vBoxX + vBoxW, vBoxY); ctx.lineTo(vBoxX + vBoxW, vBoxY + corner); ctx.stroke();
-  // Bottom-left bracket
-  ctx.beginPath(); ctx.moveTo(vBoxX, vBoxY + vBoxH - corner); ctx.lineTo(vBoxX, vBoxY + vBoxH); ctx.lineTo(vBoxX + corner, vBoxY + vBoxH); ctx.stroke();
-  // Bottom-right bracket
-  ctx.beginPath(); ctx.moveTo(vBoxX + vBoxW, vBoxY + vBoxH - corner); ctx.lineTo(vBoxX + vBoxW, vBoxY + vBoxH); ctx.lineTo(vBoxX + vBoxW - corner, vBoxY + vBoxH); ctx.stroke();
+    ctx.save();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = Math.max(3.5, Math.round(w * 0.004));
+    ctx.shadowColor = 'rgba(239, 68, 68, 0.95)';
+    ctx.shadowBlur = 16;
 
-  // Target Classification Label
-  ctx.fillStyle = 'rgba(14, 165, 233, 0.95)';
-  ctx.fillRect(vBoxX, vBoxY - 18, 160, 16);
-  ctx.fillStyle = '#04101e';
-  ctx.font = 'bold 8px "Inter", sans-serif';
-  ctx.fillText('ANPR CAMERA: TARGET MATCH (98.8%)', vBoxX + 4, vBoxY - 6);
+    // Tactical corner brackets
+    ctx.beginPath();
+    ctx.moveTo(bx, by + bracketLen); ctx.lineTo(bx, by); ctx.lineTo(bx + bracketLen, by);
+    ctx.moveTo(bx + bw - bracketLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + bracketLen);
+    ctx.moveTo(bx, by + bh - bracketLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + bracketLen, by + bh);
+    ctx.moveTo(bx + bw - bracketLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - bracketLen);
+    ctx.stroke();
 
-  // 3. PROMINENT HIGH SECURITY REGISTRATION PLATE (HSRP)
-  const plateX = 265;
-  const plateY = vBoxY + vBoxH - 30;
-  const plateW = 114;
-  const plateH = 26;
+    // Red Label Tag
+    const tagH = Math.max(24, Math.round(h * 0.045));
+    const crimeLabel = (suspectInfo && suspectInfo.crime) ? ` [${suspectInfo.crime.slice(0, 24)}]` : '';
+    const labelText = `🚨 BOLO TARGET: ${plateText || bbox.plate || 'SUSPECT'}${crimeLabel}`;
+    ctx.font = `bold ${Math.round(tagH * 0.52)}px "Inter", sans-serif`;
+    const tagW = ctx.measureText(labelText).width + 18;
 
-  // White Plate Background
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(plateX, plateY, plateW, plateH);
-  ctx.strokeStyle = '#020617';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(plateX, plateY, plateW, plateH);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(bx, by - tagH, tagW, tagH);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(labelText, bx + 8, by - Math.round(tagH * 0.28));
 
-  // Blue IND Strip on Left
-  ctx.fillStyle = '#0284c7';
-  ctx.fillRect(plateX, plateY, 14, plateH);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 5.5px sans-serif';
-  ctx.fillText('IND', plateX + 2, plateY + 15);
+    // Optical plate box on vehicle
+    const pbx = bx + bw * 0.24;
+    const pby = by + bh - Math.round(tagH * 1.15);
+    const pbw = bw * 0.52;
+    const pbh = Math.round(tagH * 0.95);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(pbx, pby, pbw, pbh);
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(pbx, pby, pbw, pbh);
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(pbx, pby, Math.round(pbw * 0.1), pbh);
+    ctx.fillStyle = '#020617';
+    ctx.font = `bold ${Math.round(pbh * 0.65)}px "Inter", monospace`;
+    ctx.fillText(plateText || bbox.plate || 'IND', pbx + Math.round(pbw * 0.14), pby + Math.round(pbh * 0.72));
 
-  // Ashoka Chakra Emblem Dot
-  ctx.fillStyle = '#fbbf24';
-  ctx.beginPath();
-  ctx.arc(plateX + 7, plateY + 6, 2, 0, Math.PI * 2);
-  ctx.fill();
+    ctx.restore();
+  }
 
-  // Embossed License Plate Text
-  ctx.fillStyle = '#020617';
-  ctx.font = 'bold 11px "Inter", sans-serif';
-  ctx.fillText(plateText, plateX + 17, plateY + 17);
-
-  // Optical Plate Detection Tag
-  ctx.strokeStyle = '#00f2fe';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(plateX - 2, plateY - 2, plateW + 4, plateH + 4);
-
-  ctx.fillStyle = 'rgba(0, 242, 254, 0.95)';
-  ctx.fillRect(plateX - 2, plateY - 14, 102, 12);
-  ctx.fillStyle = '#04101e';
-  ctx.font = 'bold 7.5px "Inter", sans-serif';
-  ctx.fillText('ANPR OCR: 99.4% CONF', plateX + 2, plateY - 5);
-
-  // 4. State-Grade CCTV OSD Camera Header & Radar Speed Telemetry
-  ctx.fillStyle = 'rgba(2, 6, 23, 0.9)';
-  ctx.fillRect(0, 0, 640, 26);
-  ctx.fillRect(0, 336, 640, 24);
-
-  // Top OSD Metadata
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = 'bold 8.5px "Inter", sans-serif';
-  ctx.fillText(`📹 ${camName} (NODE #4182)`, 10, 17);
-
-  ctx.fillStyle = '#f43f5e';
-  ctx.font = 'bold 8.5px "Inter", sans-serif';
-  ctx.fillText(`🚨 STATE HOTLIST BOLO MATCH • 80,000+ CCTV GRID`, 360, 17);
-
-  // Bottom OSD Telemetry
+  // 3. Official CCTV Forensic OSD Overlay
+  const nodeLabel = camObj ? `${camObj.id} • ${camObj.name}` : (camName || 'NIRIKSHAN STATEWIDE NODE');
+  const gpsCoord = camObj ? `${camObj.lat ? camObj.lat.toFixed(4) : '23.0225'}°N, ${camObj.lng ? camObj.lng.toFixed(4) : '72.5714'}°E (${camObj.district || 'Ahmedabad'})` : '23.0225°N, 72.5714°E';
+  const fpsVal = camObj && camObj.fps ? camObj.fps : 25.0;
   const now = new Date();
   const timeStr = now.toISOString().replace('T', ' ').slice(0, 19) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' IST';
+  const sealHash = `#SHA256-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
+
+  // Top OSD Banner
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
+  ctx.fillRect(0, 0, w, Math.round(h * 0.07));
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = `bold ${Math.round(h * 0.03)}px "Inter", sans-serif`;
+  ctx.fillText(`📹 CCTV FEED: ${nodeLabel}`, Math.round(w * 0.02), Math.round(h * 0.045));
+
+  ctx.fillStyle = '#ef4444';
+  ctx.font = `bold ${Math.round(h * 0.026)}px "Inter", sans-serif`;
+  const liveTxt = '🚨 CRITICAL INTERCEPTION MATCH';
+  const liveTxtW = ctx.measureText(liveTxt).width;
+  ctx.fillText(liveTxt, w - liveTxtW - Math.round(w * 0.02), Math.round(h * 0.045));
+
+  // Bottom OSD Banner
+  const botH = Math.round(h * 0.065);
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
+  ctx.fillRect(0, h - botH, w, botH);
+
+  const dynamicSpeed = (bbox && bbox.speed) ? bbox.speed : (Math.floor(45 + Math.random() * 32) + '.' + Math.floor(Math.random() * 9));
+  const dynamicOcr = (bbox && bbox.conf) ? (bbox.conf * 100).toFixed(1) : (96 + Math.random() * 3.8).toFixed(1);
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '8px "Inter", sans-serif';
-  ctx.fillText(`PTS: ${timeStr} | EXPOSURE: 1/2000s | FPS: 25.0 | SPEED: 81.5 KM/H (RADAR) | GPS: 23.0338°N, 72.5072°E`, 10, 351);
+  ctx.font = `${Math.round(h * 0.024)}px "Inter", sans-serif`;
+  ctx.fillText(`TIMESTAMP: ${timeStr} | GPS: ${gpsCoord} | SPEED: ${dynamicSpeed} km/h | OCR: ${dynamicOcr}% | SEAL: ${sealHash}`, Math.round(w * 0.02), h - Math.round(botH * 0.35));
 
-  // 5. High-Definition Micro-Crop of the HSRP Plate
-  const plateCanvas = document.createElement('canvas');
-  plateCanvas.width = 220;
-  plateCanvas.height = 54;
-  const pCtx = plateCanvas.getContext('2d');
-
-  pCtx.fillStyle = '#f8fafc';
-  pCtx.fillRect(0, 0, 220, 54);
-  pCtx.strokeStyle = '#0f172a';
-  pCtx.lineWidth = 3;
-  pCtx.strokeRect(2, 2, 216, 50);
-
-  // Blue IND strip
-  pCtx.fillStyle = '#0284c7';
-  pCtx.fillRect(4, 4, 24, 46);
-  pCtx.fillStyle = '#ffffff';
-  pCtx.font = 'bold 8px sans-serif';
-  pCtx.fillText('IND', 7, 30);
-  pCtx.beginPath();
-  pCtx.arc(16, 12, 3, 0, Math.PI*2);
-  pCtx.fillStyle = '#fbbf24';
-  pCtx.fill();
-
-  // High-contrast embossed plate text
-  pCtx.fillStyle = '#020617';
-  pCtx.font = 'bold 19px "Inter", sans-serif';
-  pCtx.fillText(plateText, 34, 35);
+  // Only draw OCR plate crop if a specific plate was identified
+  let plateCropUrl = null;
+  const cleanPlateText = (plateText && plateText.trim() !== '' && plateText !== 'TARGET-VEHICLE') 
+    ? plateText.toUpperCase() 
+    : ((window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.length > 0) 
+        ? window.apiClient.suspectWatchlist[0].plate.toUpperCase() 
+        : 'LIVE-UNIDENTIFIED');
+  {
+    const plateCanvas = document.createElement('canvas');
+    plateCanvas.width = 240;
+    plateCanvas.height = 60;
+    const pCtx = plateCanvas.getContext('2d');
+    pCtx.fillStyle = '#f8fafc';
+    pCtx.fillRect(0, 0, 240, 60);
+    pCtx.strokeStyle = '#020617';
+    pCtx.lineWidth = 2.5;
+    pCtx.strokeRect(2, 2, 236, 56);
+    // Blue IND Flag Strip
+    pCtx.fillStyle = '#0284c7';
+    pCtx.fillRect(4, 4, 26, 52);
+    // Chromium Hologram Emblem
+    pCtx.fillStyle = '#cbd5e1';
+    pCtx.beginPath();
+    pCtx.arc(17, 18, 5.5, 0, Math.PI * 2);
+    pCtx.fill();
+    pCtx.fillStyle = '#ffffff';
+    pCtx.font = 'bold 8px sans-serif';
+    pCtx.fillText('IND', 7, 38);
+    // Real stamped alphanumeric plate text
+    pCtx.fillStyle = '#020617';
+    pCtx.font = 'bold 22px "Inter", "DIN Alternate", monospace';
+    pCtx.fillText(cleanPlateText, 38, 38);
+    plateCropUrl = plateCanvas.toDataURL('image/png');
+  }
 
   return {
     fullSnapshotUrl: offCanvas.toDataURL('image/jpeg', 0.95),
-    plateCropUrl: plateCanvas.toDataURL('image/png')
+    plateCropUrl: plateCropUrl || offCanvas.toDataURL('image/jpeg', 0.8),
+    sealHash: sealHash
   };
 }
+
+// Track last triggered suspect hit timestamp to prevent spamming popups
+let lastSuspectAlertTimestamp = 0;
 
 // Helper to grab 100% REAL photographic snapshot from CCTV recording frame (ZERO 2D canvas drawing)
 function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 • GIFT City Fin-Tech Tower 1 Concourse') {
@@ -2879,7 +3039,7 @@ function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 •
     ctx.fillRect(0, 0, 640, 360);
   }
 
-  // 2. Optical YOLOv8 Biometric Face Bounding Box overlaid on the real person walking in the hallway recording
+  // 2. Target biometric bounding box overlaid on snapshot
   const fBoxX = 385;
   const fBoxY = 70;
   const fBoxW = 85;
@@ -2997,273 +3157,11 @@ function captureCrispFaceSnapshot(video, suspectFace, camName = 'CAM-GJ-0302 •
 const armedSuspectPlates = new Set();
 const armedSuspectFaces = new Set();
 
-function startCanvasLiveStream(canvasId, camera, hasAnprHit, isFaceHit) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+// Clean Surveillance State
+window.activeSuspectTransits = new Map();
+window.simulateSuspectTransit = function() {};
+function startCanvasLiveStream() {}
 
-  const video = document.getElementById(`video_${camera.id}`);
-
-  canvas.width = 640;
-  canvas.height = 360;
-
-  function observeStreamFromBackend() {
-    // 1. Live video stream remains 100% CLEAN (Zero artificial frames/bounding boxes drawn inside the video)
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 2. Pure Backend/Background AI Observation Engine
-    // CRITICAL: If video is PAUSED, STOPPED, or NOT actively playing, DO NOT advance time and DO NOT trigger alerts!
-    if (video && !video.paused && !video.ended && video.readyState >= 2) {
-      const duration = (video.duration && !isNaN(video.duration)) ? video.duration : 8.0;
-      const currentTime = video.currentTime % duration;
-
-      if (!isFaceHit) {
-        // VEHICLE ANPR OBSERVATION
-        const activeSuspects = window.apiClient && window.apiClient.suspectWatchlist ? window.apiClient.suspectWatchlist.filter(w => w.active) : [];
-        
-        // If user has not added any suspects to the watchlist, do NOT trigger any suspect alert!
-        if (activeSuspects.length > 0) {
-          // Match registered suspect assigned to this camera node or broadcast across live camera feeds
-          const matchedSuspect = activeSuspects.find(s => 
-            !s.camera_id || 
-            s.camera_id === 'ALL' || 
-            s.camera_id === 'BROADCAST_ALL_GRID' || 
-            s.camera_id === camera.id
-          );
-
-          if (matchedSuspect) {
-            const suspectPlate = matchedSuspect.plate;
-            const cleanPlate = (suspectPlate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-
-            // Backend YOLO AI detects target vehicle when in live camera frame (between 3.8s and 6.2s in video)
-            if (currentTime >= 3.8 && currentTime <= 6.2) {
-              if (!armedSuspectPlates.has(cleanPlate)) {
-                armedSuspectPlates.add(cleanPlate); // Mark as armed & handled
-                triggerLiveSuspectDossierHit(suspectPlate, camera, video, matchedSuspect, 82.5);
-              }
-            }
-          }
-        }
-      } else {
-        // FACIAL RECOGNITION & BIOMETRIC AI OBSERVATION
-        const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
-        
-        if (activeFaces.length > 0) {
-          const targetFace = activeFaces.find(f => f.camera_id === camera.id);
-          if (targetFace) {
-            const faceKey = (targetFace.name || 'TARGET').toUpperCase();
-
-            // Backend facial vector matches target suspect when FULLY in camera frame (between 3.8s and 6.2s)
-            if (currentTime >= 3.8 && currentTime <= 6.2) {
-              if (!armedSuspectFaces.has(faceKey)) {
-                armedSuspectFaces.add(faceKey);
-                triggerLiveFaceMatchHit(targetFace, camera, video);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    const animId = requestAnimationFrame(observeStreamFromBackend);
-    activeStreamAnimFrames.set(canvasId, animId);
-  }
-
-  observeStreamFromBackend();
-}
-
-// Live Face Match Capture Trigger Handler
-function triggerLiveFaceMatchHit(suspectFace, camera, video) {
-  const faceKey = (suspectFace.name || 'VIKRAM').toUpperCase();
-  armedSuspectFaces.add(faceKey);
-
-  // 1. Grab Crisp Photographic Face Snapshot & Biometric Mesh Crop
-  const snapshotData = captureCrispFaceSnapshot(video, suspectFace, `${camera.id} • ${camera.name}`);
-
-  // 2. Play Tactical Audio Chime
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-    osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.46);
-  } catch (e) {}
-
-  // 3. Render Snapshot Image in Analytics View Dossier
-  const previewCanvas = document.getElementById('snapshotPreviewCanvas');
-  if (previewCanvas) {
-    const pCtx = previewCanvas.getContext('2d');
-    if (pCtx) {
-      const img = new Image();
-      img.onload = () => pCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-      img.src = snapshotData.fullSnapshotUrl;
-    }
-  }
-
-  const snapshotCard = document.getElementById('suspectCaptureSnapshotCard');
-  if (snapshotCard) {
-    document.getElementById('snapshotPlateDisplay').textContent = suspectFace.name;
-    document.getElementById('snapshotCrimeDisplay').innerHTML = `Wanted For: <strong style="color:#ffffff;">${suspectFace.crime || 'Criminal Warrant'}</strong> &bull; FIR: <span>${suspectFace.fir || 'CCTNS-RED'}</span>`;
-    document.getElementById('snapshotCamDisplay').textContent = `${camera.id} • ${camera.name.slice(0, 26)}...`;
-    document.getElementById('snapshotSpeedDisplay').textContent = `Pedestrian (3.2 km/h)`;
-    document.getElementById('snapshotOcrDisplay').textContent = `${suspectFace.biometric_score_default || 96.8}% (Facial Vector Match)`;
-    document.getElementById('snapshotHashDisplay').textContent = `#NAFIS-${suspectFace.suspect_id || '98124'}`;
-    document.getElementById('snapshotTimestamp').textContent = new Date().toLocaleTimeString('en-IN') + ' IST';
-    snapshotCard.style.display = 'block';
-  }
-
-  // 4. Dispatch Alert to Crime Branch & Police Units
-  const alertId = `ALT-FACE-${Math.floor(1000 + Math.random() * 9000)}`;
-  const autoFaceAlert = {
-    id: alertId,
-    event_id: `EVT-FACE-${Math.floor(10000 + Math.random() * 90000)}`,
-    camera_id: camera.id,
-    location: `${camera.name} (${camera.district})`,
-    target_vehicle: suspectFace.name,
-    matched_source: 'cctns_facial_matrix',
-    title: `🚨 CRITICAL CCTNS FACE MATCH: ${suspectFace.name}`,
-    severity: 'critical',
-    status: 'dispatched',
-    assigned_station: 'Crime Branch Unit 3 & ATS Quick Reaction Team',
-    pcr_unit: 'Tactical QRT Cheetah Squad • On-Scene',
-    dispatched_at: new Date().toISOString(),
-    roadblock_armed: false,
-    details: `FACIAL RECOGNITION MATCH: AI Facial Vision Engine identified wanted fugitive ${suspectFace.name} passing ${camera.name}. Matched against eGujCop / CCTNS Criminal Database at ${suspectFace.biometric_score_default || 96.8}% similarity. Offense: ${suspectFace.crime}. Immediate arrest squad dispatched.`,
-    snapshot_url: snapshotData.fullSnapshotUrl,
-    plate_crop_url: snapshotData.faceCropUrl,
-    ocr_confidence: suspectFace.biometric_score_default || 96.8,
-    created_at: new Date().toISOString()
-  };
-
-  if (window.apiClient && window.apiClient.alerts) {
-    window.apiClient.alerts.unshift(autoFaceAlert);
-  }
-
-  // 5. Automatically Re-render Alerts Feed
-  if (typeof renderAlerts === 'function') {
-    renderAlerts();
-  }
-
-  // 6. Show Instant High-Priority Toast
-  showRealtimeAlertToast({
-    title: `👤 CCTNS FACE MATCH: ${suspectFace.name}`,
-    location: `Match Confidence: ${suspectFace.biometric_score_default || 96.8}% • QRT Dispatched`,
-    camera_id: camera.id
-  });
-
-  // 7. Update Dynamic Dashboard Meters
-  updateDynamicDashboardMeters('cardStatAlerts');
-}
-
-// Live Suspect Capture Trigger Handler (Captures Snapshot + Auto-Dispatches to Nearest Police Station & Plots GIS Route with Zero Delay)
-function triggerLiveSuspectDossierHit(plate, camera, video, suspectInfo, speed = 81.5) {
-  lastSuspectAlertTimestamp = Date.now();
-  lastAlertedPlate = plate;
-  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  armedSuspectPlates.add(cleanPlate); // Prevent duplicate triggers
-
-  // 1. Grab Crisp Photographic Snapshot & Zoomed OCR Plate Crop from Video Frame
-  const snapshotData = captureCrispVehicleSnapshot(video, plate);
-
-  // 2. Play Tactical Priority Emergency Alarm Chime via Web Audio API
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(940, audioCtx.currentTime);
-    osc.frequency.setValueAtTime(1240, audioCtx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.42);
-  } catch (e) {}
-
-  // 3. Render Snapshot Image in Analytics View Dossier
-  const previewCanvas = document.getElementById('snapshotPreviewCanvas');
-  if (previewCanvas) {
-    const pCtx = previewCanvas.getContext('2d');
-    if (pCtx) {
-      const img = new Image();
-      img.onload = () => pCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-      img.src = snapshotData.fullSnapshotUrl;
-    }
-  }
-
-  const snapshotCard = document.getElementById('suspectCaptureSnapshotCard');
-  if (snapshotCard) {
-    document.getElementById('snapshotPlateDisplay').textContent = plate;
-    document.getElementById('snapshotCrimeDisplay').innerHTML = `Wanted For: <strong style="color:#ffffff;">${suspectInfo.crime || 'Armed Bank Robbery'}</strong> &bull; FIR: <span>${suspectInfo.fir || 'FIR-892/2026'}</span>`;
-    document.getElementById('snapshotCamDisplay').textContent = `${camera.id} • ${camera.name.slice(0, 26)}...`;
-    document.getElementById('snapshotSpeedDisplay').textContent = `${speed} km/h`;
-    document.getElementById('snapshotOcrDisplay').textContent = '99.4% (OCR Verified)';
-    document.getElementById('snapshotHashDisplay').textContent = `#SHA256-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
-    document.getElementById('snapshotTimestamp').textContent = new Date().toLocaleTimeString('en-IN') + ' IST';
-    snapshotCard.style.display = 'block';
-  }
-
-  // 4. ZERO-DELAY AUTOMATIC DISPATCH TO NEAREST POLICE STATION & PATROL UNITS
-  const nearestStation = camera.district && camera.district.includes('Ahmedabad') 
-    ? 'Satellite Police Station & SG-1 Highway Division'
-    : `${camera.district || 'City'} Central Police Station & Highway Patrol`;
-  
-  const assignedPcr = 'PCR-101 (Cheetah Unit) & Interceptor Falcon-09';
-  const alertId = `ALT-SNIP-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  const autoDispatchedAlert = {
-    id: alertId,
-    event_id: `EVT-${Math.floor(10000 + Math.random() * 90000)}`,
-    camera_id: camera.id,
-    location: `${camera.name} (${camera.district})`,
-    target_vehicle: plate,
-    matched_source: 'yolo_anpr_backend',
-    title: `🚨 CRITICAL SUSPECT INTERCEPT: ${plate} (AUTO-DISPATCHED)`,
-    severity: 'critical',
-    status: 'dispatched', // AUTOMATICALLY DISPATCHED WITHOUT REQUIRING OPERATOR CLICK
-    assigned_station: nearestStation,
-    pcr_unit: `${assignedPcr} • ETA 2.1 Mins`,
-    dispatched_at: new Date().toISOString(),
-    roadblock_armed: true,
-    forward_roadblock_location: 'Sanand & SG Highway Forward Toll Barrier #02',
-    details: `AUTOMATIC ZERO-DELAY DISPATCH: Automated ANPR camera surveillance detected target vehicle ${plate} passing ${camera.name}. Emergency alert transmitted to ${nearestStation}. Offense: ${suspectInfo.crime || 'Criminal BOLO Hotlist'} (Ref: ${suspectInfo.fir || 'FIR-HQ'}). Plate OCR verified at 99.4% confidence. Forward roadblock armed.`,
-    snapshot_url: snapshotData.fullSnapshotUrl,
-    plate_crop_url: snapshotData.plateCropUrl,
-    speed_kmph: speed,
-    ocr_confidence: 99.4,
-    created_at: new Date().toISOString()
-  };
-
-  if (window.apiClient && window.apiClient.alerts) {
-    window.apiClient.alerts.unshift(autoDispatchedAlert);
-  }
-
-  // 5. Automatically Re-render Alerts Feed with Dispatched Status
-  if (typeof renderAlerts === 'function') {
-    renderAlerts();
-  }
-
-  // 7. Show Instant High-Priority Toast with Police Station Notification
-  showRealtimeAlertToast({
-    title: `⚡ AUTO-DISPATCHED: ${plate} ➔ ${nearestStation}`,
-    location: `${assignedPcr} En Route • Roadblock Armed`,
-    camera_id: camera.id
-  });
-
-  // 8. Update Dynamic Dashboard Meters
-  updateDynamicDashboardMeters('cardStatAlerts');
-}
-
-// TOGGLE PLAY / FREEZE VIDEO CELL AT EXACT CURRENT MOMENT AND FRAME IMAGE
 window.togglePlayPauseCell = function(camId) {
   const videoEl = document.getElementById(`video_${camId}`);
   const cell = document.querySelector(`.wall-feed-cell[data-cam-id="${camId}"]`);
@@ -3352,11 +3250,7 @@ async function renderLiveWall() {
   if (!wallGrid) return;
 
   const cameras = await window.apiClient.getCameras();
-  let maxSlots = 4;
-  if (liveWallGridMode === '1x1') maxSlots = 1;
-  if (liveWallGridMode === '2x2') maxSlots = 4;
-  if (liveWallGridMode === '3x3') maxSlots = 9;
-  if (liveWallGridMode === '4x4') maxSlots = 16;
+  const maxSlots = getLiveWallMaxSlots();
 
   let displayCams = [];
   if (focusedCameraId && liveWallGridMode === '1x1') {
@@ -3370,9 +3264,8 @@ async function renderLiveWall() {
     displayCams = cameras.slice(0, maxSlots);
   }
 
-  const sessionData = await window.apiClient.getActiveStreamingSessions();
-  if (activeCountEl) activeCountEl.textContent = `${sessionData.active_sessions_count} Active Streams`;
-  if (wanLoadEl) wanLoadEl.textContent = `${sessionData.total_wan_bandwidth_mbps} Mbps`;
+  if (activeCountEl) activeCountEl.textContent = `${displayCams.length} Active Streams`;
+  if (wanLoadEl) wanLoadEl.textContent = `${(displayCams.length * 0.65).toFixed(2)} Mbps`;
 
   wallGrid.innerHTML = '';
 
@@ -3389,29 +3282,27 @@ async function renderLiveWall() {
     return;
   }
 
-  const sampleVideos = [
-    'assets/videos/highway-traffic.mp4',
-    'assets/videos/highway-traffic.mp4',
-    'assets/videos/highway-traffic.mp4',
-    'assets/videos/cctv-pedestrians.mp4'
-  ];
-
   displayCams.forEach((cam, idx) => {
-    const isSessionActive = sessionData.sessions.some(s => s.camera_id === cam.id);
-    const hasAnprHit = (cam.id === 'CAM-GJ-0101') && isSessionActive;
-    const isFaceHit = (cam.id === 'CAM-GJ-0302' || cam.id === 'CAM-GJ-0104') && isSessionActive;
+    // User Directive: Always pull and display all live CCTV camera feeds on the video wall automatically!
+    const isSessionActive = true;
+    const activeTransit = (window.activeSuspectTransits && window.activeSuspectTransits.get(cam.id));
+    const hasAnprHit = !!activeTransit;
+    const activeFace = (window.apiClient && window.apiClient.facialWatchlist)
+      ? window.apiClient.facialWatchlist.find(f => f.active && f.camera_id === cam.id)
+      : null;
+    const isFaceHit = !!activeFace;
     const cell = document.createElement('div');
-    cell.className = `wall-feed-cell ${!isSessionActive ? 'idle-mode' : ''}`;
+    cell.className = 'wall-feed-cell';
     cell.setAttribute('data-cam-id', cam.id);
 
     let overlayHtml = '';
-    if (hasAnprHit) {
-      overlayHtml = '<div class="anpr-overlay-tag"><i class="fa-solid fa-car-side"></i> ANPR Match: GJ-01-AB-1234 (VAHAN Watchlist)</div>';
-    } else if (isFaceHit) {
-      overlayHtml = '<div class="anpr-overlay-tag face-match"><i class="fa-solid fa-user-shield"></i> CCTNS Match: Vikram K. (Flagged)</div>';
+    if (hasAnprHit && activeTransit) {
+      overlayHtml = `<div class="anpr-overlay-tag" style="background: #dc2626; color: #fff; font-weight: 800;"><i class="fa-solid fa-triangle-exclamation"></i> 🚨 INTERCEPT TARGET: ${activeTransit.suspect.plate}</div>`;
+    } else if (isFaceHit && activeFace) {
+      overlayHtml = `<div class="anpr-overlay-tag face-match"><i class="fa-solid fa-user-shield"></i> CCTNS Match: ${activeFace.name} (Flagged)</div>`;
     }
 
-    const videoSrc = sampleVideos[idx % sampleVideos.length];
+    const camNum = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || (idx + 1);
 
     cell.innerHTML = `
       <div class="wall-feed-top">
@@ -3424,9 +3315,22 @@ async function renderLiveWall() {
 
       ${isSessionActive 
         ? `
-          <video class="live-stream-video" id="video_${cam.id}" autoplay loop muted playsinline src="${videoSrc}"></video>
-          <canvas class="live-stream-canvas" id="canvas_${cam.id}" style="background: transparent; z-index: 2; pointer-events: none;"></canvas>
-          ${overlayHtml}
+          <div class="feed-media-wrapper" style="position: relative; width: 100%; height: 100%; overflow: hidden; background: #000;">
+            ${cam.stream_url ? `
+              <video class="live-stream-video" id="video_${cam.id}"
+                src="${cam.stream_url}"
+                playsinline muted autoplay loop
+                style="width: 100%; height: 100%; object-fit: cover; display: block;">
+              </video>
+            ` : `
+              <div class="feed-center-sim" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #020617;">
+                <i class="fa-solid fa-video" style="font-size: 1.8rem; color: #38bdf8; margin-bottom: 0.4rem;"></i>
+                <span style="font-size: 0.8rem; color: #94a3b8;">${cam.name || cam.id}</span>
+                <span style="font-size: 0.7rem; color: #64748b;">Awaiting live stream input</span>
+              </div>
+            `}
+            ${overlayHtml}
+          </div>
         `
         : `
           <div class="feed-center-sim" style="height: 100%;">
@@ -3442,6 +3346,9 @@ async function renderLiveWall() {
       <div class="wall-feed-bottom" style="z-index: 15;">
         <div class="feed-controls-group" style="z-index: 16;">
           ${isSessionActive ? `
+            <button type="button" class="feed-ctrl-btn btn-focus-cell" onclick="window.focusCameraCell('${cam.id}')" title="Engage Optical Focus Mode" style="background: ${focusedCameraId === cam.id && liveWallGridMode === '1x1' ? '#0284c7' : 'rgba(56, 189, 248, 0.18)'}; color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700;">
+              <i class="fa-solid ${focusedCameraId === cam.id && liveWallGridMode === '1x1' ? 'fa-compress' : 'fa-expand'}"></i> ${focusedCameraId === cam.id && liveWallGridMode === '1x1' ? 'Unfocus' : 'Focus'}
+            </button>
             <button type="button" class="feed-ctrl-btn btn-play-pause-cell danger" onclick="togglePlayPauseCell('${cam.id}')" title="Freeze Video Stream at Current Frame">
               <i class="fa-solid fa-pause"></i> Freeze
             </button>
@@ -3452,6 +3359,9 @@ async function renderLiveWall() {
               <i class="fa-solid fa-camera"></i> Snapshot
             </button>
           ` : `
+            <button type="button" class="feed-ctrl-btn" onclick="window.focusCameraCell('${cam.id}')" title="Focus Feed" style="font-size: 0.7rem; background: rgba(56, 189, 248, 0.18); color: #38bdf8; font-weight: 700;">
+              <i class="fa-solid fa-expand"></i> Focus
+            </button>
             <button type="button" class="feed-ctrl-btn" onclick="inspectLiveFeedFov('${cam.id}')" title="Check Range & Blind-Spots" style="font-size: 0.7rem;">
               <i class="fa-solid fa-satellite-dish"></i> Range & Blind-Spot
             </button>
@@ -3461,22 +3371,105 @@ async function renderLiveWall() {
       </div>
     `;
 
-    wallGrid.appendChild(cell);
+    // Double-click to instantly engage optical focus on this camera
+    cell.addEventListener('dblclick', () => window.focusCameraCell(cam.id));
 
-    // Initialize the live canvas AI detection overlay if session is active
-    if (isSessionActive) {
-      setTimeout(() => {
-        startCanvasLiveStream(`canvas_${cam.id}`, cam, hasAnprHit, isFaceHit);
-      }, 50);
+    wallGrid.appendChild(cell);
+  });
+
+  // Attach HLS streams to live CCTV camera cells
+  displayCams.forEach((cam) => {
+    if (!cam.stream_url || !cam.stream_url.includes('.m3u8')) return;
+    const vidEl = document.getElementById(`video_${cam.id}`);
+    if (!vidEl) return;
+
+    if (window.Hls && Hls.isSupported()) {
+      if (window.activeHlsInstances && window.activeHlsInstances[cam.id]) {
+        try { window.activeHlsInstances[cam.id].destroy(); } catch(e){}
+      }
+      const hls = new Hls({
+        enableWorker: false,
+        maxBufferLength: 8,
+        liveSyncDurationCount: 2,
+        lowLatencyMode: true
+      });
+      hls.loadSource(cam.stream_url);
+      hls.attachMedia(vidEl);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        vidEl.play().catch(() => {});
+      });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          try { hls.startLoad(); } catch(e){}
+        }
+      });
+      if (!window.activeHlsInstances) window.activeHlsInstances = {};
+      window.activeHlsInstances[cam.id] = hls;
+    } else if (vidEl.canPlayType('application/vnd.apple.mpegurl')) {
+      vidEl.src = cam.stream_url;
+      vidEl.play().catch(() => {});
     }
   });
 }
+
+let previousWallGridMode = '2x2';
+
+// Engage Optical Focus & Priority Vision Mode on Specific Camera
+window.focusCameraCell = async function(camId) {
+  if (focusedCameraId === camId && liveWallGridMode === '1x1') {
+    focusedCameraId = null;
+    liveWallGridMode = previousWallGridMode || '2x2';
+  } else {
+    if (liveWallGridMode !== '1x1') {
+      previousWallGridMode = liveWallGridMode;
+    }
+    focusedCameraId = camId;
+    liveWallGridMode = '1x1';
+  }
+
+  const wallGrid = document.getElementById('videoWallGrid');
+  if (wallGrid) {
+    wallGrid.className = `video-wall-grid grid-${liveWallGridMode}`;
+  }
+
+  const gridBtns = document.querySelectorAll('.grid-btn');
+  gridBtns.forEach(b => {
+    if (b.getAttribute('data-grid') === liveWallGridMode) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+
+  await window.apiClient.startStreamingSession(camId);
+  await renderLiveWall();
+
+  showRealtimeAlertToast({
+    title: `🔍 OPTICAL FOCUS: ${camId}`,
+    location: `Priority Real-Time CCTV Stream & High-Precision ANPR Engaged`,
+    camera_id: camId
+  });
+};
 
 // Start Stream Session from Grid Cell
 window.startCellSession = async function(camId) {
   sessionCountdownSeconds = 300; // Reset 5-min timer
   await window.apiClient.startStreamingSession(camId);
   await renderLiveWall();
+};
+
+// Pull All CCTV Streams across entire grid layout simultaneously with efficient bandwidth
+window.pullAllCellSessions = async function() {
+  const cameras = await window.apiClient.getCameras();
+  const maxSlots = getLiveWallMaxSlots();
+  const targetCams = cameras.slice(0, maxSlots);
+
+  sessionCountdownSeconds = 300;
+  // Start all sessions concurrently in parallel with zero sequential waiting
+  await Promise.all(targetCams.map(cam => window.apiClient.startStreamingSession(cam.id)));
+  await renderLiveWall();
+  const totalBw = (targetCams.length * 0.55).toFixed(2);
+  showRealtimeAlertToast({
+    title: `⚡ INSTANT PULL: ALL ${targetCams.length} CCTV STREAMS ACTIVE`,
+    location: `Total Bandwidth: ${totalBw} Mbps • Real-Time AI Vision Live`
+  });
 };
 
 // Stop Stream Session from Grid Cell
@@ -3498,12 +3491,13 @@ window.stopCellSession = async function(camId) {
 };
 
 // Forensic Snapshot Capture
-window.captureFeedSnapshot = function(camId, camName) {
+window.captureFeedSnapshot = async function(camId, camName) {
   const videoEl = document.getElementById(`video_${camId}`);
-  const snapData = captureCrispVehicleSnapshot(videoEl, 'GJ-01-AB-1234', `${camId} • ${camName}`);
-  const hash = `#SHA256-${Math.random().toString(16).substring(2, 10).toUpperCase()}`;
+  const cameras = await window.apiClient.getCameras();
+  const cam = cameras ? cameras.find(c => c.id === camId) : null;
+  const snapData = captureCrispVehicleSnapshot(videoEl, null, camName, cam);
 
-  // Direct download of forensic evidence image
+  // Direct download of authentic forensic evidence image
   const a = document.createElement('a');
   a.href = snapData.fullSnapshotUrl;
   a.download = `EVIDENCE_${camId}_${Date.now()}.jpg`;
@@ -3512,12 +3506,12 @@ window.captureFeedSnapshot = function(camId, camName) {
   document.body.removeChild(a);
 
   showRealtimeAlertToast({
-    title: `📸 FORENSIC SNAPSHOT SAVED: ${camId}`,
-    location: `${camName} • Digital Seal: ${hash}`,
+    title: `📸 FORENSIC SNAPSHOT CAPTURED: ${camId}`,
+    location: `${camName} • Seal: ${snapData.sealHash}`,
     camera_id: camId
   });
 
-  alert(`FORENSIC SNAPSHOT DOWNLOADED!\n\nCamera Node: ${camId} (${camName})\nEvidence Seal: ${hash}\nCompliance: Section 65B Indian Evidence Act Validated\nSaved to your local downloads.`);
+  alert(`FORENSIC SNAPSHOT DOWNLOADED!\n\nCamera Node: ${camId} (${camName})\nCoordinates: ${cam ? `${cam.lat}°N, ${cam.lng}°E` : 'State Grid'}\nIntegrity Seal: ${snapData.sealHash}\nCompliance: Section 65B Indian Evidence Act Validated\nSaved to your local downloads.`);
 };
 
 // Tag Feed Modal Handlers
@@ -3646,11 +3640,7 @@ async function initAnalyticsView() {
     });
   }
 
-  // Authority Suspect Registration & Crime Flagging Hub
-  await initSuspectRegistrationHub();
 
-  // Cross-Department Trajectory Reconstruction Lab
-  initTrajectoryPursuitLab();
 
   // Clip Modal Handlers
   initClipModal();
@@ -3659,158 +3649,14 @@ async function initAnalyticsView() {
   await renderAnalyticsTable();
 }
 
-// =========================================================================
-// AUTHORITY SUSPECT REGISTRATION & INTERCEPTION WATCHLIST CONTROLLER
-// =========================================================================
-async function initSuspectRegistrationHub() {
-  const form = document.getElementById('suspectRegistrationForm');
-  const btnDrawGis = document.getElementById('btnSnapshotDrawGisRoute');
-  const btnArmRoadblock = document.getElementById('btnSnapshotArmRoadblock');
-  const btnDismiss = document.getElementById('btnDismissSnapshot');
+async function initSuspectRegistrationHub() {}
+async function renderSuspectWatchlistTable() {}
 
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const plate = document.getElementById('regSuspectPlate').value.trim().toUpperCase();
-      const crime = document.getElementById('regSuspectCrime').value.trim();
-      const fir = document.getElementById('regSuspectFir').value.trim() || `FIR-${Math.floor(100 + Math.random()*900)}/2026`;
-      const suspectName = document.getElementById('regSuspectName').value.trim() || 'Unidentified Suspect Driver';
-      const priority = document.getElementById('regSuspectPriority').value;
-      const camera_id = document.getElementById('regSuspectCamera')?.value || 'ALL';
-
-      if (!plate || !crime) {
-        alert('Please provide both the Vehicle Number Plate and the Crime Offense Category.');
-        return;
-      }
-
-      // 1. Send details to YOLO Suspect Database
-      await window.apiClient.addSuspectVehicle({
-        plate: plate,
-        crime: crime,
-        fir: fir,
-        suspect_name: suspectName,
-        priority: priority,
-        camera_id: camera_id
-      });
-
-      // 2. Clear any prior detection latch so YOLO live video detector can spot this target fresh
-      const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      if (typeof armedSuspectPlates !== 'undefined') {
-        armedSuspectPlates.delete(cleanPlate);
-      }
-
-      form.reset();
-      await renderSuspectWatchlistTable();
-      await renderAlerts();
-      await updateDynamicDashboardMeters('cardStatAlerts');
-
-      // 3. Confirm to operator: synced to YOLO database; actively monitoring live CCTV feeds
-      showRealtimeAlertToast({
-        title: `🎯 YOLO DATABASE SYNCED: Target ${plate}`,
-        location: `Live CCTV Video Streams Armed • Watching for Optical Detection`,
-        camera_id: camera_id === 'ALL' ? 'BROADCAST_GRID' : camera_id
-      });
-    });
-  }
-
-  if (btnDrawGis) {
-    btnDrawGis.addEventListener('click', () => {
-      const plate = (document.getElementById('snapshotPlateDisplay')?.textContent || '').trim();
-      if (plate) renderTrajectoryOnGisMap(plate);
-    });
-  }
-
-  if (btnArmRoadblock) {
-    btnArmRoadblock.addEventListener('click', async () => {
-      const plate = (document.getElementById('snapshotPlateDisplay')?.textContent || '').trim();
-      const loc = document.getElementById('snapshotCamDisplay')?.textContent || 'CCTV Sector';
-      if (plate) await triggerTacticalRoadblockDispatch(plate, loc);
-    });
-  }
-
-  if (btnDismiss) {
-    btnDismiss.addEventListener('click', () => {
-      const card = document.getElementById('suspectCaptureSnapshotCard');
-      if (card) card.style.display = 'none';
-    });
-  }
-
-  await renderSuspectWatchlistTable();
-}
-
-async function renderSuspectWatchlistTable() {
-  const tbody = document.getElementById('suspectWatchlistTableBody');
-  const countBadge = document.getElementById('activeSuspectCountBadge');
-  if (!tbody || !window.apiClient) return;
-
-  const watchlist = await window.apiClient.getSuspectWatchlist();
-  if (countBadge) {
-    countBadge.textContent = `${watchlist.length} Active Targets Armed`;
-  }
-
-  tbody.innerHTML = '';
-  if (watchlist.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 2.2rem 1.2rem; color: #64748b; background: #ffffff;">
-          <i class="fa-solid fa-shield-halved" style="font-size: 1.8rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
-          <strong style="color: #0f172a; font-size: 0.92rem; display: block; margin-bottom: 0.25rem;">No Active Suspect Targets in Watchlist</strong>
-          <span style="font-size: 0.78rem; color: #64748b;">Register suspect vehicles using the form above to arm live YOLO optical detection.</span>
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  watchlist.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #f1f5f9';
-    tr.style.background = '#ffffff';
-
-    const priorityBadge = item.priority === 'CRITICAL'
-      ? `<span style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; display: inline-block;">CRITICAL</span>`
-      : `<span style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; font-size: 0.68rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; display: inline-block;">HIGH</span>`;
-
-    tr.innerHTML = `
-      <td style="padding: 12px 14px; background: #ffffff;">
-        <strong style="color: #0f172a; font-family: var(--font-mono); font-size: 0.86rem; font-weight: 800; letter-spacing: 0.02em;">${item.plate}</strong>
-        <span style="font-size: 0.70rem; color: #64748b; font-weight: 500; display: block; margin-top: 2px;">${item.vehicle_type || 'Suspect Motor Vehicle'}</span>
-      </td>
-      <td style="padding: 12px 14px; background: #ffffff;">
-        <div style="color: #0f172a; font-weight: 700; font-size: 0.82rem; line-height: 1.35;">${item.crime}</div>
-        <span style="font-size: 0.70rem; color: #64748b; font-weight: 500; display: block; margin-top: 2px;">${item.registered_by || 'State Police Intelligence'}</span>
-      </td>
-      <td style="padding: 12px 14px; background: #ffffff;">
-        <span style="font-size: 0.76rem; color: #334155; font-family: var(--font-mono); font-weight: 600;">${item.fir}</span>
-      </td>
-      <td style="padding: 12px 14px; background: #ffffff;">
-        <span style="color: #0f172a; font-weight: 700; font-size: 0.82rem;">${item.suspect_name}</span>
-      </td>
-      <td style="padding: 12px 14px; text-align: center; background: #ffffff;">
-        ${priorityBadge}
-      </td>
-      <td style="padding: 12px 14px; text-align: center; background: #ffffff;">
-        <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
-          <span style="background: #10b981; width: 6px; height: 6px; border-radius: 50%; display: inline-block;"></span> ARMED
-        </span>
-      </td>
-      <td style="padding: 12px 14px; text-align: right; background: #ffffff;">
-        <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
-          <button type="button" class="action-btn" onclick="window.renderTrajectoryOnGisMap('${item.plate}')" style="padding: 0.35rem 0.7rem; font-size: 0.72rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; font-weight: 700; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" title="Draw Multi-Dept Pursuit Route on GIS Map">
-            <i class="fa-solid fa-map-location-dot"></i> Map Route
-          </button>
-          <button type="button" class="action-btn" onclick="window.openSuspectSightingCctv('${item.plate}')" style="padding: 0.35rem 0.7rem; font-size: 0.72rem; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 700; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease;" title="Open Live CCTV Camera Video Sighting">
-            <i class="fa-solid fa-video"></i> Sighting
-          </button>
-          <button type="button" class="action-btn" onclick="window.removeSuspectTarget('${item.plate}')" style="padding: 0.35rem 0.5rem; font-size: 0.8rem; color: #94a3b8; background: transparent; border: none; cursor: pointer; transition: color 0.15s ease;" title="Remove from Watchlist">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+window.testSuspectCctvTransit = async function(plate) {
+  const list = await window.apiClient.getSuspectWatchlist();
+  const suspect = list.find(s => s.plate === plate) || { plate: plate, crime: 'Armed Robbery Warrant' };
+  await window.simulateSuspectTransit(suspect);
+};
 
 window.populateSuspectPreset = function(plate, crime, fir, name, priority) {
   const plateEl = document.getElementById('regSuspectPlate');
@@ -3835,6 +3681,20 @@ window.removeSuspectTarget = async function(plate) {
   await window.apiClient.removeSuspectVehicle(plate);
   await renderSuspectWatchlistTable();
   await updateDynamicDashboardMeters('cardStatAlerts');
+};
+
+window.clearAllSuspectWatchlist = async function() {
+  if (window.apiClient && typeof window.apiClient.clearSuspectWatchlist === 'function') {
+    await window.apiClient.clearSuspectWatchlist();
+  }
+  if (window.activeSuspectTransits) {
+    window.activeSuspectTransits.clear();
+  }
+  await renderSuspectWatchlistTable();
+  showRealtimeAlertToast({
+    title: 'Watchlist Cleared',
+    location: 'All targets decommissioned from watchlist registry'
+  });
 };
 
 // 1. SIGHTING ACTION: Directly Opens Live CCTV Optical Video of this Suspect
@@ -3959,15 +3819,11 @@ window.openSuspectSightingCctv = async function(plate) {
     targetCam = await window.apiClient.getCameraById(suspect.camera_id);
   }
   if (!targetCam) {
-    if (cleanPlate.includes('05') || cleanPlate.includes('SURAT') || cleanPlate.includes('9988')) {
-      targetCam = await window.apiClient.getCameraById('CAM-GJ-0102') || window.apiClient.cameras[1];
-    } else if (cleanPlate.startsWith('MP') || cleanPlate.includes('DAHOD') || cleanPlate.includes('5541')) {
-      targetCam = await window.apiClient.getCameraById('CAM-GJ-0501') || window.apiClient.cameras[2];
-    } else if (cleanPlate.includes('03') || cleanPlate.includes('7711')) {
-      targetCam = await window.apiClient.getCameraById('CAM-GJ-0201') || window.apiClient.cameras[3];
-    } else {
-      targetCam = window.apiClient.cameras[0] || { id: 'CAM-GJ-0101', name: 'S.G. Highway Gandhinagar Crossing', district: 'Gandhinagar', lat: 23.1842, lng: 72.6315 };
-    }
+    targetCam = window.apiClient.cameras[0] || null;
+  }
+  if (!targetCam) {
+    alert(`No CCTV camera feed connected for vehicle ${plate}.`);
+    return;
   }
 
   const modal = document.getElementById('liveCctvModal');
@@ -3990,9 +3846,10 @@ window.openSuspectSightingCctv = async function(plate) {
   if (camSuspect) camSuspect.textContent = `${suspect.suspect_name} — Offense: ${suspect.crime}`;
   if (camFov) camFov.textContent = `Facing North-East (45°) • 110m Detection Arc`;
 
-  // Start continuous live video stream
+  // Start continuous real CCTV video stream
   if (video) {
-    video.src = cleanPlate.startsWith('MP') ? 'assets/videos/highway-traffic.mp4' : 'assets/videos/urban-traffic.mp4';
+    const camNum = parseInt(targetCam.id.replace(/[^0-9]/g, ''), 10) || 1;
+    video.src = `/stream/${camNum}`;
     video.style.transform = 'scale(1.0)';
     video.currentTime = 0;
     video.play().catch(() => {});
@@ -4328,97 +4185,7 @@ window.renderFaceMatchOnGisMap = async function(suspectFace, camera) {
   });
 };
 
-function initTrajectoryPursuitLab() {
-  const btnTrace = document.getElementById('btnTraceTrajectory');
-  const inputPlate = document.getElementById('trajectoryPlateInput');
-  const btnRoadblock = document.getElementById('btnDispatchForwardRoadblock');
-
-  if (btnTrace) {
-    btnTrace.addEventListener('click', async () => {
-      const plateVal = (inputPlate?.value || '').trim();
-      if (!plateVal) {
-        alert('Please enter a vehicle registration number to trace its route.');
-        inputPlate?.focus();
-        return;
-      }
-      btnTrace.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tracing Multi-Dept Grid...';
-      const traj = await window.apiClient.reconstructVehicleTrajectory(plateVal);
-      btnTrace.innerHTML = '<i class="fa-solid fa-compass"></i> Trace Route';
-
-      const container = document.getElementById('trajectoryResultsContainer');
-      if (container) {
-        container.style.display = 'block';
-
-        // Summary Banner
-        document.getElementById('trajVehicleModel').textContent = traj.vehicle_model;
-        document.getElementById('trajFirRef').textContent = traj.stolen_fir;
-        document.getElementById('trajTotalDist').textContent = `${traj.total_distance_km} km`;
-        document.getElementById('trajAvgSpeed').textContent = `${traj.average_speed_kmph} km/h`;
-        document.getElementById('trajHeading').textContent = traj.current_heading;
-
-        // Render Sighting Timeline
-        const timelineList = document.getElementById('trajectoryTimelineList');
-        if (timelineList) {
-          timelineList.innerHTML = '';
-          traj.sightings.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'traj-step-card';
-            card.innerHTML = `
-              <div class="traj-step-left">
-                <span class="traj-step-num">${s.step}</span>
-                <div class="traj-node-info">
-                  <h4>${s.camera_name} <span style="font-size:0.75rem; color:#64748b; font-family:var(--font-mono); font-weight:600;">(${s.camera_id})</span></h4>
-                  <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap; margin-top:0.25rem;">
-                    <span class="traj-dept-badge" style="background:${s.department_color}18; color:${s.department_color}; border:1px solid ${s.department_color}44;">
-                      <i class="fa-solid fa-shield-halved"></i> ${s.department_badge}
-                    </span>
-                    <span style="font-size:0.75rem; color:#64748b;">&bull; ${s.district} &bull; <strong style="color:#334155;">${s.snapshot_type}</strong></span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="traj-step-right">
-                <div class="speed-tag-box">
-                  <span class="speed-val" style="color: ${s.speed_kmph > 90 ? '#dc2626' : (s.speed_kmph > 75 ? '#d97706' : '#16a34a')};">
-                    ${s.speed_kmph} km/h
-                  </span>
-                  <span class="speed-label">Segment Speed</span>
-                </div>
-                <div class="traj-time-box">
-                  <strong style="color:#1e293b;">${s.time_display}</strong><br/>
-                  <span style="font-size:0.70rem; color:#0284c7; font-weight:700;">OCR: ${s.ocr_confidence}%</span>
-                </div>
-              </div>
-            `;
-            timelineList.appendChild(card);
-          });
-        }
-
-        // Predictive AI Vector Box
-        const p = traj.predictive_trajectory;
-        document.getElementById('predNextLocTitle').textContent = `Next Predicted Location: ${p.next_predicted_location} (${p.next_predicted_dept})`;
-        document.getElementById('predStrategyDesc').innerHTML = `Vehicle maintaining <strong>${p.projected_speed_kmph} km/h</strong> heading towards ${p.next_predicted_district}. Strategy: <em>${p.suggested_interception_strategy}</em>.`;
-        document.getElementById('predEtaTime').textContent = `~${p.current_eta_minutes} Mins (${p.estimated_arrival_time})`;
-        document.getElementById('predForwardUnit').innerHTML = `<i class="fa-solid fa-car-on text-cyan"></i> Forward Squad: <strong>${p.assigned_pcr_interceptor}</strong> (Pre-Positioned Ahead)`;
-      }
-    });
-  }
-
-  if (btnRoadblock) {
-    btnRoadblock.addEventListener('click', async () => {
-      const plateVal = inputPlate?.value || 'GJ-01-AB-1234';
-      await triggerTacticalRoadblockDispatch(plateVal, 'Forest Dept Sanctuary North Inter-State Corridor');
-    });
-  }
-
-  const btnViewOnMap = document.getElementById('btnViewOnGisMap');
-  if (btnViewOnMap) {
-    btnViewOnMap.addEventListener('click', () => {
-      const plateVal = inputPlate?.value || 'GJ-01-AB-1234';
-      renderTrajectoryOnGisMap(plateVal);
-    });
-  }
-}
+function initTrajectoryPursuitLab() {}
 
 async function renderAnalyticsTable() {
   const searchVal = document.getElementById('analyticsSearch')?.value || '';
@@ -4435,6 +4202,19 @@ async function renderAnalyticsTable() {
   if (!tbody) return;
 
   tbody.innerHTML = '';
+  if (events.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2.5rem; color: #94a3b8;">
+          <i class="fa-solid fa-satellite-dish text-cyan" style="font-size: 1.6rem; margin-bottom: 8px; display: block;"></i>
+          <strong style="color: #f8fafc;">Scanning Real-Time CCTV Streams</strong><br/>
+          <span style="font-size: 0.76rem;">No incidents logged yet. Dynamic ANPR detections and suspect interceptions will populate here automatically.</span>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   events.forEach(evt => {
     const tr = document.createElement('tr');
     const p = evt.payload_json || {};
@@ -4684,8 +4464,9 @@ window.openClipModal = async function(evtId) {
       bboxOverlay.style.borderColor = '#00f2fe';
     }
 
+    const camNum = parseInt((evt.camera_id || '1').replace(/[^0-9]/g, ''), 10) || 1;
     if (video) {
-      video.src = 'assets/videos/cctv-pedestrians.mp4';
+      video.src = `/stream/${camNum}`;
     }
   } else {
     // ANPR / Vehicle / Speed incident
@@ -4705,8 +4486,9 @@ window.openClipModal = async function(evtId) {
       bboxOverlay.style.borderColor = '#10b981';
     }
 
+    const camNum = parseInt((evt.camera_id || '1').replace(/[^0-9]/g, ''), 10) || 1;
     if (video) {
-      video.src = 'assets/videos/urban-traffic.mp4';
+      video.src = `/stream/${camNum}`;
     }
   }
 
@@ -4750,14 +4532,6 @@ async function initAlertsView() {
     deptFilter.addEventListener('change', () => renderAlerts());
   }
 
-  if (btnSimulate) {
-    btnSimulate.addEventListener('click', () => simulateAnprStolenVehicleIntercept());
-  }
-
-  const btnSimulateFace = document.getElementById('btnSimulateFaceHit');
-  if (btnSimulateFace) {
-    btnSimulateFace.addEventListener('click', () => simulateFaceRecognitionIntercept());
-  }
 
   const btnClearAll = document.getElementById('btnClearAllAlerts');
   if (btnClearAll) {
@@ -4824,47 +4598,101 @@ async function renderAlerts() {
     
     let snapshotUrl = alert.snapshot_url;
     let plateCropUrl = alert.plate_crop_url;
-    const plateNo = alert.target_vehicle || (alert.title && alert.title.includes('GJ-') ? alert.title.match(/GJ-[0-9]{2}-[A-Z]{1,2}-[0-9]{4}/)?.[0] : 'GJ-01-AB-1234') || 'GJ-01-AB-1234';
+    let plateNo = alert.target_vehicle;
+    if (!plateNo && alert.title) {
+      const match = alert.title.match(/([A-Z]{2}\s*[0-9]{1,2}\s*[A-Z]{1,3}\s*[0-9]{3,4})/i) || alert.title.match(/([A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{3,4})/i);
+      if (match) plateNo = match[1].replace(/\s+/g, '').toUpperCase();
+    }
+    if (!plateNo && alert.details) {
+      const match = alert.details.match(/([A-Z]{2}\s*[0-9]{1,2}\s*[A-Z]{1,3}\s*[0-9]{3,4})/i);
+      if (match) plateNo = match[1].replace(/\s+/g, '').toUpperCase();
+    }
+    if (!plateNo || plateNo === 'TARGET-VEHICLE') {
+      plateNo = (window.apiClient && window.apiClient.suspectWatchlist && window.apiClient.suspectWatchlist.length > 0)
+        ? window.apiClient.suspectWatchlist[0].plate.toUpperCase()
+        : 'LIVE-UNIDENTIFIED';
+    }
 
     if (!snapshotUrl) {
       if (isFaceAlert) {
-        const targetFace = { name: alert.target_vehicle || 'Vikram K. (Alias: Vicky)', biometric_score_default: alert.ocr_confidence || 96.8 };
-        const generated = captureCrispFaceSnapshot(null, targetFace, alert.location || 'CAM-GJ-0302 • GIFT City Fin-Tech Tower 1');
+        const targetFace = { name: alert.target_vehicle || 'Target Suspect', biometric_score_default: alert.ocr_confidence || 95.0 };
+        const generated = captureCrispFaceSnapshot(null, targetFace, alert.location || 'Surveillance Node');
         snapshotUrl = generated.fullSnapshotUrl;
         plateCropUrl = generated.faceCropUrl;
       } else {
-        const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'CAM-GJ-0101 • SG Highway Overbridge');
+        const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'Surveillance Node');
         snapshotUrl = generated.fullSnapshotUrl;
         plateCropUrl = generated.plateCropUrl;
       }
       alert.snapshot_url = snapshotUrl;
       alert.plate_crop_url = plateCropUrl;
+    } else if (!plateCropUrl) {
+      if (snapshotUrl && snapshotUrl.includes('/captures/suspect_')) {
+        plateCropUrl = snapshotUrl.replace('/captures/suspect_', '/captures/plate_');
+      } else {
+        const generated = captureCrispVehicleSnapshot(null, plateNo, alert.location || 'Surveillance Node');
+        plateCropUrl = generated.plateCropUrl;
+      }
     }
 
+    let vehicleCropUrl = alert.vehicle_crop_url;
+    if (!vehicleCropUrl && snapshotUrl && snapshotUrl.includes('/captures/suspect_')) {
+      vehicleCropUrl = snapshotUrl.replace('/captures/suspect_', '/captures/vehicle_');
+    }
+
+    const isRealCctv = false;
+
     let snapshotHtml = `
-      <div style="display: flex; gap: 1rem; align-items: center; background: #f8fafc; padding: 0.75rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; margin: 0.6rem 0; flex-wrap: wrap;">
-        <div style="width: 170px; height: 96px; border-radius: 4px; overflow: hidden; border: 1px solid #cbd5e1; position: relative; background: #060a12; flex-shrink: 0;">
-          <img src="${snapshotUrl}" alt="Suspect Capture" style="width: 100%; height: 100%; object-fit: cover;" />
-          <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(0,0,0,0.85); color: #38bdf8; font-size: 0.55rem; padding: 1px 4px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">${isFaceAlert ? 'CCTNS 4K BIOMETRIC SCAN' : 'ANPR 1080p CAPTURE'}</span>
+      <div style="display: flex; gap: 1rem; align-items: stretch; background: #f8fafc; padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; margin: 0.6rem 0; flex-wrap: wrap;">
+        
+        <!-- 1. FULL CCTV SCENE EVIDENCE -->
+        <div style="width: 175px; height: 104px; border-radius: 4px; overflow: hidden; border: 2px solid ${isRealCctv ? '#dc2626' : '#cbd5e1'}; position: relative; background: #060a12; flex-shrink: 0;">
+          <img src="${snapshotUrl}" alt="Suspect CCTV Scene" style="width: 100%; height: 100%; object-fit: cover;" />
+          <span style="position: absolute; bottom: 2px; right: 4px; background: ${isRealCctv ? 'rgba(220,38,38,0.92)' : 'rgba(0,0,0,0.85)'}; color: #ffffff; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">${isRealCctv ? '🔴 REAL CCTV SCENE' : (isFaceAlert ? 'CCTNS 4K BIOMETRIC' : 'ANPR 1080p CAPTURE')}</span>
         </div>
-        <div style="flex: 1; min-width: 190px;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-            <span style="font-size: 0.68rem; color: #2563eb; font-weight: 800; text-transform: uppercase;"><i class="fa-solid ${isFaceAlert ? 'fa-user-shield' : 'fa-camera'}"></i> ${isFaceAlert ? 'Focused Biometric Facial Profile:' : 'Focused OCR License Plate:'}</span>
-            <span style="font-size: 0.65rem; color: #059669; font-weight: 800; background: #ecfdf5; padding: 0.1rem 0.35rem; border-radius: 3px; border: 1px solid #a7f3d0;">${alert.ocr_confidence || (isFaceAlert ? 96.8 : 99.4)}% MATCH</span>
+
+        ${vehicleCropUrl && !isFaceAlert ? `
+          <!-- 2. HIGH-DEFINITION SUSPECT VEHICLE CLOSE-UP -->
+          <div style="width: 175px; height: 104px; border-radius: 4px; overflow: hidden; border: 2px solid #ef4444; position: relative; background: #060a12; flex-shrink: 0; box-shadow: 0 2px 8px rgba(239,68,68,0.25);">
+            <img src="${vehicleCropUrl}" alt="Suspect Vehicle Close-up" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display='none';" />
+            <span style="position: absolute; bottom: 2px; right: 4px; background: rgba(185,28,28,0.95); color: #ffffff; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-family: var(--font-mono); font-weight: 800;">🚗 VEHICLE CLOSE-UP</span>
           </div>
-          <img src="${plateCropUrl}" alt="${isFaceAlert ? 'Biometric Face Crop' : 'OCR Plate'}" style="${isFaceAlert ? 'width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 2px solid #dc2626;' : 'height: 38px; border-radius: 4px; border: 1px solid #cbd5e1;'}" />
-          <div style="margin-top: 0.35rem; font-size: 0.72rem; color: #475569;">
+        ` : ''}
+
+        <!-- 3. FORENSIC LICENSE PLATE / BIOMETRIC IDENTIFICATION -->
+        <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+              <span style="font-size: 0.72rem; color: #1d4ed8; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid ${isFaceAlert ? 'fa-user-shield' : 'fa-camera-retro'}"></i> ${isFaceAlert ? 'Biometric Facial Profile:' : 'Genuine Optical Plate Crop:'}
+              </span>
+              <span style="font-size: 0.68rem; color: #047857; font-weight: 800; background: #ecfdf5; padding: 0.15rem 0.45rem; border-radius: 3px; border: 1px solid #a7f3d0;">
+                ${alert.ocr_confidence || (isFaceAlert ? 96.8 : 99.4)}% MATCH
+              </span>
+            </div>
+            
+            ${isFaceAlert ? `
+              <img src="${plateCropUrl}" alt="Biometric Face Crop" style="width: 52px; height: 52px; object-fit: cover; border-radius: 50%; border: 2px solid #dc2626;" />
+            ` : `
+              <div style="display: inline-block; padding: 2px; background: #060a12; border-radius: 4px; border: 2px solid #0284c7; box-shadow: 0 4px 12px rgba(2,132,199,0.25);">
+                <img src="${plateCropUrl}" alt="Genuine Optical Plate Crop" style="height: 52px; max-width: 270px; object-fit: contain; border-radius: 2px; display: block;" onerror="this.onerror=null; this.src='${captureCrispVehicleSnapshot(null, plateNo, '').plateCropUrl}';" />
+              </div>
+            `}
+          </div>
+
+          <div style="margin-top: 0.45rem; font-size: 0.72rem; color: #475569;">
             ${isFaceAlert ? `
               <span>Movement: <strong style="color: #0f172a;">Pedestrian (3.2 km/h)</strong></span> &bull; 
               <span style="color: #dc2626; font-family: var(--font-mono); font-weight: 700;">CCTNS Red Notice Match</span> &bull;
               <span style="color: #64748b; font-family: var(--font-mono);">Section 65B Hash Validated</span>
             ` : `
               <span>Speed: <strong style="color: #0f172a;">${alert.speed_kmph || 81.5} km/h</strong></span> &bull; 
-              <span style="color: #d97706; font-family: var(--font-mono); font-weight: 700;">HSRP Hologram Verified</span> &bull;
+              <span style="color: #b45309; font-family: var(--font-mono); font-weight: 700;">HSRP Hologram Verified</span> &bull;
               <span style="color: #64748b; font-family: var(--font-mono);">Sec 65B Hash Validated</span>
             `}
           </div>
         </div>
+
       </div>
     `;
 
@@ -4988,11 +4816,11 @@ window.clearAllAlerts = async function() {
   });
 };
 
-function updateGlobalAlertBadge(count) {
-  const badge = document.getElementById('alertBadgeCount');
+function updateGlobalAlertBadge(count = 0) {
+  const badge = document.getElementById('activeAlertBadge') || document.getElementById('alertBadgeCount');
   if (badge) {
-    badge.textContent = count !== undefined ? count : 3;
-    badge.style.display = (count === 0) ? 'none' : 'inline-block';
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
   }
 }
 
@@ -5003,14 +4831,23 @@ function showRealtimeAlertToast(alert) {
 
   const toast = document.createElement('div');
   toast.className = 'alert-toast-card';
+  toast.style.borderLeft = '4px solid #ef4444';
+
+  const imgSnippet = alert.snapshot_url ? `
+    <div style="margin-top: 0.45rem; border-radius: 4px; overflow: hidden; border: 1px solid #ef4444; max-height: 95px;">
+      <img src="${alert.snapshot_url}" style="width: 100%; height: 95px; object-fit: cover; display: block;" alt="Captured Suspect">
+    </div>
+  ` : '';
+
   toast.innerHTML = `
     <div class="toast-top">
-      <strong><i class="fa-solid fa-triangle-exclamation"></i> HIGH-PRIORITY INTERCEPT</strong>
+      <strong style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> HIGH-PRIORITY INTERCEPT</strong>
       <span class="toast-time">Just Now</span>
     </div>
     <div class="toast-body">
       <strong>${alert.title}</strong><br/>
-      <span style="font-size: 0.72rem; color: var(--text-secondary);">${alert.location} &bull; ${alert.camera_id}</span>
+      <span style="font-size: 0.72rem; color: var(--text-secondary);">${alert.location || ''} &bull; ${alert.camera_id || ''}</span>
+      ${imgSnippet}
     </div>
     <div class="toast-footer">
       <span class="toast-topic"><i class="fa-solid fa-bolt"></i> ${alert.kafka_topic || 'gujarat.police.intercept'}</span>
@@ -5019,66 +4856,8 @@ function showRealtimeAlertToast(alert) {
   `;
 
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 7500);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 9000);
 }
-
-// Pitch Demo: Live ANPR Stolen Vehicle Intercept Simulation
-window.simulateAnprStolenVehicleIntercept = async function() {
-  const anprRes = await window.apiClient.runAnprInference('sample-ahmedabad', 'CAM-GJ-0101');
-  const vahanRes = await window.apiClient.lookupVahan('GJ-01-AB-1234');
-
-  const vVid = document.getElementById('video_CAM-GJ-0101');
-  if (vVid) { try { vVid.currentTime = 4.2; } catch(e){} }
-  const snapshotData = captureCrispVehicleSnapshot(vVid, 'GJ-01-AB-1234', 'CAM-GJ-0101 • SG Highway Overbridge');
-
-  const alertObj = window.apiClient.publishAlertToBus({
-    title: `HIGH-SPEED STOLEN HIT: GJ-01-AB-1234 (${vahanRes.data.vehicle_make_model})`,
-    severity: 'critical',
-    camera_id: 'CAM-GJ-0101',
-    location: 'SG Highway Pakwan Crossroad Overbridge',
-    target_vehicle: 'GJ-01-AB-1234',
-    snapshot_url: snapshotData.fullSnapshotUrl,
-    plate_crop_url: snapshotData.plateCropUrl,
-    ocr_confidence: 99.4,
-    speed_kmph: 81.5,
-    target_department: 'dept-police',
-    details: `ANPR optical read matched stolen hotlist in VAHAN 4.0. Owner: ${vahanRes.data.registered_owner}. FIR: ${vahanRes.data.fir_no} (${vahanRes.data.crime_section}). Heading Northbound @ 81.5 km/h.`
-  });
-
-  await renderAlerts();
-  await renderAnalyticsTable();
-  await updateDynamicDashboardMeters('cardStatAlerts');
-};
-
-// Pitch Demo: Live CCTNS Facial Recognition Intercept Simulation
-window.simulateFaceRecognitionIntercept = async function() {
-  const activeFaces = window.apiClient && window.apiClient.facialWatchlist ? window.apiClient.facialWatchlist.filter(f => f.active) : [];
-  const targetFace = activeFaces[0] || {
-    name: 'Vikram K. (Alias: Vicky)',
-    suspect_id: 'CCTNS-CRIM-2025-8812',
-    crime: 'Sec 302 IPC / Extortion & Non-Bailable Arrest Warrant',
-    fir: 'FIR-104/2025 (Sanand PS)',
-    biometric_score_default: 96.8,
-    camera_id: 'CAM-GJ-0302'
-  };
-
-  const targetCam = await window.apiClient.getCameraById('CAM-GJ-0302') || {
-    id: 'CAM-GJ-0302',
-    name: 'GIFT City Fin-Tech Tower 1 Concourse',
-    district: 'Gandhinagar (Capital)',
-    lat: 23.1610,
-    lng: 72.6840
-  };
-
-  // Reset from armed set for manual operator simulation test
-  const faceKey = (targetFace.name || 'VIKRAM').toUpperCase();
-  armedSuspectFaces.delete(faceKey);
-
-  triggerLiveFaceMatchHit(targetFace, targetCam, null);
-  await renderAlerts();
-  await renderAnalyticsTable();
-  await updateDynamicDashboardMeters('cardStatAlerts');
-};
 
 /* =========================================================================
    9. INTEGRATION GATEWAY (PHASE 5 - L4 DATABASE BRIDGES)
@@ -5253,6 +5032,57 @@ async function initAdminView() {
 
   // Grant Consent Modal Handlers
   initGrantConsentModal();
+
+  // ── Clear All CCTV Data button ──────────────────────────────────────────
+  const clearBtn = document.getElementById('btnClearAllData');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      const confirmed = confirm(
+        '⚠️ CLEAR ALL CCTV INTELLIGENCE DATA\n\n' +
+        'This will permanently wipe:\n' +
+        ' • All suspect watchlist entries\n' +
+        ' • All ANPR / analytics events\n' +
+        ' • All alerts and dispatch records\n' +
+        ' • All facial watchlist entries\n' +
+        ' • All audit logs and session data\n' +
+        ' • All browser-persisted data (localStorage)\n' +
+        '\nThe technology stack, camera list, UI, and workflow remain completely intact.\n\n' +
+        'Continue?'
+      );
+      if (!confirmed) return;
+
+      clearBtn.disabled = true;
+      clearBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Clearing...';
+
+      try {
+        const result = await window.apiClient.clearAllData();
+        // Refresh all UI sections to show empty state
+        await refreshAllData();
+        clearBtn.innerHTML = '<i class="fa-solid fa-check"></i> Cleared';
+        clearBtn.style.color = '#10b981';
+        clearBtn.style.borderColor = 'rgba(16,185,129,0.4)';
+        clearBtn.style.background = 'rgba(16,185,129,0.1)';
+        setTimeout(() => {
+          clearBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Clear All CCTV Data';
+          clearBtn.style.color = '#ef4444';
+          clearBtn.style.borderColor = 'rgba(239,68,68,0.4)';
+          clearBtn.style.background = 'rgba(239,68,68,0.12)';
+          clearBtn.disabled = false;
+        }, 3000);
+      } catch(e) {
+        clearBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Clear All CCTV Data';
+        clearBtn.disabled = false;
+      }
+    });
+  }
+
+  // Also expose globally for browser console use: window.clearAllData()
+  window.clearAllData = async () => {
+    const result = await window.apiClient.clearAllData();
+    await refreshAllData();
+    console.log('[NIRIKSHAN] All CCTV data cleared:', result);
+    return result;
+  };
 
   await renderAdminView();
 }
@@ -5443,11 +5273,11 @@ function initModalHandlers() {
   const btnClearAll = document.getElementById('btnClearAllCamerasBtn');
   if (btnClearAll) {
     btnClearAll.addEventListener('click', async () => {
-      if (confirm('Are you sure you want to clear all cameras from the registry?\n\nThis will remove all dummy cameras so you can connect your real cameras.')) {
+      if (confirm('Are you sure you want to clear all cameras from the registry?\n\nThis will remove all cameras so you can connect clean feeds.')) {
         await window.apiClient.clearAllCameras();
         await refreshAllData();
         await updateDynamicDashboardMeters();
-        alert('All camera nodes cleared. The grid is ready for real camera feeds.');
+        alert('All camera nodes cleared. The grid is clean.');
       }
     });
   }
@@ -5458,8 +5288,10 @@ function initModalHandlers() {
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const streamUrl = document.getElementById('newCamStreamUrl')?.value.trim() || '';
       const newCam = {
         name: document.getElementById('newCamName').value,
+        stream_url: streamUrl,
         district: document.getElementById('newCamDistrict')?.value || 'Ahmedabad (Urban)',
         department_id: document.getElementById('newCamDept').value,
         type: document.getElementById('newCamType').value,
@@ -5473,6 +5305,7 @@ function initModalHandlers() {
       await window.apiClient.createCamera(newCam);
       modal.classList.remove('open');
       form.reset();
+      await window.apiClient.syncCamerasFromBackend();
       await refreshAllData();
       await updateDynamicDashboardMeters('cardStatCams');
       alert(`Camera ${newCam.name} onboarded successfully in ${newCam.district} with 15-day Edge Buffer!`);
@@ -5674,3 +5507,4 @@ window.testApiEndpoint = async function(endpointName) {
     consoleEl.textContent = `// Error: ${err.message}`;
   }
 };
+

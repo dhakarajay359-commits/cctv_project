@@ -35,12 +35,24 @@ class ANPRPipeline:
             logger.warning(f"EasyOCR not available ({e}). Using optimized fallback pattern parser.")
             self.ocr_reader = None
 
-    def preprocess_plate_image(self, plate_crop: np.ndarray) -> np.ndarray:
+    def preprocess_plate_image(self, plate_crop: np.ndarray, extreme_night: bool = False) -> np.ndarray:
         """
-        Enhances license plate contrast using CLAHE, Bilateral filtering and thresholding.
+        Enhances license plate contrast using CLAHE, Bilateral filtering, thresholding,
+        and optional Extreme Night Super-Resolution (TextZoom) + Glare Suppression.
         """
         if plate_crop is None or plate_crop.size == 0:
             return plate_crop
+
+        # If Extreme Night mode is requested, apply anti-glare suppression and super-resolution
+        if extreme_night:
+            try:
+                from .extreme_night_restoration import PlateSuperResolution, IlluminationMapRestorer
+                restorer = IlluminationMapRestorer()
+                plate_crop = restorer.restore_frame(plate_crop)
+                super_res = PlateSuperResolution()
+                plate_crop = super_res.upscale(plate_crop)
+            except Exception as e:
+                logger.debug(f"Extreme night pre-enhancement fallback: {e}")
 
         # 1. Convert to Grayscale
         gray = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY) if len(plate_crop.shape) == 3 else plate_crop
@@ -52,7 +64,7 @@ class ANPRPipeline:
             gray = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_CUBIC)
 
         # 3. Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=3.0 if extreme_night else 2.0, tileGridSize=(8, 8))
         contrast = clahe.apply(gray)
 
         # 4. Bilateral filter to reduce noise while keeping edges sharp
@@ -75,14 +87,14 @@ class ANPRPipeline:
 
         return cleaned
 
-    def extract_plate_text(self, plate_crop: np.ndarray) -> Dict:
+    def extract_plate_text(self, plate_crop: np.ndarray, extreme_night: bool = False) -> Dict:
         """
         Runs OCR on plate crop and validates against registration schema.
         """
         if plate_crop is None or plate_crop.size == 0:
             return {"plate_number": "UNKNOWN", "confidence": 0.0, "is_valid_format": False}
 
-        processed = self.preprocess_plate_image(plate_crop)
+        processed = self.preprocess_plate_image(plate_crop, extreme_night=extreme_night)
 
         if self.ocr_reader:
             try:
