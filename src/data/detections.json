@@ -1,5 +1,137 @@
 [
   {
+    "detectionId": "DET-MTLRK1MU-383",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam10",
+    "cameraName": "Char Chowk Road",
+    "region": "Junagadh (Girnar)",
+    "latitude": 21.52,
+    "longitude": 70.46,
+    "vehicleType": "two_wheeler",
+    "confidence": 0.684,
+    "timestamp": "2026-09-03T16:52:52.422Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      66,
+      748,
+      160,
+      919
+    ]
+  },
+  {
+    "detectionId": "DET-MTLRJZYH-208",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam10",
+    "cameraName": "Char Chowk Road",
+    "region": "Junagadh (Girnar)",
+    "latitude": 21.52,
+    "longitude": 70.46,
+    "vehicleType": "car",
+    "confidence": 0.749,
+    "timestamp": "2026-09-03T16:52:50.249Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      1143,
+      43,
+      1227,
+      107
+    ]
+  },
+  {
+    "detectionId": "DET-MTLRJU51-366",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam08",
+    "cameraName": "Majewadi Gate",
+    "region": "Junagadh (Girnar)",
+    "latitude": 21.517,
+    "longitude": 70.463,
+    "vehicleType": "two_wheeler",
+    "confidence": 0.469,
+    "timestamp": "2026-09-03T16:52:42.709Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      416,
+      670,
+      492,
+      775
+    ]
+  },
+  {
+    "detectionId": "DET-MTLRJSFF-787",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam08",
+    "cameraName": "Majewadi Gate",
+    "region": "Junagadh (Girnar)",
+    "latitude": 21.517,
+    "longitude": 70.463,
+    "vehicleType": "truck",
+    "confidence": 0.859,
+    "timestamp": "2026-09-03T16:52:40.491Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      628,
+      541,
+      817,
+      794
+    ]
+  },
+  {
     "detectionId": "DET-MTLRJA1X-676",
     "vehicleId": "OCR UNRESOLVED",
     "plate": "OCR UNRESOLVED",
@@ -16374,138 +16506,6 @@
       209,
       1263,
       272
-    ]
-  },
-  {
-    "detectionId": "DET-MTLL0HLV-493",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam12",
-    "cameraName": "Tri Mandir Adalaj Tollnaka",
-    "region": "Gandhinagar (Capital)",
-    "latitude": 23.167,
-    "longitude": 72.583,
-    "vehicleType": "auto_rickshaw",
-    "confidence": 0.216,
-    "timestamp": "2026-09-03T13:49:42.307Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      1129,
-      388,
-      1244,
-      491
-    ]
-  },
-  {
-    "detectionId": "DET-MTLL0B6F-228",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam10",
-    "cameraName": "Char Chowk Road",
-    "region": "Junagadh (Girnar)",
-    "latitude": 21.52,
-    "longitude": 70.46,
-    "vehicleType": "two_wheeler",
-    "confidence": 0.684,
-    "timestamp": "2026-09-03T13:49:33.975Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      66,
-      748,
-      160,
-      919
-    ]
-  },
-  {
-    "detectionId": "DET-MTLL09FY-809",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam10",
-    "cameraName": "Char Chowk Road",
-    "region": "Junagadh (Girnar)",
-    "latitude": 21.52,
-    "longitude": 70.46,
-    "vehicleType": "car",
-    "confidence": 0.749,
-    "timestamp": "2026-09-03T13:49:31.726Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      1143,
-      43,
-      1227,
-      107
-    ]
-  },
-  {
-    "detectionId": "DET-MTLL03QI-996",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam08",
-    "cameraName": "Majewadi Gate",
-    "region": "Junagadh (Girnar)",
-    "latitude": 21.517,
-    "longitude": 70.463,
-    "vehicleType": "two_wheeler",
-    "confidence": 0.469,
-    "timestamp": "2026-09-03T13:49:24.330Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      416,
-      670,
-      492,
-      775
     ]
   }
 ]
