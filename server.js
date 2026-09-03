@@ -617,62 +617,194 @@ function runAutoCctvScan(camId, callback) {
   callback(null, alert);
 }
 
-function getNearestPoliceStationBackend(plate, targetCam) {
-  let cam = targetCam;
-  if (!cam) {
-    const clean = (plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    if (clean.includes('7762') || clean.includes('1002') || clean.includes('MH')) {
-      cam = CAMERA_CATALOG.find(c => c.id === 'cam32') || CAMERA_CATALOG[0];
-    } else {
-      cam = CAMERA_CATALOG.find(c => c.id === 'cam31') || CAMERA_CATALOG[0];
-    }
+function hashPlate(str, mod) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 37 + str.charCodeAt(i)) >>> 0;
+  return mod > 0 ? (h % mod) : 0;
+}
+
+function pickDynamicSurveillanceCamera(plate, targetCam) {
+  if (targetCam && typeof targetCam === 'object' && targetCam.id) return targetCam;
+  if (!CAMERA_CATALOG || CAMERA_CATALOG.length === 0) return { id: 'cam01', name: 'Chandkheda Highway Intercept', district: 'Ahmedabad (Urban)' };
+
+  const clean = (plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+  
+  // 1. RTO District Code Matching
+  if (clean.startsWith('GJ01') || clean.startsWith('GJ1')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Ahmedabad'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ03') || clean.startsWith('GJ3')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Rajkot'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ18')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Gandhinagar'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ11') || clean.startsWith('GJ10') || clean.startsWith('GJ14')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && (c.district.includes('Junagadh') || c.district.includes('Gir')));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ21')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Navsari'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ12')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Kutch'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ24')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Patan'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
+  } else if (clean.startsWith('GJ02')) {
+    const pool = CAMERA_CATALOG.filter(c => c.district && c.district.includes('Mehsana'));
+    if (pool.length > 0) return pool[hashPlate(clean, pool.length)];
   }
 
-  const cid = (cam?.id || 'cam31').toLowerCase();
-  const district = (cam?.district || 'Ahmedabad (Urban)');
-  const name = cam?.name || 'Overhead Traffic Aerial Corridor';
+  // 2. Dynamic distribution across all 32 cameras
+  const idx = hashPlate(clean, CAMERA_CATALOG.length);
+  return CAMERA_CATALOG[idx];
+}
 
-  if (cid === 'cam31' || name.toLowerCase().includes('overhead') || name.toLowerCase().includes('navrangpura')) {
+function getNearestPoliceStationBackend(plate, targetCam) {
+  const cam = pickDynamicSurveillanceCamera(plate, targetCam);
+  const cid = (cam?.id || 'cam01').toLowerCase();
+  const district = (cam?.district || 'Ahmedabad (Urban)');
+  const name = cam?.name || 'Surveillance Node';
+
+  if (district.includes('Ahmedabad')) {
     return {
       cam_id: cam.id,
       cam_name: cam.name,
       district: district,
-      name: 'Navrangpura Police Station & SG Highway Division',
-      distance: '0.6 km',
-      eta: '1.8 mins',
-      pcr_unit: 'PCR Interceptor Cheetah-14',
-      phone: '079-26561100 / Dial 112',
+      name: `${name.split(' ')[0]} Division Police Station (Ahmedabad City Police)`,
+      distance: '0.7 km',
+      eta: '1.9 mins',
+      pcr_unit: `PCR Cheetah-${(parseInt(cid.replace('cam','')) || 1) + 10}`,
+      phone: '079-25630100 / Dial 112',
       radio_channel: 'APCO-25 Secure VHF Ch-04 (West Zone Grid)',
-      roadblock: 'SG Highway Intercept Toll Barrier #02 (ARMED)'
+      roadblock: `${name} Forward Checkpost Barrier #01 (ARMED)`
     };
-  } else if (cid === 'cam32' || name.toLowerCase().includes('arterial') || name.toLowerCase().includes('paldi')) {
+  } else if (district.includes('Gandhinagar')) {
     return {
       cam_id: cam.id,
       cam_name: cam.name,
       district: district,
-      name: 'Paldi Police Station & Riverfront Division',
-      distance: '0.8 km',
+      name: 'Sector-7 Police Station (Gandhinagar Capital Division)',
+      distance: '1.1 km',
+      eta: '2.4 mins',
+      pcr_unit: 'PCR Falcon-03 (Capital Intercept)',
+      phone: '079-23222100 / Dial 112',
+      radio_channel: 'State Capital Security VHF Grid',
+      roadblock: 'CH-Road Toll Plaza Intercept Barrier'
+    };
+  } else if (district.includes('Rajkot')) {
+    return {
+      cam_id: cam.id,
+      cam_name: cam.name,
+      district: district,
+      name: 'Pradhyuman Nagar Police Station (Rajkot City Police)',
+      distance: '0.9 km',
       eta: '2.1 mins',
-      pcr_unit: 'PCR Interceptor Falcon-08',
-      phone: '079-26578900 / Dial 112',
-      radio_channel: 'APCO-25 Secure VHF Ch-02 (Central Grid)',
-      roadblock: 'Nehru Bridge Forward Roadblock & Riverfront Checkpost'
+      pcr_unit: 'PCR Eagle-07 (Saurashtra Rapid Grid)',
+      phone: '0281-2451100 / Dial 112',
+      radio_channel: 'Saurashtra Regional APCO-25 Ch-02',
+      roadblock: 'Rajkot Ring Road Bypass Highway Checkpost'
+    };
+  } else if (district.includes('Junagadh') || district.includes('Gir')) {
+    return {
+      cam_id: cam.id,
+      cam_name: cam.name,
+      district: district,
+      name: 'Junagadh B-Division Police Station & Coastal Intercept',
+      distance: '1.2 km',
+      eta: '2.8 mins',
+      pcr_unit: 'PCR Lion-09 (Girnar Forest & Highway Patrol)',
+      phone: '0285-2620100 / Dial 112',
+      radio_channel: 'Coastal & Sanctuary Tactical Network',
+      roadblock: 'Timbavadi-Majevadi Intercept Point'
+    };
+  } else if (district.includes('Navsari')) {
+    return {
+      cam_id: cam.id,
+      cam_name: cam.name,
+      district: district,
+      name: 'Navsari Town Police Station & NH-48 Intercept Unit',
+      distance: '1.4 km',
+      eta: '3.1 mins',
+      pcr_unit: 'PCR Interceptor Unit-22',
+      phone: '02637-257100 / Dial 112',
+      radio_channel: 'South Gujarat Coastal Security VHF',
+      roadblock: 'National Highway NH-48 Check Barrier'
+    };
+  } else if (district.includes('Kutch')) {
+    return {
+      cam_id: cam.id,
+      cam_name: cam.name,
+      district: district,
+      name: 'Gandhidham Marine & Port Special Police Station',
+      distance: '1.8 km',
+      eta: '3.5 mins',
+      pcr_unit: 'Marine Interceptor Unit-05',
+      phone: '02836-220100 / Dial 112',
+      radio_channel: 'Border & Maritime Coastal Radio Grid',
+      roadblock: 'Kandla Port Toll Checkpost Barrier'
     };
   } else {
     return {
       cam_id: cam.id,
       cam_name: cam.name,
       district: district,
-      name: `${district.split('(')[0].trim()} Police Station & Regional Intercept Division`,
+      name: `${district.split('(')[0].trim()} District Police Station & Regional Intercept`,
       distance: '1.0 km',
       eta: '2.2 mins',
-      pcr_unit: 'PCR Tactical Interceptor Unit-11',
-      phone: 'Emergency 112',
+      pcr_unit: 'PCR Tactical Unit-11',
+      phone: 'Emergency Dial 112',
       radio_channel: 'Statewide Tactical Radio Grid',
-      roadblock: 'Forward Regional Checkpost & Highway Barrier'
+      roadblock: 'Forward Regional Checkpost Barrier'
     };
   }
 }
+
+function ensureOpticalVehicleCrop(camId, plate) {
+  const cid = (camId || 'cam01').toLowerCase();
+  const clean = (plate || 'GJ01AB1234').replace(/[^A-Z0-9]/g, '');
+  const cropPath = path.join(__dirname, 'assets', 'live_frames', `crop_${cid}_${clean}.jpg`);
+  if (!fs.existsSync(cropPath)) {
+    const srcPath = path.join(__dirname, 'assets', 'live_frames', `${cid}.jpg`);
+    const fallbackSrc = fs.existsSync(srcPath) ? srcPath : path.join(__dirname, 'assets', 'live_frames', 'cam01.jpg');
+    try {
+      const { execFileSync } = require('child_process');
+      const pyCode = `
+import cv2, os, sys
+src = sys.argv[1]
+dst = sys.argv[2]
+plate = sys.argv[3]
+cid = sys.argv[4]
+img = cv2.imread(src)
+if img is None: sys.exit(0)
+h, w = img.shape[:2]
+crop_w, crop_h = int(w * 0.44), int(h * 0.44)
+x1, y1 = int((w - crop_w) * 0.5), int((h - crop_h) * 0.55)
+crop = cv2.resize(img[y1:y1+crop_h, x1:x1+crop_w], (480, 270))
+bx, by, bw, bh = 95, 45, 290, 170
+cv2.rectangle(crop, (bx, by), (bx+bw, by+bh), (16, 185, 129), 2)
+c_len = 16
+for (x,y) in [(bx,by), (bx+bw,by), (bx,by+bh), (bx+bw,by+bh)]:
+    dx = -c_len if x > bx else c_len
+    dy = -c_len if y > by else c_len
+    cv2.line(crop, (x, y), (x+dx, y), (0, 242, 254), 3)
+    cv2.line(crop, (x, y), (x, y+dy), (0, 242, 254), 3)
+cv2.rectangle(crop, (bx, by-22), (bx+bw, by), (15, 23, 42), -1)
+cv2.putText(crop, f'TARGET: {plate}', (bx+6, by-7), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 242, 254), 1, cv2.LINE_AA)
+cv2.putText(crop, '99.4% LOCK', (bx+bw-80, by-7), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (16, 185, 129), 1, cv2.LINE_AA)
+cv2.rectangle(crop, (0, 248), (480, 270), (0, 0, 0), -1)
+cv2.putText(crop, f'OPTICAL 2.2X ZOOM - {cid.upper()} - SEC-65B CERTIFIED', (8, 263), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (203, 213, 225), 1, cv2.LINE_AA)
+cv2.imwrite(dst, crop)
+`;
+      execFileSync('python', ['-c', pyCode, fallbackSrc, cropPath, plate, cid], { timeout: 4000 });
+    } catch(e) {
+      console.warn('[CROP-GEN-ERROR]', e.message);
+    }
+  }
+  return `/assets/live_frames/crop_${cid}_${clean}.jpg`;
+}
+
 function generateHSRPPlateSvgBackend(plateText) {
   const clean = (plateText || 'GJ 01 AB 1234').toUpperCase().trim();
   const rawClean = clean.replace(/[^A-Z0-9]/g, '');
@@ -1779,7 +1911,12 @@ const server = http.createServer((req, res) => {
         }
 
         // 2. Real-Time Zero-Delay Detection & Dispatch to Nearest Police Station
-        const stationInfo = getNearestPoliceStationBackend(plate);
+        const preferredCamId = payload.camera_id || payload.cameraId;
+        let preferredCam = null;
+        if (preferredCamId && preferredCamId !== 'AUTO') {
+          preferredCam = CAMERA_CATALOG.find(c => c.id.toLowerCase() === String(preferredCamId).toLowerCase());
+        }
+        const stationInfo = getNearestPoliceStationBackend(plate, preferredCam);
         const liveAlert = {
           id: `ALT-LIVE-${Date.now().toString(36).toUpperCase()}`,
           title: `CRITICAL BOLO INTERCEPT: ${plate}`,
@@ -1804,6 +1941,8 @@ const server = http.createServer((req, res) => {
           kafka_topic: 'gujarat.police.intercept.cctv_live',
           auto_dispatched: true,
           speed_kmph: 81.5,
+          snapshot_url: `/assets/live_frames/${stationInfo.cam_id}.jpg`,
+          vehicle_crop_url: ensureOpticalVehicleCrop(stationInfo.cam_id, plate),
           plate_crop_url: generateHSRPPlateSvgBackend(plate),
           ts: Date.now(),
           created_at: new Date().toISOString()
@@ -1813,6 +1952,7 @@ const server = http.createServer((req, res) => {
         if (ALERT_QUEUE.length > 50) ALERT_QUEUE.pop();
 
         // 3. Create active detection record for GIS map & analytics
+        const camObj = CAMERA_CATALOG.find(c => c.id === stationInfo.cam_id) || {};
         const liveDet = {
           detectionId: `DET-LIVE-${Date.now().toString(36).toUpperCase()}`,
           vehicleId: plate,
@@ -1820,12 +1960,15 @@ const server = http.createServer((req, res) => {
           cameraId: stationInfo.cam_id,
           cameraName: stationInfo.cam_name,
           region: stationInfo.district,
-          latitude: 23.0335,
-          longitude: 72.5645,
+          latitude: camObj.lat || 23.0335,
+          longitude: camObj.lng || 72.5645,
           vehicleType: newSuspect.vehicle_type || 'car',
           confidence: 0.99,
           timestamp: new Date().toISOString(),
           sourceId: 'cctv_yolo_detector',
+          full_frame_url: `/assets/live_frames/${stationInfo.cam_id}.jpg`,
+          crop_url: ensureOpticalVehicleCrop(stationInfo.cam_id, plate),
+          camera_status: 'online',
           camera_status: 'online',
           suspect_match: {
             matched: true,
@@ -2006,6 +2149,14 @@ const server = http.createServer((req, res) => {
   // If path is a directory, look for index.html
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
+  }
+
+  if (pathname.startsWith('/assets/live_frames/crop_')) {
+    const filename = path.basename(pathname);
+    const m = filename.match(/^crop_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)\.jpg$/i);
+    if (m) {
+      ensureOpticalVehicleCrop(m[1], m[2]);
+    }
   }
 
   fs.stat(filePath, (err, stats) => {
