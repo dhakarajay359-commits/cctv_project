@@ -112,6 +112,10 @@ evidentiary_audits/
 *.png
 *.jpg
 *.jpeg
+!assets/*.png
+!assets/*.jpg
+!assets/*.jpeg
+!assets/*.svg
 scratch/
 cache/
 
