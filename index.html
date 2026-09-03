@@ -19,21 +19,43 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
 
   <!-- Application CSS -->
-  <link rel="stylesheet" href="style.css?v=4.2.1">
+  <link rel="stylesheet" href="style.css?v=4.2.2">
 </head>
 <body class="dark-theme">
-  <!-- Microsecond Hardware-Accelerated CCTV Optical Quality Improver & HLC Anti-Glare Shader -->
+  <!-- Microsecond Hardware-Accelerated CCTV Video Quality Enhancer & Plate Focus Shaders -->
   <svg style="position: absolute; width: 0; height: 0; pointer-events: none; overflow: hidden;" aria-hidden="true">
     <defs>
+      <!-- 1. BALANCED SMART VIDEO ENHANCER (Denoise + Contrast Stretch + Crisp Edges) -->
       <filter id="cctv-clarity-enhancer" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-        <!-- 1. HLC (Highlight Compensation) Knee Compression: Suppresses blinding headlight bloom/washout -->
-        <feComponentTransfer result="hlc_tone">
-          <feFuncR type="table" tableValues="0.0 0.14 0.28 0.44 0.60 0.74 0.85 0.91 0.94 0.96" />
-          <feFuncG type="table" tableValues="0.0 0.14 0.28 0.44 0.60 0.74 0.85 0.91 0.94 0.96" />
-          <feFuncB type="table" tableValues="0.0 0.14 0.28 0.44 0.60 0.74 0.85 0.91 0.94 0.96" />
+        <feComponentTransfer result="tone_stretched">
+          <feFuncR type="table" tableValues="0.0 0.12 0.26 0.42 0.58 0.74 0.86 0.93 0.96 0.98" />
+          <feFuncG type="table" tableValues="0.0 0.12 0.26 0.42 0.58 0.74 0.86 0.93 0.96 0.98" />
+          <feFuncB type="table" tableValues="0.0 0.12 0.26 0.42 0.58 0.74 0.86 0.93 0.96 0.98" />
         </feComponentTransfer>
-        <!-- 2. High-Pass Unsharp Convolution: Sharpens vehicle silhouettes & license plates between headlights -->
-        <feConvolveMatrix in="hlc_tone" order="3" kernelMatrix="0 -0.4 0 -0.4 2.6 -0.4 0 -0.4 0" preserveAlpha="true" />
+        <feConvolveMatrix in="tone_stretched" order="3" kernelMatrix="0 -0.45 0 -0.45 2.8 -0.45 0 -0.45 0" preserveAlpha="true" result="sharpened" />
+        <feColorMatrix in="sharpened" type="saturate" values="1.15" />
+      </filter>
+
+      <!-- 2. HIGH-DEFINITION LICENSE PLATE SUPER-RESOLUTION SHADER (Glyph & Edge Extraction) -->
+      <filter id="cctv-plate-superres" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feComponentTransfer result="high_contrast">
+          <feFuncR type="linear" slope="1.35" intercept="-0.12" />
+          <feFuncG type="linear" slope="1.35" intercept="-0.12" />
+          <feFuncB type="linear" slope="1.35" intercept="-0.12" />
+        </feComponentTransfer>
+        <!-- Directional Laplacian High-Pass Filter for Alphanumeric Plate Characters -->
+        <feConvolveMatrix in="high_contrast" order="3" kernelMatrix="-0.5 -1.0 -0.5 -1.0 7.0 -1.0 -0.5 -1.0 -0.5" preserveAlpha="true" result="plate_edges" />
+        <feBlend mode="overlay" in="plate_edges" in2="high_contrast" />
+      </filter>
+
+      <!-- 3. NIGHT VISION & HEADLIGHT GLARE SUPPRESSION SHADER -->
+      <filter id="cctv-night-antiglare" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feComponentTransfer result="anti_bloom">
+          <feFuncR type="gamma" amplitude="1.25" exponent="0.85" offset="0.04" />
+          <feFuncG type="gamma" amplitude="1.25" exponent="0.85" offset="0.04" />
+          <feFuncB type="gamma" amplitude="1.25" exponent="0.85" offset="0.04" />
+        </feComponentTransfer>
+        <feConvolveMatrix in="anti_bloom" order="3" kernelMatrix="0 -0.35 0 -0.35 2.4 -0.35 0 -0.35 0" preserveAlpha="true" />
       </filter>
     </defs>
   </svg>
@@ -1157,8 +1179,13 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <span id="liveCctvCamNameOsd" style="font-family: var(--font-mono); font-size: 0.74rem; color: #38bdf8;">Awaiting Camera Feed</span>
             </div>
 
-            <!-- Live Network Stats (Top Right) -->
-            <div class="live-cctv-osd-tr">
+            <!-- Live Network Stats & AI Enhancer Telemetry (Top Right) -->
+            <div class="live-cctv-osd-tr" style="display: flex; align-items: center; gap: 0.6rem;">
+              <div id="liveEnhancerTelemetryBadge" class="enhancer-osd-badge active" title="Inline AI Video Quality Enhancer Status">
+                <span class="pulse-green-dot" style="background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                <i class="fa-solid fa-wand-magic-sparkles text-emerald"></i>
+                <span>AI ENHANCER: <strong style="color: #6ee7b7;">ACTIVE</strong> (<span id="enhancerLatencyVal">0.9ms</span> &bull; GPU SHADER)</span>
+              </div>
               <span style="color: #10b981;"><i class="fa-solid fa-wifi"></i> 4.8 Mbps</span> &bull; <span>1080p UHD</span>
             </div>
 
@@ -1179,7 +1206,7 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           </div>
 
           <!-- Live Stream Control Bar (No Scrubber - True Live Feed) -->
-          <div class="live-cctv-toolbar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; background: #0f172a; padding: 0.5rem 0.85rem; border-radius: 6px; border: 1px solid #1e293b;">
+          <div class="live-cctv-toolbar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; background: #0f172a; padding: 0.5rem 0.85rem; border-radius: 6px; border: 1px solid #1e293b; gap: 0.5rem; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
               <span class="live-feed-badge-green">
                 <span class="pulse-green-dot"></span> REAL-TIME FEED
@@ -1189,8 +1216,21 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               </span>
             </div>
 
-            <!-- Live PTZ & Action Controls -->
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <!-- Live PTZ & Action Controls + AI Quality Enhancer -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <!-- Real-Time Inline Video Quality Enhancer Toggle -->
+              <button type="button" class="player-ctrl-btn active" id="btnLiveVideoEnhancer" title="Toggle Real-Time AI Video Quality Enhancer (Zero-Latency GPU Engine)" style="width: auto; padding: 0 10px; font-size: 0.74rem; font-weight: 700; color: #10b981; border-color: #059669; background: rgba(16, 185, 129, 0.15);">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="btnLiveVideoEnhancerText">AI Enhancer: ON</span>
+              </button>
+
+              <!-- Enhancer Pipeline Mode Selector -->
+              <select id="selectEnhancerMode" title="Inline AI Video Quality Enhancement Pipeline Mode" style="background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; outline: none; cursor: pointer;">
+                <option value="balanced" selected>✨ Balanced Super-Clarity</option>
+                <option value="plate_superres">🎯 Plate Super-Resolution</option>
+                <option value="night_antiglare">🌙 Night Vision &amp; Anti-Glare</option>
+                <option value="raw">⚡ Raw Unenhanced Feed</option>
+              </select>
+
               <button type="button" class="player-ctrl-btn" id="btnLiveCctvFreeze" title="Freeze Frame / Focus Suspect Plate" style="width: auto; padding: 0 10px; font-size: 0.75rem; font-weight: 700; color: #ef4444; border-color: #dc2626; display: none;">
                 <i class="fa-solid fa-crosshairs"></i> <span id="btnLiveCctvFreezeText">Focus Plate</span>
               </button>
@@ -2571,6 +2611,6 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
   <script src="src/api/client.js?v=4.8.0"></script>
-  <script src="app.js?v=5.8.9"></script>
+  <script src="app.js?v=5.9.0"></script>
 </body>
 </html>

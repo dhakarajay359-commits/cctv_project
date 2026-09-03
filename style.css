@@ -5587,6 +5587,64 @@ video,
   box-shadow: 0 0 14px rgba(239, 68, 68, 0.6) !important;
 }
 
+/* REAL-TIME AI VIDEO QUALITY ENHANCER HUD & GPU SHADERS */
+.enhancer-osd-badge {
+  background: rgba(6, 78, 59, 0.75);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  backdrop-filter: blur(4px);
+  transition: all 0.25s ease;
+}
+
+.enhancer-osd-badge.inactive {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: #475569;
+  color: #94a3b8;
+  box-shadow: none;
+}
+
+/* GPU Hardware-Accelerated Video Filter Modes */
+#liveCctvVideoElement.video-enhanced-balanced,
+.wall-feed-media video.video-enhanced-balanced {
+  filter: url(#cctv-clarity-enhancer) contrast(1.10) brightness(1.02);
+}
+
+#liveCctvVideoElement.video-enhanced-plate-superres,
+.wall-feed-media video.video-enhanced-plate-superres {
+  filter: url(#cctv-plate-superres) contrast(1.22) brightness(1.04);
+}
+
+#liveCctvVideoElement.video-enhanced-night-antiglare,
+.wall-feed-media video.video-enhanced-night-antiglare {
+  filter: url(#cctv-night-antiglare) contrast(1.14) brightness(1.10);
+}
+
+#liveCctvVideoElement.video-enhanced-raw,
+.wall-feed-media video.video-enhanced-raw {
+  filter: none !important;
+}
+
+/* Targeted License Plate Super-Resolution Glass Overlay */
+.plate-superres-lens {
+  position: absolute;
+  border: 1.5px solid #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.75), inset 0 0 12px rgba(16, 185, 129, 0.4);
+  pointer-events: none;
+  z-index: 16;
+  border-radius: 3px;
+  backdrop-filter: contrast(1.3) saturate(1.2) brightness(1.05);
+}
+
 /* PHASE 4 — SURVEILLANCE & EVENT LOG STYLES */
 
 /* Security & Governance Top Ribbon */
