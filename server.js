@@ -697,6 +697,20 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(parsedUrl.pathname);
 
+  // FASTEST TOP-LEVEL ROUTE FOR AES-128 HLS DECRYPTION KEY (Guaranteed 0ms HTTP 200 on Render & Local)
+  if (pathname === '/cctv-stream/enc.key' || pathname === '/enc.key' || pathname.endsWith('/enc.key') || pathname.endsWith('enc.key')) {
+    const keyBuffer = Buffer.from('a59c70f080134543ffade38733d40d4a', 'hex');
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Length': keyBuffer.length,
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Cache-Control': 'public, max-age=86400'
+    });
+    res.end(keyBuffer);
+    return;
+  }
+
   // Health check endpoint for Render / Kubernetes
   if (pathname === '/healthz' || pathname === '/health' || pathname === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
@@ -1194,18 +1208,16 @@ const server = http.createServer((req, res) => {
 
     // 0. Fast-path: Serve local AES-128 key immediately (0ms latency, zero cloud dependency)
     if (subPath === 'enc.key' || pathname.endsWith('/enc.key') || subPath.endsWith('enc.key')) {
-      const keyPath = path.join(ROOT_DIR, 'enc.key');
-      if (fs.existsSync(keyPath)) {
-        const keyData = fs.readFileSync(keyPath);
-        res.writeHead(200, {
-          'Content-Type': 'application/octet-stream',
-          'Content-Length': keyData.length,
-          'Access-Control-Allow-Origin': '*',
-          'Cache-Control': 'public, max-age=86400'
-        });
-        res.end(keyData);
-        return;
-      }
+      const keyBuffer = Buffer.from('a59c70f080134543ffade38733d40d4a', 'hex');
+      res.writeHead(200, {
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': keyBuffer.length,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Cache-Control': 'public, max-age=86400'
+      });
+      res.end(keyBuffer);
+      return;
     }
 
     // 0.5 Fast-path: Check local disk cache for .ts video segments (0.001ms latency, zero buffering)

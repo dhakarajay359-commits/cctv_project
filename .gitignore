@@ -86,6 +86,7 @@ coverage/
 .env.production.local
 *.pem
 *.key
+!enc.key
 *.cert
 *.crt
 
