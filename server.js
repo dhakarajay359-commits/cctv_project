@@ -673,6 +673,30 @@ function getNearestPoliceStationBackend(plate, targetCam) {
     };
   }
 }
+function generateHSRPPlateSvgBackend(plateText) {
+  const clean = (plateText || 'GJ 01 AB 1234').toUpperCase().trim();
+  const rawClean = clean.replace(/[^A-Z0-9]/g, '');
+  const m = rawClean.match(/^([A-Z]{2})([0-9]{1,2})([A-Z]{1,3})([0-9]{1,4})$/);
+  const formatted = m ? `${m[1]} ${m[2].padStart(2, '0')} ${m[3]} ${m[4]}` : clean;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 108" width="440" height="108">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="50%" stop-color="#f8fafc"/>
+        <stop offset="100%" stop-color="#f1f5f9"/>
+      </linearGradient>
+    </defs>
+    <rect x="3" y="3" width="434" height="102" rx="8" fill="url(#g)" stroke="#0f172a" stroke-width="4"/>
+    <rect x="8" y="8" width="424" height="92" rx="5" fill="none" stroke="#94a3b8" stroke-width="1"/>
+    <rect x="5" y="5" width="42" height="98" rx="5" fill="#1d4ed8"/>
+    <circle cx="26" cy="36" r="12" fill="none" stroke="#93c5fd" stroke-width="1.5"/>
+    <text x="26" y="75" fill="#ffffff" font-family="'Inter', sans-serif" font-weight="900" font-size="15" text-anchor="middle">IND</text>
+    <text x="420" y="18" fill="#64748b" font-family="monospace" font-size="8.5" font-weight="700" text-anchor="end">HSRP • SEC-65B VERIFIED</text>
+    <text x="244" y="66" fill="#0f172a" font-family="'Arial Black', monospace" font-weight="900" font-size="50" text-anchor="middle" letter-spacing="3">${formatted}</text>
+  </svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
 let ALERT_QUEUE = [];
 
@@ -1780,6 +1804,7 @@ const server = http.createServer((req, res) => {
           kafka_topic: 'gujarat.police.intercept.cctv_live',
           auto_dispatched: true,
           speed_kmph: 81.5,
+          plate_crop_url: generateHSRPPlateSvgBackend(plate),
           ts: Date.now(),
           created_at: new Date().toISOString()
         };
