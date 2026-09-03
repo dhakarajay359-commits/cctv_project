@@ -3893,27 +3893,69 @@ window.getVehiclesAtTime = function(timeSec, targetCamId) {
     });
   }
 
-  // Fallback from registered detections
-  const dets = (window.apiClient.detections || []).filter(d => (d.cameraId || '').toLowerCase() === cid);
-  if (dets.length > 0) {
-    return dets.slice(0, 4).map((d, i) => ({
-      id: d.detectionId,
-      plate: d.plate || d.vehicleId || `VEHICLE-${i+1}`,
-      aliases: [d.plate, d.vehicleId],
-      type: d.vehicleType || 'VEHICLE',
-      suspect: d.suspect_match?.status === 'MATCH',
-      crime: d.suspect_match?.crime || '',
+  // Universal Fallback Trajectories for all other cameras (cam01 - cam30, etc.)
+  const waveT = (t % 8.0);
+  const p = waveT / 8.0;
+  const camNum = parseInt(cid.replace(/[^0-9]/g, ''), 10) || 1;
+  const cat = window.getCameraVehiclePlateCatalog(cid, t);
+  const v1 = cat[0] || { id: `${cid}_veh_1`, plate: `GJ-01-BK-${1000 + camNum}`, type: 'CAR (SEDAN)', suspect: false };
+  const v2 = cat[1] || { id: `${cid}_veh_2`, plate: `GJ-27-AX-${2000 + camNum}`, type: 'SUV (URBAN)', suspect: false };
+
+  vehicles.push({
+    id: v1.id,
+    plate: v1.plate,
+    aliases: v1.aliases || [v1.plate],
+    type: v1.type || 'CAR',
+    suspect: v1.suspect || false,
+    crime: v1.crime || '',
+    isVisible: true,
+    plateBox: {
+      left: 36.0 + (10.0 * p),
+      top: 62.0 - (24.0 * p),
+      width: Math.max(7.0, 10.5 - (3.0 * p)),
+      height: Math.max(3.2, 5.0 - (1.6 * p))
+    }
+  });
+
+  if (waveT >= 1.5 && waveT <= 7.0) {
+    const p2 = (waveT - 1.5) / 5.5;
+    vehicles.push({
+      id: v2.id,
+      plate: v2.plate,
+      aliases: v2.aliases || [v2.plate],
+      type: v2.type || 'SUV',
+      suspect: v2.suspect || false,
+      crime: v2.crime || '',
       isVisible: true,
       plateBox: {
-        left: 35.0 + (i * 15),
-        top: 60.0,
-        width: 10.0,
-        height: 4.5
+        left: 58.0 - (8.0 * p2),
+        top: 68.0 - (26.0 * p2),
+        width: Math.max(6.5, 9.5 - (2.5 * p2)),
+        height: Math.max(3.0, 4.6 - (1.4 * p2))
       }
-    }));
+    });
   }
 
-  return [];
+  // Dynamic Watchlist Suspect Matching across live vehicles
+  if (window.activeWatchlistCache && window.activeWatchlistCache.length > 0) {
+    vehicles.forEach(v => {
+      const vPlateNorm = (v.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      const hit = window.activeWatchlistCache.find(w => {
+        const wPlateNorm = (w.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+        if (wPlateNorm === vPlateNorm) return true;
+        if (v.aliases && v.aliases.some(a => a.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === wPlateNorm)) return true;
+        return false;
+      });
+      if (hit) {
+        v.suspect = true;
+        v.crime = hit.crime || 'ACTIVE BOLO WARRANT';
+        v.suspect_name = hit.suspect_name || 'Suspect Target';
+        v.priority = hit.priority || 'CRITICAL';
+      }
+    });
+  }
+
+  return vehicles;
 };
 
 // Returns primary registered vehicle list for quick-chips
@@ -3948,6 +3990,13 @@ window.getCameraVehiclePlateCatalog = function(targetCamId, timeSec) {
     list = [
       { id: 'cam32_veh_1', plate: 'MH-02-EE-7762', aliases: ['MH02EE7762'], type: 'FOUR-WHEELER (CAR)', suspect: false },
       { id: 'cam32_veh_2', plate: 'MH-01-AB-1002', aliases: ['MH01AB1002'], type: 'TWO-WHEELER', suspect: false }
+    ];
+  } else {
+    // Universal vehicle catalog for all other cameras (cam01 - cam30, etc.)
+    const camNum = parseInt(cid.replace(/[^0-9]/g, ''), 10) || 1;
+    list = [
+      { id: `${cid}_veh_1`, plate: `GJ-01-BK-${1000 + camNum}`, aliases: [`GJ01BK${1000 + camNum}`], type: 'CAR (FOUR-WHEELER)', suspect: false },
+      { id: `${cid}_veh_2`, plate: `GJ-27-AX-${2000 + camNum}`, aliases: [`GJ27AX${2000 + camNum}`], type: 'SUV (CROSSOVER)', suspect: false }
     ];
   }
 
@@ -4107,16 +4156,35 @@ window.startLiveVideoTracking = function(video, targetCamId) {
   window.liveTrackingRafId = requestAnimationFrame(trackingTick);
 };
 
-// Focuses moving plate WITHOUT stopping the video
+// Focuses moving plate WITHOUT stopping the video & magnifies plate
 window.focusVehiclePlate = function(plate, targetCamId) {
   const cleanPlate = (plate || '').trim().toUpperCase();
   const video = document.getElementById('liveCctvVideoElement');
-  const t = video ? video.currentTime : 0;
-  const catalog = window.getCameraVehiclePlateCatalog(targetCamId, t);
-  const matched = catalog.find(v => 
-    v.plate === cleanPlate || 
-    (v.aliases && v.aliases.some(a => cleanPlate.includes(a.toUpperCase()) || a.toUpperCase().includes(cleanPlate)))
-  ) || catalog[0];
+  const t = video ? (video.currentTime || 0) : 0;
+  const activeCam = (targetCamId || window.currentActiveLiveCamId || 'cam31').toLowerCase();
+
+  // Find active vehicles on screen right now
+  const activeVehicles = window.getVehiclesAtTime(t, activeCam);
+  const catalog = window.getCameraVehiclePlateCatalog(activeCam, t);
+
+  let matched = null;
+  if (cleanPlate) {
+    matched = activeVehicles.find(v => 
+      v.plate === cleanPlate || 
+      (v.aliases && v.aliases.some(a => cleanPlate.includes(a.toUpperCase()) || a.toUpperCase().includes(cleanPlate)))
+    ) || catalog.find(v => 
+      v.plate === cleanPlate || 
+      (v.aliases && v.aliases.some(a => cleanPlate.includes(a.toUpperCase()) || a.toUpperCase().includes(cleanPlate)))
+    );
+  }
+
+  // If no exact match, pick suspect in frame, or first visible vehicle in frame, or catalog[0]
+  if (!matched) {
+    matched = activeVehicles.find(v => v.suspect && v.isVisible) ||
+              activeVehicles.find(v => v.isVisible) ||
+              activeVehicles[0] ||
+              catalog[0];
+  }
 
   if (!matched) return;
 
@@ -4132,7 +4200,7 @@ window.focusVehiclePlate = function(plate, targetCamId) {
     if (matched.suspect) {
       targetPlateText.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ffffff;"></i> TRACKING SUSPECT: ${matched.plate} &bull; ${matched.crime || 'ARMED'}`;
     } else {
-      targetPlateText.innerHTML = `<i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> ANPR PLATE LOCK: ${matched.plate} &bull; ${matched.type}`;
+      targetPlateText.innerHTML = `<i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> ANPR PLATE LOCK: ${matched.plate} &bull; ${matched.type || 'VEHICLE'}`;
     }
   }
 
@@ -4142,6 +4210,15 @@ window.focusVehiclePlate = function(plate, targetCamId) {
     btnFreeze.style.display = 'inline-flex';
     btnFreeze.classList.add('frozen');
     btnFreeze.innerHTML = '<i class="fa-solid fa-arrows-to-eye"></i> <span id="btnLiveCctvFreezeText">Show Wide View</span>';
+    btnFreeze.title = 'Release Plate Lock / Return to Wide View';
+  }
+
+  // Optical magnification centered on the license plate
+  if (video && matched.plateBox) {
+    const originX = Math.round(matched.plateBox.left + (matched.plateBox.width / 2));
+    const originY = Math.round(matched.plateBox.top + (matched.plateBox.height / 2));
+    video.style.transformOrigin = `${originX}% ${originY}%`;
+    video.style.transform = 'scale(1.45)';
   }
 
   // Ensure video CONTINUES playing smoothly
@@ -4153,12 +4230,16 @@ window.focusVehiclePlate = function(plate, targetCamId) {
 window.resumeLiveCctvFeed = function(video) {
   window.currentActiveFocusedPlate = null;
   const targetBox = document.getElementById('liveTargetBox');
-  if (targetBox) targetBox.style.display = 'none';
+  if (targetBox) {
+    targetBox.style.display = 'none';
+    targetBox.classList.remove('plate-focused');
+  }
 
   document.querySelectorAll('.live-plate-chip').forEach(c => c.classList.remove('active'));
   document.querySelectorAll('.live-plate-reticle').forEach(r => r.classList.remove('active-focused'));
 
   if (video) {
+    video.style.transformOrigin = 'center center';
     video.style.transform = 'scale(1.0)';
     if (video.paused) video.play().catch(() => {});
   }
@@ -4167,16 +4248,33 @@ window.resumeLiveCctvFeed = function(video) {
   if (btnFreeze) {
     btnFreeze.classList.remove('frozen');
     btnFreeze.innerHTML = '<i class="fa-solid fa-crosshairs"></i> <span id="btnLiveCctvFreezeText">Focus Plate</span>';
+    btnFreeze.title = 'Focus Current Vehicle Plate';
   }
 };
 
-window.openSuspectSightingCctv = async function(plate, camId) {
-  const cleanPlate = (plate || '').trim().toUpperCase();
-  const targetCamId = (camId || '').toLowerCase();
-  if (!targetCamId) return;
+window.openSuspectSightingCctv = async function(param1, param2) {
+  let targetCamId = 'cam31';
+  let cleanPlate = '';
+
+  const p1 = (param1 || '').toString().trim();
+  const p2 = (param2 || '').toString().trim();
+
+  // Invariant parameter resolution: supports (plate, camId) or (camId, plate)
+  if (p1.toLowerCase().startsWith('cam') || /cam\d+/i.test(p1)) {
+    targetCamId = p1.toLowerCase();
+    cleanPlate = p2.toUpperCase();
+  } else if (p2.toLowerCase().startsWith('cam') || /cam\d+/i.test(p2)) {
+    targetCamId = p2.toLowerCase();
+    cleanPlate = p1.toUpperCase();
+  } else if (p1) {
+    cleanPlate = p1.toUpperCase();
+    targetCamId = p2 ? p2.toLowerCase() : (window.currentActiveLiveCamId || 'cam31');
+  } else {
+    targetCamId = p2 ? p2.toLowerCase() : (window.currentActiveLiveCamId || 'cam31');
+  }
 
   const suspect = cleanPlate ? await window.apiClient.isPlateSuspect(cleanPlate) : null;
-  const targetCam = (await window.apiClient.getCameraById(targetCamId));
+  const targetCam = (await window.apiClient.getCameraById(targetCamId)) || (window.apiClient.cameras && window.apiClient.cameras[0]);
   if (!targetCam) {
     alert(`Camera node '${targetCamId}' not found in registered database.`);
     return;
@@ -4196,7 +4294,12 @@ window.openSuspectSightingCctv = async function(plate, camId) {
   const camFov = document.getElementById('liveCamFovText');
   const btnFreeze = document.getElementById('btnLiveCctvFreeze');
 
-  if (btnFreeze) btnFreeze.style.display = 'inline-flex';
+  if (btnFreeze) {
+    btnFreeze.style.display = 'inline-flex';
+    btnFreeze.classList.remove('frozen');
+    btnFreeze.innerHTML = '<i class="fa-solid fa-crosshairs"></i> <span id="btnLiveCctvFreezeText">Focus Plate</span>';
+    btnFreeze.title = 'Focus Current Vehicle Plate';
+  }
 
   if (title) {
     if (suspect) {
@@ -4215,7 +4318,7 @@ window.openSuspectSightingCctv = async function(plate, camId) {
   }
   if (streamUri) streamUri.textContent = targetCam.stream_url || `/cctv-stream/${targetCam.id}/index.m3u8`;
   if (camJunction) camJunction.textContent = `${targetCam.name} (${targetCam.district})`;
-  if (camGps) camGps.textContent = `${targetCam.lat.toFixed(6)}° N, ${targetCam.lng.toFixed(6)}° E`;
+  if (camGps) camGps.textContent = `${targetCam.lat ? targetCam.lat.toFixed(6) : '23.033500'}° N, ${targetCam.lng ? targetCam.lng.toFixed(6) : '72.564500'}° E`;
   if (camStatus) {
     if (suspect) {
       camStatus.innerHTML = `<span style="color: #ef4444; font-weight: 800;"><i class="fa-solid fa-triangle-exclamation"></i> BOLO HIT: ${suspect.crime}</span>`;
@@ -4223,14 +4326,14 @@ window.openSuspectSightingCctv = async function(plate, camId) {
       camStatus.innerHTML = `<span style="color: #10b981; font-weight: 800;"><i class="fa-solid fa-circle-check"></i> Standard Continuous Optical Monitor</span>`;
     }
   }
-  if (camFov) camFov.textContent = `Status: ${targetCam.status.toUpperCase()} • ${targetCam.direction || 'Corridor'}`;
+  if (camFov) camFov.textContent = `Status: ${(targetCam.status || 'ONLINE').toUpperCase()} • ${targetCam.direction || 'Corridor'}`;
 
   // Populate dynamic overlays and quick focus buttons for every vehicle
-  window.renderDynamicPlateOverlays(targetCamId);
+  window.renderDynamicPlateOverlays(targetCam.id);
 
   if (video) {
     video.onplay = () => {
-      window.startLiveVideoTracking(video, targetCamId);
+      window.startLiveVideoTracking(video, targetCam.id);
     };
 
     const streamUrl = targetCam.stream_url || `/cctv-stream/${targetCam.id}/index.m3u8`;
@@ -4253,18 +4356,18 @@ window.openSuspectSightingCctv = async function(plate, camId) {
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(() => {});
-        window.startLiveVideoTracking(video, targetCamId);
+        window.startLiveVideoTracking(video, targetCam.id);
         if (cleanPlate) {
-          window.focusVehiclePlate(cleanPlate, targetCamId);
+          window.focusVehiclePlate(cleanPlate, targetCam.id);
         }
       });
       window.modalHlsInstance = hls;
     } else {
       video.src = streamUrl;
       video.play().catch(() => {});
-      window.startLiveVideoTracking(video, targetCamId);
+      window.startLiveVideoTracking(video, targetCam.id);
       if (cleanPlate) {
-        window.focusVehiclePlate(cleanPlate, targetCamId);
+        window.focusVehiclePlate(cleanPlate, targetCam.id);
       }
     }
   }
@@ -4293,6 +4396,7 @@ function initLiveCctvModal() {
     if (video) {
       video.pause();
       video.style.transform = 'scale(1.0)';
+      video.style.transformOrigin = 'center center';
     }
     window.isLiveFeedFrozen = false;
     window.currentActiveFocusedPlate = null;
@@ -4334,17 +4438,37 @@ function initLiveCctvModal() {
     });
   }
 
-  // Focus / Wide-View toggle button
+  // Focus / Wide-View toggle button: instantly locks current plate
   if (btnFreeze) {
     btnFreeze.addEventListener('click', () => {
       const activeCamId = window.currentActiveLiveCamId || 'cam31';
+      const video = document.getElementById('liveCctvVideoElement');
+
+      // If already focused, toggle back to wide view
       if (window.currentActiveFocusedPlate) {
         window.resumeLiveCctvFeed(video);
-      } else {
-        const defaultPlate = (activeCamId === 'cam31') ? '5696 GXS' : 'MH-02-EE-7762';
-        const cleanPlate = window.currentActiveSuspectPlate || defaultPlate;
-        window.focusVehiclePlate(cleanPlate, activeCamId);
+        return;
       }
+
+      // Find the most relevant plate to focus right now
+      const t = video ? (video.currentTime || 0) : 0;
+      const activeVehicles = window.getVehiclesAtTime(t, activeCamId);
+
+      let targetPlate = '';
+      const suspectInFrame = activeVehicles.find(v => v.suspect && v.isVisible);
+      if (suspectInFrame) {
+        targetPlate = suspectInFrame.plate;
+      } else if (window.currentActiveSuspectPlate) {
+        targetPlate = window.currentActiveSuspectPlate;
+      } else if (activeVehicles.length > 0) {
+        const visibleVeh = activeVehicles.find(v => v.isVisible) || activeVehicles[0];
+        targetPlate = visibleVeh.plate;
+      } else {
+        const catalog = window.getCameraVehiclePlateCatalog(activeCamId, t);
+        targetPlate = catalog[0]?.plate || '6380 CCS';
+      }
+
+      window.focusVehiclePlate(targetPlate, activeCamId);
     });
   }
 
@@ -4393,56 +4517,7 @@ function initLiveCctvModal() {
 }
 
 window.openLiveCameraModal = async function(camId) {
-  const targetCam = await window.apiClient.getCameraById(camId) || window.apiClient.cameras[0];
-  if (!targetCam) return;
-  window.currentActiveLiveCamId = targetCam.id;
-
-  const modal = document.getElementById('liveCctvModal');
-  const title = document.getElementById('liveCctvModalTitle');
-  const video = document.getElementById('liveCctvVideoElement');
-  const camNameOsd = document.getElementById('liveCctvCamNameOsd');
-  const streamUri = document.getElementById('liveCctvStreamUri');
-  const camJunction = document.getElementById('liveCamJunctionText');
-  const camGps = document.getElementById('liveCamGpsText');
-  const camStatus = document.getElementById('liveCamStatusText');
-  const camFov = document.getElementById('liveCamFovText');
-
-  if (title) title.innerHTML = `Live CCTV Stream: <span style="color: #38bdf8;">${targetCam.id}</span> &bull; ${targetCam.name}`;
-  if (camNameOsd) camNameOsd.textContent = `${targetCam.id} • ${targetCam.name}`;
-  if (streamUri) streamUri.textContent = `rtsp://10.240.12.${Math.floor(Math.random() * 80 + 10)}:554/live/${targetCam.id.toLowerCase()}`;
-  if (camJunction) camJunction.textContent = `${targetCam.name} (${targetCam.district})`;
-  if (camGps) camGps.textContent = `${targetCam.lat.toFixed(6)}° N, ${targetCam.lng.toFixed(6)}° E`;
-  if (camStatus) camStatus.textContent = 'Active Continuous Monitor';
-  if (camFov) camFov.textContent = `Facing North-East (45°) • 110m Range`;
-
-  if (video) {
-    const streamUrl = targetCam.stream_url || `/cctv-stream/${targetCam.id}/index.m3u8`;
-    if (window.Hls && Hls.isSupported() && streamUrl.includes('.m3u8')) {
-      if (window.liveHlsInstance) {
-        try { window.liveHlsInstance.destroy(); } catch(e){}
-      }
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 10,
-        maxBufferLength: 8,
-        maxMaxBufferLength: 16,
-        liveSyncDuration: 2.5,
-        liveMaxLatencyDuration: 5,
-        fragLoadingTimeOut: 3000,
-        manifestLoadingTimeOut: 3000
-      });
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
-      window.liveHlsInstance = hls;
-    } else {
-      video.src = streamUrl;
-      video.play().catch(() => {});
-    }
-  }
-
-  if (modal) modal.classList.add('open');
+  return window.openSuspectSightingCctv('', camId);
 };
 
 // Layer group for active dynamic GIS pursuit trajectories
