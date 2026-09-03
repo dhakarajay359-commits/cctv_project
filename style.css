@@ -1511,25 +1511,26 @@ body.focus-mode .leaflet-container-view {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  row-gap: 0.65rem;
-  padding: 0.6rem 1rem;
+  gap: 0.6rem;
+  padding: 0.4rem 0.85rem;
   background: #ffffff;
   border-bottom: 1px solid var(--border-color);
-  font-size: 0.78rem;
-  flex-wrap: wrap;
-  min-height: 52px;
+  font-size: 0.75rem;
+  flex-wrap: nowrap;
+  min-height: 44px;
+  overflow-x: auto;
 }
 
 .map-mode-indicator {
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.8rem;
+  gap: 0.4rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .map-mode-indicator .text-cyan {
@@ -1770,32 +1771,35 @@ body.focus-mode .leaflet-container-view {
 .map-top-bar-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .map-border-controls {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  gap: 0.32rem;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .map-border-btn {
-  height: 33px;
+  height: 27px;
   background: #ffffff;
-  border: 1.5px solid #cbd5e1;
+  border: 1px solid #cbd5e1;
   color: #1e293b;
-  padding: 0 0.85rem;
-  border-radius: 6px;
-  font-size: 0.76rem;
+  padding: 0 0.5rem;
+  border-radius: 4px;
+  font-size: 0.71rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.3rem;
   white-space: nowrap;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.16s ease;
   outline: none;
   user-select: none;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -1804,22 +1808,23 @@ body.focus-mode .leaflet-container-view {
 
 .map-border-btn i {
   color: #475569;
-  font-size: 0.82rem;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+  font-size: 0.72rem;
+  transition: transform 0.16s ease, color 0.16s ease;
 }
 
 .map-border-btn strong {
   display: inline-block;
-  padding: 0.1rem 0.42rem;
-  border-radius: 4px;
-  font-size: 0.68rem;
+  padding: 0.03rem 0.28rem;
+  border-radius: 3px;
+  font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   background: #f1f5f9;
   color: #64748b;
   border: 1px solid #e2e8f0;
-  margin-left: 0.25rem;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-left: 0.15rem;
+  line-height: 1.2;
+  transition: all 0.16s ease;
 }
 
 /* Hover: Regular / Inactive */
@@ -1827,13 +1832,13 @@ body.focus-mode .leaflet-container-view {
   background: #ffffff;
   color: #0f172a;
   border-color: #64748b;
-  box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.10), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
 }
 
 .map-border-btn:hover i {
   color: #0f172a;
-  transform: scale(1.15);
+  transform: scale(1.08);
 }
 
 .map-border-btn:hover strong {
@@ -1844,9 +1849,9 @@ body.focus-mode .leaflet-container-view {
 
 /* Press Interaction */
 .map-border-btn:active {
-  transform: translateY(0.5px) scale(0.985);
+  transform: translateY(0.5px) scale(0.99);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-  transition-duration: 0.08s;
+  transition-duration: 0.06s;
 }
 
 .map-border-btn:focus {
@@ -1856,15 +1861,15 @@ body.focus-mode .leaflet-container-view {
 .map-border-btn:focus-visible {
   outline: none;
   border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.22);
 }
 
 /* Active State (ON) */
 .map-border-btn.active {
   background: #ffffff;
-  border: 1.5px solid #0f172a;
+  border: 1.2px solid #0f172a;
   color: #0f172a;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
 .map-border-btn.active i {
@@ -1882,12 +1887,12 @@ body.focus-mode .leaflet-container-view {
   background: #ffffff;
   border-color: #0f172a;
   color: #0f172a;
-  box-shadow: 0 6px 18px -2px rgba(15, 23, 42, 0.12), 0 2px 6px -1px rgba(15, 23, 42, 0.05);
-  transform: translateY(-1.5px);
+  box-shadow: 0 3px 10px -1px rgba(15, 23, 42, 0.10);
+  transform: translateY(-1px);
 }
 
 .map-border-btn.active:hover i {
-  transform: scale(1.15);
+  transform: scale(1.08);
   color: #0f172a;
 }
 
@@ -1895,8 +1900,6 @@ body.focus-mode .leaflet-container-view {
   background: #bbf7d0;
   color: #14532d;
   border-color: #4ade80;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.22);
-  transform: scale(1.04);
 }
 
 /* Fit State Button Hover Enhancement */
@@ -1904,7 +1907,7 @@ body.focus-mode .leaflet-container-view {
   background: #f0f7ff;
   border-color: #2563eb;
   color: #1d4ed8;
-  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.14), 0 2px 6px -1px rgba(37, 99, 235, 0.05);
+  box-shadow: 0 3px 8px -1px rgba(37, 99, 235, 0.12);
 }
 
 #btnFitGujaratBorder:hover i {
