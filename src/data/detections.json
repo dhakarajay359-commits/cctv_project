@@ -1,5 +1,71 @@
 [
   {
+    "detectionId": "DET-MTLUGIPW-833",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam08",
+    "cameraName": "Majewadi Gate",
+    "region": "Junagadh (Girnar)",
+    "latitude": 21.517,
+    "longitude": 70.463,
+    "vehicleType": "two_wheeler",
+    "confidence": 0.469,
+    "timestamp": "2026-09-03T18:14:06.787Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      416,
+      670,
+      492,
+      775
+    ]
+  },
+  {
+    "detectionId": "DET-MTLUGGXJ-125",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam08",
+    "cameraName": "Majewadi Gate",
+    "region": "Junagadh (Girnar)",
+    "latitude": 21.517,
+    "longitude": 70.463,
+    "vehicleType": "truck",
+    "confidence": 0.859,
+    "timestamp": "2026-09-03T18:14:04.471Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      628,
+      541,
+      817,
+      794
+    ]
+  },
+  {
     "detectionId": "DET-MTLUFYND-123",
     "vehicleId": "OCR UNRESOLVED",
     "plate": "OCR UNRESOLVED",
@@ -16440,72 +16506,6 @@
       255,
       1025,
       336
-    ]
-  },
-  {
-    "detectionId": "DET-MTLQORNT-783",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam16",
-    "cameraName": "Visat P2 Sector",
-    "region": "Ahmedabad (Urban)",
-    "latitude": 23.111,
-    "longitude": 72.595,
-    "vehicleType": "car",
-    "confidence": 0.732,
-    "timestamp": "2026-09-03T16:28:33.161Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      996,
-      280,
-      1137,
-      352
-    ]
-  },
-  {
-    "detectionId": "DET-MTLQONAF-272",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam15",
-    "cameraName": "Suvidha Park Corridor",
-    "region": "Ahmedabad (Urban)",
-    "latitude": 23.018,
-    "longitude": 72.554,
-    "vehicleType": "bus",
-    "confidence": 0.261,
-    "timestamp": "2026-09-03T16:28:27.494Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      1328,
-      498,
-      1725,
-      1036
     ]
   }
 ]
