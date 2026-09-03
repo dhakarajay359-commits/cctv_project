@@ -1,5 +1,71 @@
 [
   {
+    "detectionId": "DET-MTLT3K1Y-898",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam04",
+    "cameraName": "Paldi Circle Arterial",
+    "region": "Ahmedabad (Urban)",
+    "latitude": 23.0135,
+    "longitude": 72.563,
+    "vehicleType": "auto_rickshaw",
+    "confidence": 0.449,
+    "timestamp": "2026-09-03T17:36:02.374Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      294,
+      140,
+      444,
+      242
+    ]
+  },
+  {
+    "detectionId": "DET-MTLT3I84-865",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam04",
+    "cameraName": "Paldi Circle Arterial",
+    "region": "Ahmedabad (Urban)",
+    "latitude": 23.0135,
+    "longitude": 72.563,
+    "vehicleType": "car",
+    "confidence": 0.477,
+    "timestamp": "2026-09-03T17:36:00.004Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      622,
+      185,
+      729,
+      243
+    ]
+  },
+  {
     "detectionId": "DET-MTLT3C3D-283",
     "vehicleId": "OCR UNRESOLVED",
     "plate": "OCR UNRESOLVED",
@@ -16430,72 +16496,6 @@
       686,
       542,
       752
-    ]
-  },
-  {
-    "detectionId": "DET-MTLMJLHG-815",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam01",
-    "cameraName": "Chimanbhai Bridge",
-    "region": "Ahmedabad (Urban)",
-    "latitude": 23.0568,
-    "longitude": 72.5802,
-    "vehicleType": "auto_rickshaw",
-    "confidence": 0.365,
-    "timestamp": "2026-09-03T14:32:33.412Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      539,
-      661,
-      644,
-      735
-    ]
-  },
-  {
-    "detectionId": "DET-MTLMJCSR-848",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam31",
-    "cameraName": "Overhead Traffic Aerial Corridor",
-    "region": "Ahmedabad (Urban)",
-    "latitude": 23.0335,
-    "longitude": 72.5645,
-    "vehicleType": "car",
-    "confidence": 0.688,
-    "timestamp": "2026-09-03T14:32:22.155Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      640,
-      147,
-      909,
-      356
     ]
   }
 ]
