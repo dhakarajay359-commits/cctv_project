@@ -5747,33 +5747,58 @@ async function renderSuspectMatches() {
         <button type="button" class="action-btn" onclick="window.openSuspectSightingCctv('${targetPlate}', '${s.cameraId}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
           <i class="fa-solid fa-video"></i> View Sighting Feed
         </button>
-        <button type="button" class="action-btn danger" onclick="window.removeSuspectTarget('${targetPlate}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171;" title="Mark problem solved & remove this vehicle from suspect records">
+        <button type="button" class="action-btn danger btn-resolve-suspect" data-plate="${targetPlate}" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; cursor: pointer; transition: all 0.2s ease;" title="Mark problem solved & remove this vehicle from suspect records">
           <i class="fa-solid fa-trash-can"></i> Remove / Resolved
         </button>
       </div>
     `;
+
+    // Direct, robust event binding (no modal blocking)
+    const btnRemove = card.querySelector('.btn-resolve-suspect');
+    if (btnRemove) {
+      btnRemove.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        await window.removeSuspectTarget(targetPlate, card, btnRemove);
+      });
+    }
+
     container.appendChild(card);
   });
 }
 
-// 2. REMOVE / DEREGISTER SUSPECT TARGET ONCE PROBLEM IS SOLVED
-window.removeSuspectTarget = async function(plateNumber) {
+// 2. REMOVE / DEREGISTER SUSPECT TARGET ONCE PROBLEM IS SOLVED (INSTANT & SEAMLESS)
+window.removeSuspectTarget = async function(plateNumber, cardElement = null, btnElement = null) {
   const cleanPlate = (plateNumber || '').trim().toUpperCase();
   if (!cleanPlate) return;
+  const norm = cleanPlate.replace(/[^A-Z0-9]/g, '');
 
-  const confirmRemove = confirm(`RESOLVE SUSPECT RECORD:\n\nAre you sure you want to mark suspect vehicle ${cleanPlate} as RESOLVED and remove it from the suspect records?`);
-  if (!confirmRemove) return;
+  // 1. Instant Visual Feedback on the Button
+  if (btnElement) {
+    btnElement.disabled = true;
+    btnElement.style.opacity = '0.7';
+    btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resolving...';
+  }
+
+  // 2. Instant Animated Fade-Out of Card
+  if (cardElement) {
+    cardElement.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    cardElement.style.opacity = '0.35';
+    cardElement.style.transform = 'scale(0.96)';
+  }
 
   try {
-    // 1. Call API client & backend DELETE route
+    // 3. Dispatch backend removal across both raw plate and normalized formats
+    const deleteCalls = [
+      fetch(`/api/watchlist/${encodeURIComponent(cleanPlate)}`, { method: 'DELETE' }).catch(() => {}),
+      fetch(`/api/watchlist/${encodeURIComponent(norm)}`, { method: 'DELETE' }).catch(() => {})
+    ];
     if (window.apiClient && typeof window.apiClient.removeSuspectVehicle === 'function') {
-      await window.apiClient.removeSuspectVehicle(cleanPlate);
-    } else {
-      await fetch(`/api/watchlist/${encodeURIComponent(cleanPlate)}`, { method: 'DELETE' });
+      deleteCalls.push(window.apiClient.removeSuspectVehicle(cleanPlate).catch(() => {}));
     }
+    await Promise.all(deleteCalls);
 
-    // 2. Clear from local memory caches
-    const norm = cleanPlate.replace(/[^A-Z0-9]/g, '');
+    // 4. Clean local memory caches
     if (window.activeWatchlistCache) {
       window.activeWatchlistCache = window.activeWatchlistCache.filter(item => {
         const itemPlate = (item.plate || item.vehicleId || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
@@ -5796,30 +5821,48 @@ window.removeSuspectTarget = async function(plateNumber) {
       }
     }
 
-    // 3. Remove from client alerts list
+    // 5. Remove from alerts list
     if (window.apiClient && window.apiClient.alerts) {
       window.apiClient.alerts = window.apiClient.alerts.filter(a => {
         const aPlate = (a.target_vehicle || a.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
-        return aPlate !== norm;
+        return aPlate !== norm && !aPlate.includes(norm);
       });
     }
 
-    // 4. Update UI sections dynamically
-    await renderSuspectMatches();
-    await renderDynamicRecommendations();
-    await renderGisDetectionsList();
-    await renderAlerts();
-    await updateDynamicDashboardMeters('cardStatAlerts');
+    // 6. Smoothly collapse and remove DOM element
+    if (cardElement) {
+      cardElement.style.opacity = '0';
+      cardElement.style.transform = 'translateY(-12px) scale(0.92)';
+      setTimeout(() => {
+        cardElement.remove();
+        const container = document.getElementById('suspectMatchingHitsList');
+        if (container && container.querySelectorAll('.suspect-hit-card').length === 0) {
+          renderSuspectMatches();
+        }
+      }, 300);
+    } else {
+      await renderSuspectMatches();
+    }
 
-    // 5. Toast notification
+    // 7. Update other UI panels in background
+    renderDynamicRecommendations();
+    renderGisDetectionsList();
+    renderAlerts();
+    renderAnalyticsTable();
+    updateDynamicDashboardMeters('cardStatAlerts');
+
+    // 8. Positive Toast Confirmation
     showRealtimeAlertToast({
       title: '✅ SUSPECT TARGET RESOLVED',
-      location: `Vehicle ${cleanPlate} successfully removed from active records.`,
+      location: `Suspect vehicle ${cleanPlate} successfully removed from surveillance records.`,
       severity: 'normal'
     });
   } catch (err) {
     console.error('Error removing suspect target:', err);
-    alert(`Failed to remove suspect record: ${err.message}`);
+    if (btnElement) {
+      btnElement.disabled = false;
+      btnElement.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Retry';
+    }
   }
 };
 

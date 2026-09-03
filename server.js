@@ -1881,17 +1881,19 @@ const server = http.createServer((req, res) => {
     // Remove associated critical alerts
     ALERT_QUEUE = ALERT_QUEUE.filter(a => {
       const aTarget = (a.target_vehicle || a.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
-      return aTarget !== normTarget;
+      return aTarget !== normTarget && !aTarget.includes(normTarget) && !(normTarget && aTarget.endsWith(normTarget));
     });
 
     // Mark detection history records as resolved
     for (const det of DETECTION_HISTORY) {
-      if (det.vehicleId) {
-        const dNorm = det.vehicleId.replace(/[^A-Z0-9]/g, '').toUpperCase();
-        if (dNorm === normTarget) {
-          det.is_suspect = false;
-          det.suspect_match = { matched: false, status: 'RESOLVED', message: 'Target Resolved & Removed' };
-        }
+      const vNorm = (det.vehicleId || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+      const pNorm = (det.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+      const sNorm = (det.suspect_match?.suspect?.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+      const sId = (det.suspect_match?.suspect?.id || '').trim();
+
+      if (vNorm === normTarget || pNorm === normTarget || sNorm === normTarget || (normTarget && (vNorm.includes(normTarget) || pNorm.includes(normTarget))) || sId === targetId) {
+        det.is_suspect = false;
+        det.suspect_match = { matched: false, status: 'RESOLVED', message: 'Target Resolved & Removed' };
       }
     }
     saveDetections();
