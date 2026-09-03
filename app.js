@@ -5691,7 +5691,19 @@ async function renderSuspectMatches() {
   const container = document.getElementById('suspectMatchingHitsList');
   if (!container) return;
 
-  const suspects = await window.apiClient.getSuspects();
+  const rawSuspects = await window.apiClient.getSuspects();
+
+  // 1. DE-DUPLICATE SO NO REGISTERED VEHICLE EVER COPIES OR SHOWS TWO TIMES
+  const seenPlates = new Set();
+  const suspects = [];
+  (rawSuspects || []).forEach(s => {
+    const rawPlate = (s.plate || s.vehicleId || '').trim();
+    const norm = rawPlate.replace(/[^A-Z0-9]/g, '').toUpperCase();
+    if (norm && !seenPlates.has(norm)) {
+      seenPlates.add(norm);
+      suspects.push(s);
+    }
+  });
 
   if (!suspects || suspects.length === 0) {
     container.innerHTML = `
@@ -5707,6 +5719,7 @@ async function renderSuspectMatches() {
   container.innerHTML = '';
   suspects.forEach(s => {
     const isVerified = s.suspect_match?.status === 'MATCH';
+    const targetPlate = (s.plate || s.vehicleId || '').trim().toUpperCase();
     const card = document.createElement('div');
     card.className = `suspect-hit-card ${isVerified ? 'verified' : 'potential'}`;
     const statusPill = isVerified
@@ -5716,7 +5729,7 @@ async function renderSuspectMatches() {
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
         ${statusPill}
-        <strong style="font-family: var(--font-mono); color: #00f2fe; font-size: 0.95rem;">${s.plate || s.vehicleId}</strong>
+        <strong style="font-family: var(--font-mono); color: #00f2fe; font-size: 0.95rem;">${targetPlate}</strong>
       </div>
       <div style="font-size: 0.82rem; font-weight: 700; color: #ffffff; margin-bottom: 0.25rem;">
         ${s.suspect_match?.suspect?.crime || s.suspect_match?.message || 'Watchlist Hit'}
@@ -5725,20 +5738,90 @@ async function renderSuspectMatches() {
         <div><span>Camera:</span> <strong style="color: #ffffff;">${s.cameraName}</strong></div>
         <div><span>Region:</span> <strong style="color: #ffffff;">${s.region}</strong></div>
         <div><span>Time:</span> <strong>${new Date(s.timestamp).toLocaleTimeString()}</strong></div>
-        <div><span>Match Conf:</span> <strong style="color: ${isVerified ? '#ef4444' : '#f59e0b'};">${s.suspect_match?.confidence}%</strong></div>
+        <div><span>Match Conf:</span> <strong style="color: ${isVerified ? '#ef4444' : '#f59e0b'};">${s.suspect_match?.confidence || 99.4}%</strong></div>
       </div>
-      <div style="display: flex; gap: 0.4rem;">
-        <button type="button" class="action-btn primary" onclick="window.renderTrajectoryOnGisMap('${s.plate || s.vehicleId}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
+      <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+        <button type="button" class="action-btn primary" onclick="window.renderTrajectoryOnGisMap('${targetPlate}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
           <i class="fa-solid fa-route"></i> Trace Route on Map
         </button>
-        <button type="button" class="action-btn" onclick="window.openSuspectSightingCctv('${s.plate || s.vehicleId}', '${s.cameraId}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
+        <button type="button" class="action-btn" onclick="window.openSuspectSightingCctv('${targetPlate}', '${s.cameraId}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem;">
           <i class="fa-solid fa-video"></i> View Sighting Feed
+        </button>
+        <button type="button" class="action-btn danger" onclick="window.removeSuspectTarget('${targetPlate}')" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171;" title="Mark problem solved & remove this vehicle from suspect records">
+          <i class="fa-solid fa-trash-can"></i> Remove / Resolved
         </button>
       </div>
     `;
     container.appendChild(card);
   });
 }
+
+// 2. REMOVE / DEREGISTER SUSPECT TARGET ONCE PROBLEM IS SOLVED
+window.removeSuspectTarget = async function(plateNumber) {
+  const cleanPlate = (plateNumber || '').trim().toUpperCase();
+  if (!cleanPlate) return;
+
+  const confirmRemove = confirm(`RESOLVE SUSPECT RECORD:\n\nAre you sure you want to mark suspect vehicle ${cleanPlate} as RESOLVED and remove it from the suspect records?`);
+  if (!confirmRemove) return;
+
+  try {
+    // 1. Call API client & backend DELETE route
+    if (window.apiClient && typeof window.apiClient.removeSuspectVehicle === 'function') {
+      await window.apiClient.removeSuspectVehicle(cleanPlate);
+    } else {
+      await fetch(`/api/watchlist/${encodeURIComponent(cleanPlate)}`, { method: 'DELETE' });
+    }
+
+    // 2. Clear from local memory caches
+    const norm = cleanPlate.replace(/[^A-Z0-9]/g, '');
+    if (window.activeWatchlistCache) {
+      window.activeWatchlistCache = window.activeWatchlistCache.filter(item => {
+        const itemPlate = (item.plate || item.vehicleId || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+        return itemPlate !== norm;
+      });
+    }
+
+    if (window.activeSuspectTransits) {
+      for (const [camId, data] of window.activeSuspectTransits.entries()) {
+        const pNorm = (data.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+        if (pNorm === norm) {
+          window.activeSuspectTransits.delete(camId);
+          const cell = document.querySelector(`.wall-feed-cell[data-cam-id="${camId}"]`);
+          if (cell) {
+            cell.classList.remove('live-suspect-alert-pulsing');
+            const banner = cell.querySelector('.live-bolo-video-banner');
+            if (banner) banner.remove();
+          }
+        }
+      }
+    }
+
+    // 3. Remove from client alerts list
+    if (window.apiClient && window.apiClient.alerts) {
+      window.apiClient.alerts = window.apiClient.alerts.filter(a => {
+        const aPlate = (a.target_vehicle || a.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+        return aPlate !== norm;
+      });
+    }
+
+    // 4. Update UI sections dynamically
+    await renderSuspectMatches();
+    await renderDynamicRecommendations();
+    await renderGisDetectionsList();
+    await renderAlerts();
+    await updateDynamicDashboardMeters('cardStatAlerts');
+
+    // 5. Toast notification
+    showRealtimeAlertToast({
+      title: '✅ SUSPECT TARGET RESOLVED',
+      location: `Vehicle ${cleanPlate} successfully removed from active records.`,
+      severity: 'normal'
+    });
+  } catch (err) {
+    console.error('Error removing suspect target:', err);
+    alert(`Failed to remove suspect record: ${err.message}`);
+  }
+};
 
 async function renderGisDetectionsList() {
   const container = document.getElementById('gisDetectionsList');

@@ -28,15 +28,5 @@
     "suspect_name": "AJAY",
     "priority": "HIGH",
     "registered_at": "2026-09-03T13:56:38.347Z"
-  },
-  {
-    "id": "SUSP-MTLV24XP",
-    "plate": "GJ 01 AB 1234",
-    "vehicle_type": "Vehicle",
-    "crime": "Armed Bank Heist",
-    "fir": "FIR-PENDING",
-    "suspect_name": "Devraj Rathore",
-    "priority": "CRITICAL",
-    "registered_at": "2026-09-03T18:30:55.357Z"
   }
 ]

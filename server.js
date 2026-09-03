@@ -1863,31 +1863,67 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // DELETE /api/watchlist/:id — Remove Target from Watchlist
+  // DELETE /api/watchlist/:id — Remove Target from Watchlist & Mark Resolved
   if (pathname.startsWith('/api/watchlist/') && req.method === 'DELETE') {
-    const targetId = pathname.replace('/api/watchlist/', '').trim();
-    WATCHLIST_STORE = WATCHLIST_STORE.filter(s => s.id !== targetId && s.plate !== targetId);
+    const rawTarget = pathname.replace('/api/watchlist/', '').trim();
+    const targetId = decodeURIComponent(rawTarget);
+    const normTarget = targetId.replace(/[^A-Z0-9]/g, '').toUpperCase();
+
+    // Remove from active watchlist store
+    WATCHLIST_STORE = WATCHLIST_STORE.filter(s => {
+      const sId = (s.id || '').trim();
+      const sPlate = (s.plate || '').trim();
+      const sNorm = sPlate.replace(/[^A-Z0-9]/g, '').toUpperCase();
+      return sId !== targetId && sPlate !== targetId && sNorm !== normTarget;
+    });
     saveWatchlist();
 
+    // Remove associated critical alerts
+    ALERT_QUEUE = ALERT_QUEUE.filter(a => {
+      const aTarget = (a.target_vehicle || a.plate || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+      return aTarget !== normTarget;
+    });
+
+    // Mark detection history records as resolved
     for (const det of DETECTION_HISTORY) {
       if (det.vehicleId) {
-        det.suspect_match = matchWatchlist(det.vehicleId);
-        det.is_suspect = det.suspect_match.status === 'MATCH';
+        const dNorm = det.vehicleId.replace(/[^A-Z0-9]/g, '').toUpperCase();
+        if (dNorm === normTarget) {
+          det.is_suspect = false;
+          det.suspect_match = { matched: false, status: 'RESOLVED', message: 'Target Resolved & Removed' };
+        }
       }
     }
     saveDetections();
 
     broadcastSse('watchlist_updated', { total: WATCHLIST_STORE.length });
+    broadcastSse('alerts_updated', { total: ALERT_QUEUE.length });
     broadcastSse('recommendations_updated', generateDynamicRecommendations());
 
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-    res.end(JSON.stringify({ status: 'success', message: 'Target removed from watchlist', total: WATCHLIST_STORE.length }));
+    res.end(JSON.stringify({ 
+      status: 'success', 
+      message: `Suspect vehicle ${targetId} successfully resolved and removed from records.`, 
+      total: WATCHLIST_STORE.length 
+    }));
     return;
   }
 
-  // GET /api/suspects — Retrieve only confirmed or potential suspect detections
+  // GET /api/suspects — Retrieve only confirmed or potential suspect detections (DE-DUPLICATED)
   if (pathname === '/api/suspects' && req.method === 'GET') {
-    const suspects = DETECTION_HISTORY.filter(d => d.suspect_match && (d.suspect_match.status === 'MATCH' || d.suspect_match.status === 'POTENTIAL_MATCH'));
+    const rawSuspects = DETECTION_HISTORY.filter(d => d.suspect_match && (d.suspect_match.status === 'MATCH' || d.suspect_match.status === 'POTENTIAL_MATCH'));
+    
+    // De-duplicate so each registered suspect vehicle appears exactly ONCE (most recent sighting)
+    const seenPlates = new Set();
+    const suspects = [];
+    for (const d of rawSuspects) {
+      const normPlate = (d.plate || d.vehicleId || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
+      if (normPlate && !seenPlates.has(normPlate)) {
+        seenPlates.add(normPlate);
+        suspects.push(d);
+      }
+    }
+
     if (suspects.length === 0) {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify({
