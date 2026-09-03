@@ -643,25 +643,22 @@ body, body.dark-theme, body.light-theme {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
 .breadcrumb-root {
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  display: none;
 }
 
 .breadcrumb-divider {
-  color: var(--text-muted);
-  opacity: 0.5;
+  display: none;
 }
 
 .breadcrumb-current {
   color: var(--text-primary);
-  font-weight: 700;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .header-actions {
