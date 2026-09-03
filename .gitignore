@@ -111,4 +111,6 @@ evidentiary_audits/
 *.png
 *.jpg
 *.jpeg
+scratch/
+cache/
 

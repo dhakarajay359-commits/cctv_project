@@ -15,7 +15,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.130Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam02",
@@ -33,7 +33,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam03",
@@ -51,7 +51,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam04",
@@ -69,7 +69,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam05",
@@ -87,7 +87,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam06",
@@ -105,7 +105,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam07",
@@ -123,7 +123,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam08",
@@ -141,7 +141,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam09",
@@ -159,7 +159,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.131Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam10",
@@ -177,7 +177,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam11",
@@ -195,7 +195,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam12",
@@ -213,7 +213,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam13",
@@ -231,7 +231,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam14",
@@ -249,7 +249,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam15",
@@ -267,7 +267,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam16",
@@ -285,7 +285,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.913Z"
   },
   {
     "id": "cam17",
@@ -303,7 +303,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam18",
@@ -321,7 +321,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam19",
@@ -339,7 +339,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam20",
@@ -357,7 +357,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam21",
@@ -375,7 +375,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam22",
@@ -393,7 +393,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam23",
@@ -411,7 +411,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam24",
@@ -429,7 +429,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam25",
@@ -447,7 +447,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam26",
@@ -465,7 +465,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam27",
@@ -483,7 +483,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam28",
@@ -501,7 +501,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam29",
@@ -519,7 +519,7 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
   },
   {
     "id": "cam30",
@@ -537,6 +537,42 @@
     "retention_days": 15,
     "direction": "Northbound (Transit Corridor)",
     "fov_angle": 90,
-    "onboarded_at": "2026-09-01T09:59:51.132Z"
+    "onboarded_at": "2026-09-02T17:48:55.914Z"
+  },
+  {
+    "id": "cam31",
+    "name": "Overhead Traffic Aerial Corridor",
+    "district": "Ahmedabad (Urban)",
+    "department_id": "dept-police",
+    "lat": 23.0335,
+    "lng": 72.5645,
+    "type": "ip",
+    "vendor": "Sentinel Aerial HD",
+    "status": "online",
+    "resolution": "1080p",
+    "stream_url": "/assets/cam31_traffic.mp4",
+    "hls_url": "/assets/cam31_traffic.mp4",
+    "retention_days": 15,
+    "direction": "Aerial Top-Down Traffic Corridor",
+    "fov_angle": 120,
+    "onboarded_at": "2026-09-03T17:25:00.000Z"
+  },
+  {
+    "id": "cam32",
+    "name": "Urban Corridor Busy Arterial",
+    "district": "Ahmedabad (Urban)",
+    "department_id": "dept-police",
+    "lat": 23.0285,
+    "lng": 72.5780,
+    "type": "ip",
+    "vendor": "Sentinel Traffic Vision AI",
+    "status": "online",
+    "resolution": "1080p",
+    "stream_url": "/assets/cam32_traffic.mp4",
+    "hls_url": "/assets/cam32_traffic.mp4",
+    "retention_days": 15,
+    "direction": "Southbound (Urban Traffic Corridor)",
+    "fov_angle": 110,
+    "onboarded_at": "2026-09-03T17:48:00.000Z"
   }
 ]

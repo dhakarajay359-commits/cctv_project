@@ -4636,6 +4636,43 @@ video,
   display: flex !important;
 }
 
+#evidentiarySnapshotModal {
+  padding: 1.5rem 1rem !important;
+  overflow-y: auto !important;
+  align-items: flex-start !important;
+}
+
+#evidentiarySnapshotModal .modal-content {
+  max-width: 1040px !important;
+  max-height: 94vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: auto !important;
+}
+
+#evidentiarySnapshotModal .modal-header {
+  padding: 0.9rem 1.4rem !important;
+  margin-bottom: 0 !important;
+  background: #0b1329 !important;
+  border-bottom: 1px solid #1e293b !important;
+  flex-shrink: 0 !important;
+}
+
+#evidentiarySnapshotModal .modal-body {
+  padding: 1.2rem 1.4rem !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+}
+
+#evidentiarySnapshotModal .modal-footer {
+  padding: 0.8rem 1.4rem !important;
+  background: #0b1329 !important;
+  border-top: 1px solid #1e293b !important;
+  flex-shrink: 0 !important;
+}
+
 .modal-content {
   background: #ffffff;
   color: #0f172a;
@@ -5366,18 +5403,49 @@ video,
   left: 35%;
   width: 30%;
   height: 35%;
-  border: 1.5px solid #ef4444;
-  background: rgba(239, 68, 68, 0.08);
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.12);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  padding: 4px;
+  padding: 3px;
   pointer-events: none;
   z-index: 10;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.3);
-  transition: all 0.25s ease;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+  will-change: left, top, width, height;
 }
+
+.live-target-box.plate-focused {
+  border: 2.5px solid #ef4444;
+  background: rgba(239, 68, 68, 0.22);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.9), inset 0 0 8px rgba(239, 68, 68, 0.6);
+  animation: platePulseGlow 1.2s infinite alternate;
+}
+
+@keyframes platePulseGlow {
+  0% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.6), inset 0 0 6px rgba(239, 68, 68, 0.3); border-color: #ef4444; }
+  100% { box-shadow: 0 0 32px rgba(239, 68, 68, 1.0), inset 0 0 14px rgba(239, 68, 68, 0.8); border-color: #f87171; }
+}
+
+#liveCctvVideoElement {
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform-origin 0.4s ease;
+}
+
+.bbox-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #38bdf8;
+  border-style: solid;
+  border-width: 0;
+  pointer-events: none;
+}
+.bbox-corner.tl { top: -2px; left: -2px; border-top-width: 2.5px; border-left-width: 2.5px; }
+.bbox-corner.tr { top: -2px; right: -2px; border-top-width: 2.5px; border-right-width: 2.5px; }
+.bbox-corner.bl { bottom: -2px; left: -2px; border-bottom-width: 2.5px; border-left-width: 2.5px; }
+.bbox-corner.br { bottom: -2px; right: -2px; border-bottom-width: 2.5px; border-right-width: 2.5px; }
 
 .live-target-label {
   background: #dc2626;
@@ -5391,6 +5459,125 @@ video,
   align-items: center;
   gap: 5px;
   width: fit-content;
+  white-space: nowrap;
+}
+
+/* Dynamic Optical Plate Reticles for Live CCTV */
+.live-plate-reticle {
+  position: absolute;
+  border: 1.8px solid #00f2fe;
+  background: rgba(0, 242, 254, 0.12);
+  border-radius: 3px;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 15;
+  transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: left, top, width, height;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.live-plate-reticle:hover {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.8);
+}
+
+.live-plate-reticle.suspect {
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.20);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.85);
+  animation: platePulseGlow 1.2s infinite alternate;
+}
+
+.live-plate-reticle.active-focused {
+  border: 2.5px solid #22c55e;
+  background: rgba(34, 197, 94, 0.22);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.95);
+}
+
+.live-plate-reticle.suspect.active-focused {
+  border: 2.5px solid #ef4444;
+  background: rgba(239, 68, 68, 0.30);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 1.0);
+}
+
+.plate-reticle-badge {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: #0f172a;
+  border: 1px solid #00f2fe;
+  color: #00f2fe;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.live-plate-reticle.suspect .plate-reticle-badge {
+  background: #dc2626;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.live-plate-reticle.active-focused .plate-reticle-badge {
+  background: #15803d;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+.live-plate-chip {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid #334155;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.live-plate-chip:hover {
+  border-color: #00f2fe;
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.1);
+}
+
+.live-plate-chip.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.live-plate-chip.suspect {
+  border-color: #dc2626;
+  color: #f87171;
+  background: rgba(220, 38, 38, 0.15);
+}
+
+.live-plate-chip.suspect.active {
+  background: #dc2626;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.6);
 }
 
 /* PHASE 4 — SURVEILLANCE & EVENT LOG STYLES */
@@ -5671,5 +5858,352 @@ video,
   color: #38bdf8;
   font-size: 0.72rem;
 }
+
+
+
+/* =========================================================================
+   TACTICAL SUSPECT VEHICLE LIVE VIDEO WALL & SPOTLIGHT STYLES
+   ========================================================================= */
+@keyframes pulseRedGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.active-suspect-tag {
+  animation: pulseRedGlow 1.4s infinite;
+}
+
+.cctv-suspect-bbox {
+  animation: pulseRedGlow 2s infinite;
+}
+
+/* =========================================================================
+   DYNAMIC RECOMMENDATIONS & REAL-TIME INTELLIGENCE STYLES
+   ========================================================================= */
+.dynamic-recommendations-wrapper {
+  margin-bottom: 1.25rem;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md, 8px);
+  padding: 1rem 1.2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.recs-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.recs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.recs-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-cyan, #00f2fe);
+  box-shadow: 0 0 10px var(--accent-cyan, #00f2fe);
+  animation: pulseCyan 1.5s infinite;
+}
+
+@keyframes pulseCyan {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.recs-header-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.recs-source-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-refresh-recs {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh-recs:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.dynamic-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1rem;
+}
+
+.dynamic-rec-card {
+  background: rgba(10, 15, 29, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 4px solid var(--accent-cyan, #00f2fe);
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dynamic-rec-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.dynamic-rec-card.category-tactical_intercept {
+  border-left-color: #ef4444;
+}
+
+.dynamic-rec-card.category-route_advisory {
+  border-left-color: #38bdf8;
+}
+
+.dynamic-rec-card.category-monitoring {
+  border-left-color: #10b981;
+}
+
+.rec-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rec-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.rec-timestamp {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-family: var(--font-mono, monospace);
+}
+
+.rec-card-title {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.rec-card-desc {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.rec-card-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.6rem;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.rec-card-meta span {
+  color: #64748b;
+}
+
+.rec-card-meta strong {
+  color: #e2e8f0;
+}
+
+.rec-card-meta code {
+  color: #38bdf8;
+  font-family: var(--font-mono, monospace);
+}
+
+.rec-card-footer {
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rec-action-btn {
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  padding: 0.4rem 0.85rem !important;
+}
+
+/* GIS SIDEBAR TABS */
+.gis-sidebar-tab-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.gis-side-tab {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 0.42rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.gis-side-tab:hover {
+  color: #ffffff;
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.gis-side-tab.active {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* GIS LIVE DETECTIONS FEED */
+.gis-detections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: calc(100vh - 430px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.detection-card {
+  border-left: 3px solid #38bdf8 !important;
+  background: rgba(15, 23, 42, 0.7) !important;
+  padding: 0.65rem 0.85rem !important;
+  border-radius: 6px !important;
+}
+
+.detection-card.suspect {
+  border-left-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.06) !important;
+}
+
+/* SUSPECT MATCHING HUB */
+.suspect-matching-hub {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+}
+
+.suspect-hits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.8rem;
+}
+
+.suspect-hit-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.suspect-hit-card.verified {
+  border-left: 4px solid #ef4444;
+}
+
+.suspect-hit-card.potential {
+  border-left: 4px solid #f59e0b;
+}
+
+/* LIVE CCTV VIDEO WALL SUSPECT INTERCEPT PULSING */
+@keyframes boloWallPulse {
+  0% {
+    border-color: #ef4444;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.45), inset 0 0 14px rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    border-color: #f87171;
+    box-shadow: 0 0 32px rgba(239, 68, 68, 0.9), inset 0 0 24px rgba(239, 68, 68, 0.5);
+  }
+  100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.45), inset 0 0 14px rgba(239, 68, 68, 0.25);
+  }
+}
+
+.wall-feed-cell.live-suspect-alert-pulsing {
+  animation: boloWallPulse 1.4s infinite ease-in-out !important;
+  border: 2px solid #ef4444 !important;
+  z-index: 10;
+}
+
+.live-bolo-video-banner {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 25;
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.74rem;
+  box-shadow: 0 3px 16px rgba(220, 38, 38, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.03em;
+}
+
+.live-bolo-video-banner .pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: radarPing 1s infinite;
+}
+
+
 
 

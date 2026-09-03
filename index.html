@@ -9,10 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Fonts & Icons (Local with CDN fallback to prevent SSL ERR_CERT_AUTHORITY_INVALID) -->
+  <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css" onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';">
   
-  <!-- Leaflet GIS Map CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet GIS Map CSS (Local with CDN fallback) -->
+  <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';">
   
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%2310b981'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23070a0f'/%3E%3Cpath d='M50 15 L80 30 L80 60 C80 75 50 88 50 88 C50 88 20 75 20 60 L20 30 Z' fill='url(%23g)' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23070a0f'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%2300f2fe'/%3E%3C/svg%3E">
@@ -246,7 +247,7 @@
         <!-- Sidebar Filters -->
         <div class="gis-controls-sidebar">
           <div class="sidebar-header">
-            <h3><i class="fa-solid fa-filter"></i> Geospatial Filters</h3>
+            <h3><i class="fa-solid fa-filter"></i> Geospatial &amp; Detection Feed</h3>
             <button class="btn-refresh" id="btnRefreshMap" title="Refresh Map & Reset All Filters"><i class="fa-solid fa-arrows-rotate"></i></button>
           </div>
 
@@ -392,8 +393,21 @@
             </div>
           </div>
 
+          <div class="gis-sidebar-tab-row">
+            <button type="button" class="gis-side-tab active" id="tabGisNodes">
+              <i class="fa-solid fa-video"></i> Cameras (<span id="gisNodesCountBadge">0</span>)
+            </button>
+            <button type="button" class="gis-side-tab" id="tabGisDetections">
+              <i class="fa-solid fa-car-burst text-rose"></i> Detections (<span id="gisDetectionsCountBadge">0</span>)
+            </button>
+          </div>
+
           <div class="gis-nodes-list" id="gisNodesList">
             <!-- Rendered dynamically from API client -->
+          </div>
+
+          <div class="gis-detections-list" id="gisDetectionsList" style="display: none;">
+            <!-- Rendered dynamically from backend /api/detections -->
           </div>
         </div>
 
@@ -762,12 +776,18 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <button class="action-btn" id="btnPopoutVideoWall" title="Open Multi-Monitor Detached Wall Window" style="background: #ffffff; border-color: var(--border-color); color: var(--text-primary); font-size: 0.76rem; padding: 0.42rem 0.75rem;">
             <i class="fa-solid fa-up-right-from-square"></i> Pop-Out 4K Wall
           </button>
+          <div class="wall-cam-focus-wrap" style="display: flex; align-items: center; gap: 6px;">
+            <select id="liveWallCamSelect" class="custom-select" style="min-width: 230px; font-size: 0.76rem; padding: 0.35rem 0.6rem; height: 34px;">
+              <option value="">-- Focus Camera Feed --</option>
+            </select>
+          </div>
           <div class="wall-grid-toggles">
             <span class="toggle-label">Grid Layout:</span>
             <button class="grid-btn" data-grid="1x1"><i class="fa-solid fa-square"></i> 1 View</button>
             <button class="grid-btn active" data-grid="2x2"><i class="fa-solid fa-table-cells-large"></i> 4 Views (2x2)</button>
             <button class="grid-btn" data-grid="3x3"><i class="fa-solid fa-table-cells"></i> 9 Views (3x3)</button>
             <button class="grid-btn" data-grid="4x4"><i class="fa-solid fa-border-all"></i> 16 Views (4x4)</button>
+            <button class="grid-btn" data-grid="all"><i class="fa-solid fa-grip"></i> All 32 Feeds</button>
           </div>
         </div>
       </div>
@@ -781,15 +801,10 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         <div class="bw-stat-item">
           <span class="bw-label"><i class="fa-solid fa-gauge-high text-green"></i> Current WAN Load:</span>
           <strong class="bw-val text-green" id="liveWallWanLoad">4.80 Mbps</strong>
-          <span class="bw-sub">(vs 200 Gbps legacy centralized)</span>
         </div>
         <div class="bw-stat-item">
           <span class="bw-label"><i class="fa-solid fa-stopwatch text-amber"></i> Auto-Stop:</span>
           <strong class="bw-val text-amber" id="liveWallInactivityTimer">04:45</strong>
-        </div>
-        <div class="bw-stat-item" id="gatewatchStatusWrap" style="background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; padding: 0.25rem 0.6rem; border-radius: 4px;">
-          <span class="bw-label" style="color: #94a3b8;"><i class="fa-solid fa-shield-halved text-green"></i> Stream Gatewatch:</span>
-          <strong class="bw-val text-green" id="lblGatewatchStatus" style="font-size: 0.76rem;">All Feeds Clean</strong>
         </div>
         <div style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center;">
           <button class="action-btn primary" id="btnPullAllSessions" style="font-size: 0.75rem; background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 700;">
@@ -907,6 +922,65 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
         </div>
       </div>
 
+      <!-- DYNAMIC SUSPECT IDENTIFICATION & WATCHLIST PANEL -->
+      <div class="suspect-matching-hub" id="suspectMatchingHub" style="margin-bottom: 1.2rem;">
+        <div class="view-header-bar" style="margin-bottom: 0.8rem; background: rgba(15, 23, 42, 0.6); padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); display: flex; align-items: center; justify-content: center; color: #ef4444;">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 800;"><i class="fa-solid fa-crosshairs text-rose"></i> Authorized Suspect Matching &amp; Watchlist Hub</h3>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Verified against authorized state crime databases and BOLO registry</span>
+            </div>
+          </div>
+          <button type="button" class="action-btn" id="btnToggleWatchlistForm" style="font-size: 0.76rem; font-weight: 700;">
+            <i class="fa-solid fa-user-plus"></i> Register Suspect Target
+          </button>
+        </div>
+
+        <!-- Watchlist Target Registration Form (Collapsible) -->
+        <form id="watchlistRegisterForm" class="watchlist-reg-form" style="display: none; margin-bottom: 0.9rem; background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 0.9rem 1.2rem;">
+          <h4 style="margin: 0 0 0.6rem 0; font-size: 0.85rem; color: #38bdf8;"><i class="fa-solid fa-plus-circle"></i> Add Authorized Watchlist Vehicle / Suspect Target</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 140px; gap: 0.6rem; align-items: end;">
+            <div>
+              <label style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">Vehicle Registration Plate:</label>
+              <input type="text" id="targetRegPlate" class="custom-input" placeholder="e.g. 6380 CCS, 5696 GXS, 2694HKI" required style="font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">Suspect / Driver Name:</label>
+              <input type="text" id="targetRegName" class="custom-input" placeholder="e.g. Named Suspect / Gang Member">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">Charge / BOLO Crime:</label>
+              <input type="text" id="targetRegCrime" class="custom-input" placeholder="e.g. Armed Robbery / Stolen Vehicle" required>
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">Priority Level:</label>
+              <select id="targetRegPriority" class="custom-select">
+                <option value="CRITICAL" selected>CRITICAL RED NOTICE (Armed)</option>
+                <option value="HIGH">HIGH (Priority BOLO)</option>
+                <option value="MODERATE">MODERATE (Investigative Tracking)</option>
+              </select>
+            </div>
+            <button type="submit" class="action-btn primary" id="btnSubmitWatchlistTarget" style="height: 38px; font-weight: 700; font-size: 0.78rem; background: #dc2626; border-color: #dc2626;">
+              <i class="fa-solid fa-crosshairs"></i> Register &amp; Detect
+            </button>
+            <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem; padding: 0.45rem 0.8rem; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.74rem; color: #fecaca; font-weight: 700; cursor: pointer; margin: 0;">
+                <input type="checkbox" id="targetRegAutoAlertStation" checked style="accent-color: #ef4444; width: 16px; height: 16px;">
+                <span><i class="fa-solid fa-bolt text-amber"></i> Real-Time Zero-Delay Alert to Nearest Police Station &amp; Control Room on Live Detection</span>
+              </label>
+              <span style="font-size: 0.68rem; color: #38bdf8; font-family: var(--font-mono);"><i class="fa-solid fa-tower-broadcast"></i> Live CCTV Video Wall Intercept</span>
+            </div>
+          </div>
+        </form>
+
+        <!-- Live Suspect Hits Panel -->
+        <div id="suspectMatchingHitsList" class="suspect-hits-grid">
+          <!-- Rendered dynamically: verified matches, potential matches, or "No suspect match found." -->
+        </div>
+      </div>
 
       <!-- CAMERA-WISE MULTI-PARAMETER SEARCH TOOLBAR -->
       <div class="analytics-filter-toolbar">
@@ -1088,8 +1162,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <span style="color: #10b981;"><i class="fa-solid fa-wifi"></i> 4.8 Mbps</span> &bull; <span>1080p UHD</span>
             </div>
 
-            <!-- Live Target AI Tracking Box -->
-            <div class="live-target-box" id="liveTargetBox">
+            <!-- Dynamic AI Plate Tracking Layer -->
+            <div id="liveDynamicPlatesLayer" style="position: absolute; inset: 0; pointer-events: none; z-index: 12;"></div>
+
+            <!-- Focused Vehicle Plate Lock Box -->
+            <div class="live-target-box" id="liveTargetBox" style="display: none;">
               <div class="bbox-corner tl"></div>
               <div class="bbox-corner tr"></div>
               <div class="bbox-corner bl"></div>
@@ -1114,6 +1191,9 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
 
             <!-- Live PTZ & Action Controls -->
             <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <button type="button" class="player-ctrl-btn" id="btnLiveCctvFreeze" title="Freeze Frame / Focus Suspect Plate" style="width: auto; padding: 0 10px; font-size: 0.75rem; font-weight: 700; color: #ef4444; border-color: #dc2626; display: none;">
+                <i class="fa-solid fa-crosshairs"></i> <span id="btnLiveCctvFreezeText">Focus Plate</span>
+              </button>
               <button type="button" class="player-ctrl-btn" id="btnLiveCctvZoom" title="PTZ Optical Zoom (1x / 1.5x / 2.0x)" style="width: auto; padding: 0 9px; font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono); color: #38bdf8; border-color: #0284c7;">
                 <i class="fa-solid fa-magnifying-glass-plus"></i> 1.0x Zoom
               </button>
@@ -1123,6 +1203,16 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <button type="button" class="player-ctrl-btn" id="btnLiveCctvFullscreen" title="Toggle Fullscreen">
                 <i class="fa-solid fa-expand"></i>
               </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Optical Plate Focus Quick-Bar -->
+          <div id="livePlateFocusSelectorBar" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.5rem; background: #0b1329; padding: 0.45rem 0.85rem; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25); overflow-x: auto;">
+            <span style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-crosshairs"></i> Optical Plates In View:
+            </span>
+            <div id="livePlateChipsContainer" style="display: flex; align-items: center; gap: 0.4rem; overflow-x: auto;">
+              <!-- Dynamically populated buttons for each vehicle plate in stream -->
             </div>
           </div>
 
@@ -2303,13 +2393,184 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
     </div>
   </div>
 
-  <!-- Video Streaming (HLS.js) & Leaflet GIS Map JS -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- REAL CCTV EVIDENTIARY SNAPSHOT & ON-DEMAND LIVE PULL MODAL -->
+  <div class="app-modal" id="evidentiarySnapshotModal">
+    <div class="modal-content large" style="max-width: 980px; background: #0b1329; border: 1px solid #1e293b;">
+      <div class="modal-header" style="border-bottom: 1px solid #1e293b; padding: 0.9rem 1.4rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <!-- Primary prominent Back Button -->
+          <button type="button" class="btn" id="btnEvHeaderBack" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1rem; background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid #475569; color: #ffffff; border-radius: 6px; font-weight: 700; font-size: 0.84rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);" title="Return to Previous Page">
+            <i class="fa-solid fa-arrow-left"></i> <span>Back to Previous Page</span>
+          </button>
+          <div style="width: 36px; height: 36px; border-radius: 6px; background: rgba(0, 242, 254, 0.15); border: 1px solid var(--accent-cyan); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan);">
+            <i class="fa-solid fa-camera fa-lg"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #ffffff;" id="evModalTitle">
+              CCTV Evidentiary Verification &amp; Sighting Proof
+            </h3>
+            <span style="font-size: 0.72rem; color: #94a3b8;" id="evModalSub">Verified directly from live CCTV optical camera video</span>
+          </div>
+        </div>
+        <button class="close-modal-btn" id="closeEvidentiaryModal" style="color: #94a3b8; font-size: 1.4rem;" title="Close and Go Back">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.2rem 1.4rem;">
+        <!-- Evidentiary Verification Header Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; background: rgba(15, 23, 42, 0.7); border: 1px solid #1e293b; border-radius: 8px; padding: 0.9rem; margin-bottom: 1rem;">
+          <div>
+            <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block;">Vehicle Plate</span>
+            <strong style="font-family: var(--font-mono); color: var(--accent-cyan); font-size: 1.05rem; letter-spacing: 0.8px;" id="evPlateText">GJ-01-AB-1234</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block;">Camera Node</span>
+            <strong style="color: #ffffff; font-size: 0.86rem;" id="evCameraName">Visat P2 Sector (cam16)</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block;">Region / Jurisdiction</span>
+            <strong style="color: #cbd5e1; font-size: 0.84rem;" id="evRegionText">Ahmedabad (Urban)</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block;">Timestamp (IST)</span>
+            <strong style="font-family: var(--font-mono); color: #f8fafc; font-size: 0.82rem;" id="evTimestampText">10:18:39 AM IST</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block;">GPS Location</span>
+            <strong style="font-family: var(--font-mono); color: #38bdf8; font-size: 0.80rem;" id="evGpsText">23.1110° N, 72.5950° E</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block;">Verification Status</span>
+            <span id="evStatusBadge" style="font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; font-weight: 700;">REAL SIGHTING</span>
+          </div>
+        </div>
+
+        <!-- On-Demand Pull Toolbar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <button type="button" class="action-btn primary" id="btnPullOnDemandSnapshot" style="font-weight: 700; font-size: 0.78rem; background: linear-gradient(135deg, #0284c7, #2563eb);">
+              <i class="fa-solid fa-camera-rotate"></i> Pull Real-Time Frame Now
+            </button>
+            <span style="font-size: 0.72rem; color: #94a3b8;" id="evPullStatusText">Capture fresh 1080p frame directly from active CCTV feed</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button type="button" class="action-btn" id="evBtnBackAction" style="font-size: 0.78rem; font-weight: 700; background: #1e293b; border: 1px solid #475569; color: #ffffff; display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.8rem;" title="Go Back to Previous Page">
+              <i class="fa-solid fa-arrow-left"></i> Back to Page
+            </button>
+            <button type="button" class="action-btn" id="evBtnTraceRoute" style="font-size: 0.74rem;">
+              <i class="fa-solid fa-route"></i> Trace Route
+            </button>
+            <button type="button" class="action-btn" id="evBtnViewLiveFeed" style="font-size: 0.74rem;">
+              <i class="fa-solid fa-video"></i> Open Live Stream
+            </button>
+          </div>
+        </div>
+
+        <!-- Detected Identities Selector Bar -->
+        <div id="evVehiclesSelectorBar" style="display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.9rem; overflow-x: auto; background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; border-radius: 6px; padding: 0.5rem 0.8rem;">
+          <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; white-space: nowrap;"><i class="fa-solid fa-layer-group"></i> Detected Identities in Frame:</span>
+          <div id="evVehicleChipsContainer" style="display: flex; gap: 0.4rem; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- Image Display Area -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+          <!-- Full Camera Frame -->
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 6px; overflow: hidden; position: relative;">
+            <div style="padding: 0.4rem 0.8rem; background: rgba(15, 23, 42, 0.95); font-size: 0.72rem; font-weight: 700; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <span><i class="fa-solid fa-camera-cctv"></i> CCTV Evidentiary Stream (1080p)</span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <span title="Hardware WDR: Multi-bracket exposure fusion (120dB) prevents headlight washout" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 1px 6px; border-radius: 4px; font-size: 0.62rem; font-weight: 800;">
+                  <i class="fa-solid fa-sliders"></i> WDR 120dB
+                </span>
+                <span title="Highlight Compensation: Dims 50% high-beam glare cores so plates remain legible" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 1px 6px; border-radius: 4px; font-size: 0.62rem; font-weight: 800;">
+                  <i class="fa-solid fa-sun"></i> HLC ACTIVE
+                </span>
+                <span title="High-Speed Traffic Shutter: Locked at 1/1000s to eliminate light smear" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 1px 6px; border-radius: 4px; font-size: 0.62rem; font-weight: 800;">
+                  <i class="fa-solid fa-gauge-high"></i> SHUTTER 1/1000s
+                </span>
+                <span id="evFrameRes" style="color: #cbd5e1; font-family: var(--font-mono); font-size: 0.68rem;">1920 x 1080</span>
+              </div>
+            </div>
+            <div style="min-height: 280px; display: flex; align-items: center; justify-content: center; background: #000000; position: relative;">
+              <img id="evFullFrameImg" src="" alt="CCTV Evidentiary Full Frame" style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block;">
+              <div id="evLoadingSpinner" style="display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.7); flex-direction: column; align-items: center; justify-content: center; color: var(--accent-cyan);">
+                <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="margin-bottom: 0.5rem;"></i>
+                <span style="font-size: 0.78rem;">Pulling fresh 1080p frame from live CCTV stream...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Optical Crop & ANPR Telemetry -->
+          <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+            <!-- Vehicle Crop -->
+            <div style="background: #020617; border: 1px solid #1e293b; border-radius: 6px; overflow: hidden;">
+              <div style="padding: 0.4rem 0.8rem; background: rgba(15, 23, 42, 0.9); font-size: 0.72rem; font-weight: 700; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fa-solid fa-id-card"></i> Optical License Plate Crop (ANPR Focus)</span>
+                <span id="evCropBadge" style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 800;">PLATE FOCUS</span>
+              </div>
+              <!-- Enhancement Toggle Bar -->
+              <div style="display: flex; gap: 4px; padding: 4px 8px; background: #070d1e; border-bottom: 1px solid #1e293b;">
+                <button type="button" id="evToggleEnhancedBtn" style="flex: 1; font-size: 0.68rem; padding: 4px 6px; background: #0284c7; color: #ffffff; border: 1px solid #38bdf8; border-radius: 4px; cursor: pointer; font-weight: 700; transition: all 0.2s;" title="Forensic DSP Pipeline (LAB-CLAHE + Lanczos-4 + Edge Restoration)">
+                  🔬 Enhanced Plate (Forensic DSP)
+                </button>
+                <button type="button" id="evToggleRawBtn" style="flex: 1; font-size: 0.68rem; padding: 4px 6px; background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Raw unmanipulated optical sensor crop">
+                  📷 Raw Plate Crop
+                </button>
+              </div>
+              <div style="height: 190px; display: flex; align-items: center; justify-content: center; background: #000000; padding: 0.5rem; position: relative;">
+                <img id="evCropImg" src="" alt="License Plate Crop" style="max-width: 100%; max-height: 180px; object-fit: contain; border-radius: 4px; border: 1px solid #334155;">
+              </div>
+              <div style="padding: 0.45rem 0.8rem; background: rgba(15, 23, 42, 0.8); font-size: 0.7rem; color: #cbd5e1; border-top: 1px solid #1e293b;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="color: #64748b; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">Real Optical OCR Readout:</span>
+                  <span id="evEnhancePill" style="font-size: 0.60rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 1px 5px; border-radius: 8px;">Denoise+CLAHE+Deskew+Lanczos</span>
+                </div>
+                <strong id="evOcrStatusText" style="color: #38bdf8; font-family: var(--font-mono); font-size: 0.74rem;">REAL OPTICAL SIGHTING</strong>
+              </div>
+            </div>
+
+            <!-- Forensic Audit & Legal Admissibility Box -->
+            <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b; border-radius: 6px; padding: 0.8rem; font-size: 0.72rem; color: #94a3b8;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <strong style="color: #38bdf8; font-size: 0.75rem;"><i class="fa-solid fa-scale-balanced"></i> Daubert & Frye Legal Standards</strong>
+                <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1px 6px; border-radius: 4px; font-size: 0.60rem; font-weight: 800;">
+                  <i class="fa-solid fa-certificate"></i> CERTIFIED
+                </span>
+              </div>
+              <div style="line-height: 1.5; font-size: 0.68rem;">
+                <div><span style="color: #64748b;">Algorithm:</span> <span style="color: #e2e8f0; font-weight: 600;">Deterministic DSP (Amped/Cognitech Class)</span></div>
+                <div><span style="color: #64748b;">Integrity:</span> <span style="color: #34d399; font-weight: 700;">Bit-for-Bit Hash Verified (No AI Hallucination)</span></div>
+                <div style="margin-top: 3px; word-break: break-all;">
+                  <span style="color: #64748b;">Raw SHA-256:</span> <code id="evRawSha" style="font-family: var(--font-mono); color: #93c5fd; font-size: 0.62rem;">Calculating...</code>
+                </div>
+                <div style="margin-top: 2px; word-break: break-all;">
+                  <span style="color: #64748b;">Output SHA-256:</span> <code id="evOutSha" style="font-family: var(--font-mono); color: #34d399; font-size: 0.62rem;">Calculating...</code>
+                </div>
+              </div>
+              <button type="button" id="evViewAuditBtn" style="margin-top: 0.6rem; width: 100%; font-size: 0.68rem; padding: 5px 8px; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; cursor: pointer; font-weight: 700; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fa-solid fa-file-shield"></i> View Mathematical Audit Trail Log
+              </button>
+              <div id="evAuditDetails" style="display: none; margin-top: 0.5rem; max-height: 140px; overflow-y: auto; background: #020617; border: 1px solid #1e293b; border-radius: 4px; padding: 6px; font-family: var(--font-mono); font-size: 0.62rem; color: #cbd5e1; white-space: pre-wrap;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top: 1px solid #1e293b; padding: 0.8rem 1.4rem; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.72rem; color: #64748b;"><i class="fa-solid fa-check-double text-green"></i> Frame extracted directly from active CCTV node</span>
+        <button type="button" class="btn-cancel" id="btnCloseEvidentiaryModal" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1.1rem; font-weight: 700; font-size: 0.82rem; background: #1e293b; border: 1px solid #475569; color: #ffffff; border-radius: 6px; cursor: pointer;">
+          <i class="fa-solid fa-arrow-left"></i> Back to Previous Page
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Streaming (HLS.js) & Leaflet GIS Map JS (Local with CDN fallback) -->
+  <script src="assets/vendor/hls/hls.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js';"></script>
+  <script src="assets/vendor/leaflet/leaflet.js" onerror="this.onerror=null;this.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';"></script>
 
   <!-- NIRIKSHAN Platform Scripts -->
   <script src="src/data/gujarat_geo.js"></script>
-  <script src="src/api/client.js?v=4.7.0"></script>
-  <script src="app.js?v=5.7.0"></script>
+  <script src="src/api/client.js?v=4.8.0"></script>
+  <script src="app.js?v=5.8.8"></script>
 </body>
 </html>

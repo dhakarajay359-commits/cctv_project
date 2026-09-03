@@ -240,8 +240,17 @@ class NirikshanApiClient {
       try { localStorage.removeItem('nirikshan_camera_inventory'); } catch(e) {}
     }
 
-    // 4. Real-time Events (Clean queue)
+    // 4. Real-time Surveillance Events & Dynamic Vehicle Detection Log (Clean, ZERO dummy records)
     this.events = [];
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.removeItem('nirikshan_events'); } catch(e) {}
+    }
+
+    // Suspect Hotlist Watchlist (Real Authorized Store, ZERO dummy records)
+    this.suspectWatchlist = [];
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.removeItem('nirikshan_suspect_watchlist'); } catch(e) {}
+    }
 
     // 5. Real-time Critical Alerts (Clean queue)
     this.alerts = [];
@@ -1354,11 +1363,200 @@ class NirikshanApiClient {
 
 
 
+  // --- DYNAMIC DETECTION & REAL-TIME SSE STREAMING API ---
+  connectDetectionStream(callback) {
+    if (typeof EventSource === 'undefined') return null;
+    try {
+      const es = new EventSource('/api/detections/stream');
+      es.addEventListener('new_detection', (e) => {
+        try {
+          const det = JSON.parse(e.data);
+          if (callback) callback('new_detection', det);
+        } catch(err) {}
+      });
+      es.addEventListener('recommendations_updated', (e) => {
+        try {
+          const recs = JSON.parse(e.data);
+          if (callback) callback('recommendations_updated', recs);
+        } catch(err) {}
+      });
+      es.addEventListener('watchlist_updated', (e) => {
+        try {
+          const w = JSON.parse(e.data);
+          if (callback) callback('watchlist_updated', w);
+        } catch(err) {}
+      });
+      es.addEventListener('detections_cleared', (e) => {
+        try {
+          if (callback) callback('detections_cleared', {});
+        } catch(err) {}
+      });
+      return es;
+    } catch (e) {
+      console.warn('[CLIENT-STREAM] EventSource error:', e.message);
+      return null;
+    }
+  }
+
+  async getDetections(params = {}) {
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`/api/detections${query ? '?' + query : ''}`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.detections || [];
+      }
+    } catch(e) {}
+    return [];
+  }
+
+  async getEvidentiarySnapshot(detectionId, camId = null, isLive = false) {
+    try {
+      const params = new URLSearchParams();
+      if (detectionId) params.append('detection_id', detectionId);
+      if (camId) params.append('camera_id', camId);
+      if (isLive) params.append('live', 'true');
+      const res = await fetch(`/api/cctv/snapshot?${params.toString()}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch(e) {}
+    return { status: 'error', message: 'Unable to fetch evidentiary snapshot' };
+  }
+
+  async deleteSnapshotFiles(urls) {
+    if (!urls || urls.length === 0) return { status: 'success', deleted: 0 };
+    try {
+      const res = await fetch('/api/cctv/delete-snapshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: Array.isArray(urls) ? urls : [urls] })
+      });
+      return await res.json();
+    } catch(e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
+  async ingestDetection(payload) {
+    try {
+      const res = await fetch('/api/detections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    } catch (e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
+  async clearDetections() {
+    try {
+      const res = await fetch('/api/detections/clear', { method: 'POST' });
+      return await res.json();
+    } catch(e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
+  async getRecommendations() {
+    try {
+      const res = await fetch('/api/recommendations');
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch(e) {}
+    return { status: 'empty', recommendations: [], message: 'No recommendations available.' };
+  }
+
+  // --- DYNAMIC SUSPECT WATCHLIST & SUSPECT MATCHING API ---
+  async getSuspectWatchlist() {
+    try {
+      const res = await fetch('/api/watchlist');
+      if (res.ok) {
+        const json = await res.json();
+        return json.watchlist || [];
+      }
+    } catch(e) {}
+    return [];
+  }
+
+  async isPlateSuspect(plateNumber) {
+    if (!plateNumber) return null;
+    const clean = plateNumber.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    const list = await this.getSuspectWatchlist();
+    return list.find(s => (s.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase() === clean) || null;
+  }
+
+  async addSuspectVehicle(payload) {
+    const cleanPlate = (payload.plate || payload.vehicle_id || '').trim().toUpperCase();
+    if (!cleanPlate) return { status: 'error', message: 'Plate number is required' };
+    
+    try {
+      const res = await fetch('/api/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plate: cleanPlate,
+          crime: payload.crime || 'Active Investigative Warrant',
+          fir: payload.fir || 'FIR-VERIFIED',
+          suspect_name: payload.suspect_name || 'Suspect Target',
+          priority: payload.priority || 'HIGH',
+          vehicle_type: payload.vehicle_type || 'Vehicle'
+        })
+      });
+      const data = await res.json();
+      this.logAudit('SUSPECT_TARGET_REGISTERED', cleanPlate);
+      return data;
+    } catch(e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
+  async removeSuspectVehicle(plateNumber) {
+    const cleanPlate = (plateNumber || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    try {
+      const res = await fetch(`/api/watchlist/${encodeURIComponent(cleanPlate)}`, { method: 'DELETE' });
+      return await res.json();
+    } catch(e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
+  async getSuspects() {
+    try {
+      const res = await fetch('/api/suspects');
+      if (res.ok) {
+        const json = await res.json();
+        return json.suspects || [];
+      }
+    } catch(e) {}
+    return [];
+  }
+
   // =========================================================================
-  // MULTI-DEPARTMENT TRAJECTORY RECONSTRUCTION
+  // DYNAMIC MULTI-HOP ROAD-NETWORK TRAJECTORY RECONSTRUCTION
   // =========================================================================
-  async reconstructVehicleTrajectory(plateNumber, originCameraId = null) {
-    return null;
+  async reconstructVehicleTrajectory(plateNumber) {
+    const cleanPlate = (plateNumber || '').trim().toUpperCase();
+    if (!cleanPlate) {
+      return { status: 'empty', message: 'No vehicle plate provided.', sightings: [] };
+    }
+
+    try {
+      const res = await fetch(`/api/routes?vehicle_id=${encodeURIComponent(cleanPlate)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data;
+      }
+    } catch(e) {}
+
+    return {
+      status: 'error',
+      message: 'Route unavailable.',
+      sightings: []
+    };
   }
 
   async dispatchForwardInterception(plateNumber, targetLocation) {
