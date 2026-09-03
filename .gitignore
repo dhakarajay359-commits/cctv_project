@@ -62,6 +62,7 @@ forensic_captures/
 captures/
 recordings/
 *.mp4
+!assets/*_traffic.mp4
 *.avi
 *.mkv
 *.h264

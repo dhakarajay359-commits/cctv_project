@@ -134,7 +134,10 @@ const CORP8_DISTRICT_MAP = {
   'cam29': { district: 'Navsari (Dandi)', dept: 'dept-civil', lat: 20.7670, lng: 72.9710, name: 'Bilimora Market Gate 3' },
   'cam30': { district: 'Kutch (Ports, SEZ & Border)', dept: 'dept-police', lat: 23.0750, lng: 70.1330, name: 'Gandhidham Rambaugh P2' },
   'cam31': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0335, lng: 72.5645, name: 'Overhead Traffic Aerial Corridor' },
-  'cam32': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0285, lng: 72.5780, name: 'Urban Corridor Busy Arterial' }
+  'cam32': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0285, lng: 72.5780, name: 'Urban Corridor Busy Arterial' },
+  'cam33': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0385, lng: 72.5710, name: 'Bustling Urban Traffic Corridor' },
+  'cam34': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0420, lng: 72.5680, name: 'Motorbike & Rapid Transit Arterial' },
+  'cam35': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0360, lng: 72.5740, name: 'Bustling City Commercial Junction' }
 };
 
 function syncCorp8Cameras(callback) {

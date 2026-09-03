@@ -4160,6 +4160,159 @@ window.getVehiclesAtTime = function(timeSec, targetCamId) {
         }
       }
     ];
+  } else if (cid === 'cam33') {
+    const p1 = (t % 7.5) / 7.5;
+    const p2 = (t % 5.8) / 5.8;
+    const p3 = (t % 9.0) / 9.0;
+    return [
+      {
+        id: 'cam33_veh_1',
+        plate: 'GJ-01-ET-3344',
+        aliases: ['GJ01ET3344', '3344'],
+        type: 'AUTO-RICKSHAW (THREE-WHEELER)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 36.0 + (14.0 * p1),
+          top: 68.0 - (28.0 * p1),
+          width: Math.max(7.5, 12.0 - (4.0 * p1)),
+          height: Math.max(3.8, 6.0 - (2.0 * p1))
+        }
+      },
+      {
+        id: 'cam33_veh_2',
+        plate: 'GJ-01-RS-9921',
+        aliases: ['GJ01RS9921', '9921'],
+        type: 'HATCHBACK (CITY CAB)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 56.0 - (10.0 * p2),
+          top: 72.0 - (32.0 * p2),
+          width: Math.max(8.0, 13.0 - (4.5 * p2)),
+          height: Math.max(3.5, 5.5 - (1.8 * p2))
+        }
+      },
+      {
+        id: 'cam33_veh_3',
+        plate: 'GJ-18-BB-4512',
+        aliases: ['GJ18BB4512', '4512'],
+        type: 'BUS (AMTS PUBLIC TRANSIT)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 20.0 + (8.0 * p3),
+          top: 55.0 - (22.0 * p3),
+          width: Math.max(12.0, 18.0 - (5.0 * p3)),
+          height: Math.max(7.0, 10.0 - (2.5 * p3))
+        }
+      }
+    ];
+  } else if (cid === 'cam34') {
+    const p1 = (t % 6.2) / 6.2;
+    const p2 = (t % 5.0) / 5.0;
+    const p3 = (t % 8.0) / 8.0;
+    return [
+      {
+        id: 'cam34_veh_1',
+        plate: 'GJ-01-MD-7788',
+        aliases: ['GJ01MD7788', '7788'],
+        type: 'TWO-WHEELER (MOTORBIKE)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 42.0 + (12.0 * p1),
+          top: 74.0 - (34.0 * p1),
+          width: Math.max(5.5, 8.5 - (2.8 * p1)),
+          height: Math.max(3.2, 5.0 - (1.6 * p1))
+        }
+      },
+      {
+        id: 'cam34_veh_2',
+        plate: 'GJ-01-XJ-1205',
+        aliases: ['GJ01XJ1205', '1205'],
+        type: 'TWO-WHEELER (ACTIVA SCOOTER)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 28.0 + (6.0 * p2),
+          top: 70.0 - (30.0 * p2),
+          width: Math.max(5.0, 8.0 - (2.5 * p2)),
+          height: Math.max(3.0, 4.8 - (1.5 * p2))
+        }
+      },
+      {
+        id: 'cam34_veh_3',
+        plate: 'GJ-27-KC-6430',
+        aliases: ['GJ27KC6430', '6430'],
+        type: 'SEDAN (WHITE SWIFT DZIRE)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 58.0 - (12.0 * p3),
+          top: 65.0 - (28.0 * p3),
+          width: Math.max(8.5, 13.5 - (4.5 * p3)),
+          height: Math.max(3.8, 6.0 - (2.0 * p3))
+        }
+      }
+    ];
+  } else if (cid === 'cam35') {
+    const p1 = (t % 7.0) / 7.0;
+    const p2 = (t % 5.5) / 5.5;
+    const p3 = (t % 8.5) / 8.5;
+    return [
+      {
+        id: 'cam35_veh_1',
+        plate: 'GJ-01-KH-5566',
+        aliases: ['GJ01KH5566', '5566'],
+        type: 'AUTO-RICKSHAW (COMMERCIAL TRANSIT)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 34.0 + (16.0 * p1),
+          top: 66.0 - (26.0 * p1),
+          width: Math.max(7.5, 12.0 - (3.8 * p1)),
+          height: Math.max(3.8, 6.0 - (1.9 * p1))
+        }
+      },
+      {
+        id: 'cam35_veh_2',
+        plate: 'GJ-01-ZZ-9011',
+        aliases: ['GJ01ZZ9011', '9011'],
+        type: 'HATCHBACK (CITY CAB)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 54.0 - (12.0 * p2),
+          top: 70.0 - (30.0 * p2),
+          width: Math.max(8.0, 13.0 - (4.2 * p2)),
+          height: Math.max(3.5, 5.5 - (1.7 * p2))
+        }
+      },
+      {
+        id: 'cam35_veh_3',
+        plate: 'GJ-03-TR-4422',
+        aliases: ['GJ03TR4422', '4422'],
+        type: 'SUV (DARK COMPACT)',
+        suspect: false,
+        crime: '',
+        isVisible: true,
+        plateBox: {
+          left: 18.0 + (10.0 * p3),
+          top: 60.0 - (24.0 * p3),
+          width: Math.max(9.0, 14.0 - (4.0 * p3)),
+          height: Math.max(4.0, 6.5 - (2.0 * p3))
+        }
+      }
+    ];
   }
 
   // Dynamic Watchlist Suspect Matching across live vehicles
@@ -4278,6 +4431,24 @@ window.getCameraVehiclePlateCatalog = function(targetCamId, timeSec) {
     list = [
       { id: 'cam32_veh_1', plate: 'MH-02-EE-7762', aliases: ['MH02EE7762'], type: 'FOUR-WHEELER (CAR)', suspect: false },
       { id: 'cam32_veh_2', plate: 'MH-01-AB-1002', aliases: ['MH01AB1002'], type: 'TWO-WHEELER', suspect: false }
+    ];
+  } else if (cid === 'cam33') {
+    list = [
+      { id: 'cam33_veh_1', plate: 'GJ-01-ET-3344', aliases: ['GJ01ET3344'], type: 'AUTO-RICKSHAW (THREE-WHEELER)', suspect: false },
+      { id: 'cam33_veh_2', plate: 'GJ-01-RS-9921', aliases: ['GJ01RS9921'], type: 'HATCHBACK (CITY CAB)', suspect: false },
+      { id: 'cam33_veh_3', plate: 'GJ-18-BB-4512', aliases: ['GJ18BB4512'], type: 'BUS (AMTS PUBLIC TRANSIT)', suspect: false }
+    ];
+  } else if (cid === 'cam34') {
+    list = [
+      { id: 'cam34_veh_1', plate: 'GJ-01-MD-7788', aliases: ['GJ01MD7788'], type: 'TWO-WHEELER (MOTORBIKE)', suspect: false },
+      { id: 'cam34_veh_2', plate: 'GJ-01-XJ-1205', aliases: ['GJ01XJ1205'], type: 'TWO-WHEELER (ACTIVA SCOOTER)', suspect: false },
+      { id: 'cam34_veh_3', plate: 'GJ-27-KC-6430', aliases: ['GJ27KC6430'], type: 'SEDAN (WHITE SWIFT DZIRE)', suspect: false }
+    ];
+  } else if (cid === 'cam35') {
+    list = [
+      { id: 'cam35_veh_1', plate: 'GJ-01-KH-5566', aliases: ['GJ01KH5566'], type: 'AUTO-RICKSHAW (COMMERCIAL TRANSIT)', suspect: false },
+      { id: 'cam35_veh_2', plate: 'GJ-01-ZZ-9011', aliases: ['GJ01ZZ9011'], type: 'HATCHBACK (CITY CAB)', suspect: false },
+      { id: 'cam35_veh_3', plate: 'GJ-03-TR-4422', aliases: ['GJ03TR4422'], type: 'SUV (DARK COMPACT)', suspect: false }
     ];
   } else {
     // Universal vehicle catalog for all other cameras (cam01 - cam30, etc.)
