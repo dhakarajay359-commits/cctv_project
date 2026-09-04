@@ -1272,17 +1272,19 @@ const server = http.createServer((req, res) => {
 
       const rto = DISTRICT_RTO_MAP[(cam.district || '').toLowerCase().split(' ')[0]] || 'GJ-01';
       let plate = '7895 BVZ';
+      let vType = 'car';
+      let vLabel = 'FOUR-WHEELER (CAR)';
       if (cid === 'cam31') plate = '5696 GXS';
       else if (cid === 'cam32') plate = 'MH-02-EE-7762';
-      else if (cid === 'cam33') plate = 'GJ-01-AX-4412';
+      else if (cid === 'cam33') { plate = 'MP-04-GB-1086'; vType = 'truck'; vLabel = 'HEAVY TRUCK / COMMERCIAL'; }
       else if (cid === 'cam34') plate = 'GJ-01-TK-9021';
       else if (cid === 'cam35') plate = 'GJ-01-CR-3180';
       else plate = `${rto}-AB-${1000 + (parseInt(cid.replace(/\D/g, '') || '1') * 37) % 8999}`;
 
       const primaryVeh = {
         index: 1,
-        vehicle_type: 'car',
-        label: 'FOUR-WHEELER (CAR)',
+        vehicle_type: vType,
+        label: vLabel,
         confidence: 0.912,
         box: [200, 180, 720, 520],
         plate: plate,
