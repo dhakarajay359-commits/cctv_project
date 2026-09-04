@@ -1,35 +1,5 @@
 [
   {
-    "id": "SUSP-MTLVMXL4",
-    "plate": "MH12AB5544",
-    "vehicle_type": "Vehicle",
-    "crime": "Coastal Port Contraband Intercept",
-    "fir": "FIR-PENDING",
-    "suspect_name": "Border Smuggling Ring",
-    "priority": "HIGH",
-    "registered_at": "2026-09-03T18:47:05.608Z"
-  },
-  {
-    "id": "SUSP-MTLVMSU1",
-    "plate": "GJ03ER8899",
-    "vehicle_type": "Vehicle",
-    "crime": "Armed Gold Heist & Interstate Fleeing",
-    "fir": "FIR-PENDING",
-    "suspect_name": "Interstate Gold Robbery Gang",
-    "priority": "CRITICAL",
-    "registered_at": "2026-09-03T18:46:59.449Z"
-  },
-  {
-    "id": "SUSP-MTLVMNK3",
-    "plate": "893LIR",
-    "vehicle_type": "Vehicle",
-    "crime": "Highway Armed Carjacking",
-    "fir": "FIR-PENDING",
-    "suspect_name": "Armed Hijack Target",
-    "priority": "CRITICAL",
-    "registered_at": "2026-09-03T18:46:52.611Z"
-  },
-  {
     "id": "SUSP-MTLRI8QG",
     "plate": "6380 CCS",
     "vehicle_type": "Vehicle",
@@ -38,15 +8,5 @@
     "suspect_name": "Test Suspect",
     "priority": "CRITICAL",
     "registered_at": "2026-09-03T16:51:28.312Z"
-  },
-  {
-    "id": "SUSP-MTLL9EMJ",
-    "plate": "2694HKI",
-    "vehicle_type": "Vehicle",
-    "crime": "ARMED ",
-    "fir": "FIR-VERIFIED",
-    "suspect_name": "AJAY",
-    "priority": "HIGH",
-    "registered_at": "2026-09-03T13:56:38.347Z"
   }
 ]

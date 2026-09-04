@@ -306,39 +306,50 @@ def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehi
 def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", lat=23.0, lng=72.5):
     frame = None
 
-    # 1. Check if camera has a local video file (e.g. assets/cam31_traffic.mp4 or catalog stream_url)
-    local_video = os.path.join(BASE_DIR, "assets", f"{camera_id}_traffic.mp4")
-    if not os.path.exists(local_video):
-        cat_file = os.path.join(BASE_DIR, "src", "data", "camera_catalog.json")
-        if os.path.exists(cat_file):
-            try:
-                with open(cat_file, "r", encoding="utf-8") as cf:
-                    cams = json.load(cf)
-                    target = next((c for c in cams if c.get("id") == camera_id), None)
-                    if target and target.get("stream_url", "").startswith("/assets/"):
-                        rel = target.get("stream_url").lstrip("/")
-                        cand = os.path.join(BASE_DIR, rel)
-                        if os.path.exists(cand):
-                            local_video = cand
-            except Exception:
-                pass
-
-    if os.path.exists(local_video):
+    # 0. Primary: Instant authentic live frame from assets/live_frames
+    live_frame_path = os.path.join(BASE_DIR, "assets", "live_frames", f"{camera_id}.jpg")
+    if os.path.exists(live_frame_path):
         try:
-            cap = cv2.VideoCapture(local_video)
-            if cap.isOpened():
-                total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                # For cam32 (310 frames), pick an active road frame with visible traffic (e.g. frames 25-120 or 210-280)
-                active_offsets = [35, 60, 85, 110, 235, 260, 285, 10]
-                sec_slot = int(time.time() * 1.5) % len(active_offsets)
-                chosen_frame = active_offsets[sec_slot]
-                cap.set(cv2.CAP_PROP_POS_FRAMES, min(chosen_frame, total_f - 1))
-                ret, f = cap.read()
-                if ret and f is not None and is_frame_intact(f):
-                    frame = f
-                cap.release()
+            f = cv2.imread(live_frame_path)
+            if f is not None and is_frame_intact(f):
+                frame = f
         except Exception:
             pass
+
+    # 1. Try local traffic video file if available
+    if frame is None:
+        local_video = os.path.join(BASE_DIR, "assets", f"{camera_id}_traffic.mp4")
+        if not os.path.exists(local_video):
+            cat_file = os.path.join(BASE_DIR, "src", "data", "camera_catalog.json")
+            if os.path.exists(cat_file):
+                try:
+                    with open(cat_file, "r", encoding="utf-8") as cf:
+                        cams = json.load(cf)
+                        target = next((c for c in cams if c.get("id") == camera_id), None)
+                        if target and target.get("stream_url", "").startswith("/assets/"):
+                            rel = target.get("stream_url").lstrip("/")
+                            cand = os.path.join(BASE_DIR, rel)
+                            if os.path.exists(cand):
+                                local_video = cand
+                except Exception:
+                    pass
+
+        if os.path.exists(local_video):
+            try:
+                cap = cv2.VideoCapture(local_video)
+                if cap.isOpened():
+                    total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    # For cam32 (310 frames), pick an active road frame with visible traffic (e.g. frames 25-120 or 210-280)
+                    active_offsets = [35, 60, 85, 110, 235, 260, 285, 10]
+                    sec_slot = int(time.time() * 1.5) % len(active_offsets)
+                    chosen_frame = active_offsets[sec_slot]
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, min(chosen_frame, total_f - 1))
+                    ret, f = cap.read()
+                    if ret and f is not None and is_frame_intact(f):
+                        frame = f
+                    cap.release()
+            except Exception:
+                pass
 
     # 2. Try pulling fresh frame directly from live CCTV stream for THIS camera
     if frame is None:
@@ -411,8 +422,8 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         try:
             model_path = os.path.join(BASE_DIR, "yolov8n.pt")
             model = YOLO(model_path)
-            # Detect: 2=car, 3=motorcycle/scooter, 5=bus, 7=truck
-            results = model(frame, imgsz=1280, conf=0.25, classes=[2, 3, 5, 7], verbose=False)
+            # Detect: 2=car, 3=motorcycle/scooter, 5=bus, 7=truck (Fast CPU inference at 640px)
+            results = model(frame, imgsz=640, conf=0.25, classes=[2, 3, 5, 7], verbose=False)
             boxes = results[0].boxes
 
             all_detected = []
