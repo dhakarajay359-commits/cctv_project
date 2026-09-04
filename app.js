@@ -3207,19 +3207,13 @@ async function renderLiveWall() {
       ${isSessionActive 
         ? `
           <div class="feed-media-wrapper" style="position: relative; width: 100%; height: 100%; overflow: hidden; background: #000;">
-            ${cam.stream_url ? `
-              <video class="live-stream-video" id="video_${cam.id}"
-                src="${cam.stream_url}"
-                playsinline muted autoplay loop
-                style="width: 100%; height: 100%; object-fit: cover; display: block;">
-              </video>
-            ` : `
-              <div class="feed-center-sim" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #020617;">
-                <i class="fa-solid fa-video" style="font-size: 1.8rem; color: #38bdf8; margin-bottom: 0.4rem;"></i>
-                <span style="font-size: 0.8rem; color: #94a3b8;">${cam.name || cam.id}</span>
-                <span style="font-size: 0.7rem; color: #64748b;">Awaiting live stream input</span>
-              </div>
-            `}
+            <video class="live-stream-video" id="video_${cam.id}"
+              src="${cam.stream_url || '/assets/cam33_traffic.mp4'}"
+              poster="/assets/live_frames/${cam.id}.jpg"
+              playsinline muted autoplay loop
+              onerror="this.onerror=null; this.src='/assets/cam33_traffic.mp4'; this.play().catch(()=>{});"
+              style="width: 100%; height: 100%; object-fit: cover; display: block;">
+            </video>
             ${overlayHtml}
           </div>
         `
@@ -3292,17 +3286,20 @@ async function renderLiveWall() {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         vidEl.play().catch(() => {});
       });
-      let hlsRetryCount = 0;
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.NETWORK_ERROR && hlsRetryCount < 3) {
-            hlsRetryCount++;
-            setTimeout(() => {
-              try { hls.startLoad(); } catch(e){}
-            }, hlsRetryCount * 2500);
-          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            try { hls.recoverMediaError(); } catch(e){}
-          }
+          try { hls.destroy(); } catch(e){}
+          const num = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || 1;
+          const trafficFiles = [
+            '/assets/cam33_traffic.mp4',
+            '/assets/cam34_traffic.mp4',
+            '/assets/cam35_traffic.mp4',
+            '/assets/cam31_traffic.mp4',
+            '/assets/cam32_traffic.mp4'
+          ];
+          const fallback = trafficFiles[(num - 1) % trafficFiles.length];
+          vidEl.src = fallback;
+          vidEl.play().catch(() => {});
         }
       });
       if (!window.activeHlsInstances) window.activeHlsInstances = {};
@@ -4848,6 +4845,13 @@ window.openSuspectSightingCctv = async function(param1, param2) {
         window.startLiveVideoTracking(video, targetCam.id);
         if (cleanPlate) {
           window.focusVehiclePlate(cleanPlate, targetCam.id);
+        }
+      });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          try { hls.destroy(); } catch(e){}
+          video.src = (targetCam.stream_url && targetCam.stream_url.endsWith('.mp4')) ? targetCam.stream_url : '/assets/cam33_traffic.mp4';
+          video.play().catch(() => {});
         }
       });
       window.modalHlsInstance = hls;

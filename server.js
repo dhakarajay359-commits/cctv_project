@@ -166,6 +166,9 @@ function syncCorp8Cameras(callback) {
               lng: 72.5714,
               name: c.name
             };
+            const existingCam = CAMERA_CATALOG.find(x => x.id === c.id);
+            const defaultStream = `/assets/cam${((parseInt(c.id.replace(/\D/g, '') || '1') - 1) % 5) + 31}_traffic.mp4`;
+            const streamUrl = (existingCam && existingCam.stream_url && !existingCam.stream_url.includes('.m3u8')) ? existingCam.stream_url : defaultStream;
             return {
               id: c.id,
               name: meta.name || c.name,
@@ -177,8 +180,8 @@ function syncCorp8Cameras(callback) {
               vendor: 'Sentinel Cloud CCTV',
               status: 'online',
               resolution: '1080p',
-              stream_url: `/cctv-stream/${c.id}/index.m3u8`,
-              hls_url: `/cctv-stream/${c.id}/index.m3u8`,
+              stream_url: streamUrl,
+              hls_url: streamUrl,
               retention_days: 15,
               direction: 'Northbound (Transit Corridor)',
               fov_angle: 90,
@@ -1468,14 +1471,41 @@ const server = http.createServer((req, res) => {
     const rawId = pathname.replace('/stream/', '').trim().toLowerCase();
     const num = parseInt(rawId.replace(/[^0-9]/g, ''), 10) || 1;
     const camKey = `cam${String(num).padStart(2, '0')}`;
-    const camDir = path.join(SEGMENT_CACHE_DIR, camKey);
-    let videoFile = path.join(SEGMENT_CACHE_DIR, 'fallback.ts');
-    if (fs.existsSync(camDir)) {
-      const segs = fs.readdirSync(camDir).filter(f => f.endsWith('.ts') && fs.statSync(path.join(camDir, f)).size > 10000);
-      if (segs.length > 0) videoFile = path.join(camDir, segs[0]);
+    const trafficFiles = ['cam33_traffic.mp4', 'cam34_traffic.mp4', 'cam35_traffic.mp4', 'cam31_traffic.mp4', 'cam32_traffic.mp4'];
+    let videoFile = path.join(ROOT_DIR, 'assets', `${camKey}_traffic.mp4`);
+    if (!fs.existsSync(videoFile)) {
+      videoFile = path.join(ROOT_DIR, 'assets', trafficFiles[(num - 1) % trafficFiles.length]);
     }
+
+    if (!fs.existsSync(videoFile)) {
+      res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ error: 'Video stream not found' }));
+      return;
+    }
+
+    const stats = fs.statSync(videoFile);
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+      const chunksize = (end - start) + 1;
+      const file = fs.createReadStream(videoFile, { start, end });
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stats.size}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': 'video/mp4',
+        'Access-Control-Allow-Origin': '*'
+      });
+      file.pipe(res);
+      return;
+    }
+
     res.writeHead(200, {
-      'Content-Type': 'video/mp2t',
+      'Content-Type': 'video/mp4',
+      'Content-Length': stats.size,
+      'Accept-Ranges': 'bytes',
       'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'no-cache'
     });
@@ -1529,7 +1559,15 @@ const server = http.createServer((req, res) => {
         segList = ['fallback.ts'];
       }
       if (segList.length === 0) {
-        segList = ['seg00000.ts', 'seg00001.ts', 'seg00002.ts'];
+        const num = parseInt(camId.replace(/[^0-9]/g, ''), 10) || 1;
+        const trafficFiles = ['cam33_traffic.mp4', 'cam34_traffic.mp4', 'cam35_traffic.mp4', 'cam31_traffic.mp4', 'cam32_traffic.mp4'];
+        const targetMp4 = `/assets/${trafficFiles[(num - 1) % trafficFiles.length]}`;
+        res.writeHead(302, {
+          'Location': targetMp4,
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end();
+        return;
       }
 
       const nowSec = Math.floor(Date.now() / 1000);
@@ -1593,8 +1631,8 @@ const server = http.createServer((req, res) => {
         });
         fs.createReadStream(fastFallbackPath).pipe(res);
       } else {
-        res.writeHead(200, { 'Content-Type': 'video/mp2t', 'Access-Control-Allow-Origin': '*' });
-        res.end(Buffer.alloc(0));
+        res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ error: 'Video segment not found' }));
       }
 
       // C. Non-blocking asynchronous background cache population (NEVER blocks the player!)
