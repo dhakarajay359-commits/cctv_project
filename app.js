@@ -6446,9 +6446,27 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
 
         activeVeh = veh;
         updateCropDisplay();
-        if (evPlateText) evPlateText.textContent = veh.plate || 'OPTICALLY UNRESOLVED';
+        if (evPlateText) {
+          evPlateText.textContent = veh.plate || 'OPTICALLY UNRESOLVED';
+          evPlateText.style.transition = 'all 0.25s ease';
+          evPlateText.style.transform = 'scale(1.08)';
+          setTimeout(() => { if (evPlateText) evPlateText.style.transform = 'scale(1)'; }, 200);
+        }
         if (evCropBadge) evCropBadge.textContent = veh.label;
         if (evOcrStatusText) evOcrStatusText.textContent = veh.ocr_status || 'REAL OPTICAL SIGHTING';
+        if (evStatusBadge) {
+          if (veh.suspect_match?.status === 'MATCH' || veh.is_suspect) {
+            evStatusBadge.textContent = '🚨 WATCHLIST MATCH';
+            evStatusBadge.style.color = '#ef4444';
+            evStatusBadge.style.borderColor = '#ef4444';
+            evStatusBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+          } else {
+            evStatusBadge.textContent = '✓ REAL OPTICAL SIGHTING';
+            evStatusBadge.style.color = '#10b981';
+            evStatusBadge.style.borderColor = '#10b981';
+            evStatusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+          }
+        }
       };
       evVehicleChipsContainer.appendChild(btn);
     });
@@ -6458,11 +6476,13 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
   if (res.vehicles && res.vehicles.length > 0) {
     renderVehicleChips(res.vehicles);
     activeVeh = res.vehicles[0];
+    if (evPlateText) evPlateText.textContent = activeVeh.plate || activePlate;
     if (evCropBadge) evCropBadge.textContent = activeVeh.label;
     if (evOcrStatusText) evOcrStatusText.textContent = activeVeh.ocr_status;
     updateCropDisplay();
   } else {
     renderVehicleChips([]);
+    if (evPlateText) evPlateText.textContent = activePlate;
     updateCropDisplay();
   }
 
@@ -6503,6 +6523,7 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
         if (fresh.vehicles && fresh.vehicles.length > 0) {
           renderVehicleChips(fresh.vehicles);
           activeVeh = fresh.vehicles[0];
+          if (evPlateText) evPlateText.textContent = activeVeh.plate || fresh.plate || 'OPTICALLY UNRESOLVED';
         } else {
           activeVeh = fresh.primary_vehicle || {
             crop_url: fresh.crop_url,

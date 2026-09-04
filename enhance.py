@@ -353,13 +353,13 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
 def check_plate_fully_visible_and_clear(veh_crop: np.ndarray, bbox: tuple, frame_shape: tuple, vehicle_type: str = "car") -> tuple:
     """
     Surveillance Detection Gatekeeper:
-    Only triggers vehicle detection when a clear, fully visible vehicle and its
-    full license plate are shown in the CCTV stream.
-    Rejects:
-    - Vehicles partially cut off by camera frame edges
+    Strictly triggers vehicle capture ONLY when a vehicle has a fully visible,
+    sharp, unoccluded, and distinctly readable license plate.
+    Strictly Rejects:
+    - Vehicles partially cut off by camera frame boundaries
     - Distant low-resolution specks where plates cannot be resolved
-    - Defocused or motion-smeared frames
-    - Vehicles whose license plate is occluded, obscured, or not clearly visible
+    - Defocused, motion-smeared, or blurry number plates
+    - Vehicles whose license plate is occluded by poles, pillars, barricades, or vehicle parts
     Returns: (is_valid: bool, reason: str)
     """
     if veh_crop is None or veh_crop.size == 0:
@@ -374,59 +374,79 @@ def check_plate_fully_visible_and_clear(veh_crop: np.ndarray, bbox: tuple, frame
     if x1 < edge_margin or y1 < edge_margin or x2 > (fw - edge_margin) or y2 > (fh - edge_margin):
         return False, "Vehicle cut off by camera edge"
 
-    # 2. Must be large enough for plate to be physically resolvable
+    # 2. Must be large enough for physical plate characters to be optically resolvable
     min_w = 60 if vehicle_type == "two_wheeler" else 75
     min_h = 50 if vehicle_type == "two_wheeler" else 55
     if vw < min_w or vh < min_h:
         return False, f"Vehicle too distant/small ({vw}x{vh}px)"
 
-    # 3. Overall clarity (not motion blurred or defocused)
-    gray = cv2.cvtColor(veh_crop, cv2.COLOR_BGR2GRAY)
-    lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
-    if lap_var < 38.0:
-        return False, f"Image blurry or out of focus (sharpness {lap_var:.1f})"
+    # 3. Overall vehicle clarity check
+    v_gray = cv2.cvtColor(veh_crop, cv2.COLOR_BGR2GRAY)
+    v_lap = cv2.Laplacian(v_gray, cv2.CV_64F).var()
+    if v_lap < 35.0:
+        return False, f"Vehicle image blurry (sharpness {v_lap:.1f})"
 
-    # 4. Search for fully visible license plate zone
-    if vehicle_type == "two_wheeler":
-        y1_s, y2_s = int(vh * 0.48), int(vh * 0.96)
-        x1_s, x2_s = int(vw * 0.15), int(vw * 0.85)
-    else:
-        y1_s, y2_s = int(vh * 0.45), int(vh * 0.94)
-        x1_s, x2_s = int(vw * 0.12), int(vw * 0.88)
+    # 4. Extract dedicated license plate crop using bumper and color saliency
+    plate_crop = extract_license_plate_crop(veh_crop, vehicle_type)
+    if plate_crop is None or plate_crop.size == 0:
+        return False, "No license plate mounted on bumper"
 
-    search_roi = veh_crop[y1_s:y2_s, x1_s:x2_s]
-    if search_roi.size == 0:
-        return False, "No license plate region found"
+    ph, pw = plate_crop.shape[:2]
+    if pw < 28 or ph < 10:
+        return False, f"License plate too small ({pw}x{ph}px)"
 
-    roi_gray = cv2.cvtColor(search_roi, cv2.COLOR_BGR2GRAY)
+    aspect = pw / float(max(1, ph))
+    if aspect < 1.3 or aspect > 5.5:
+        return False, f"Invalid plate geometry (aspect {aspect:.2f})"
 
-    # Sobel X for vertical character strokes
-    sobelx = cv2.Sobel(roi_gray, cv2.CV_16S, 1, 0, ksize=3)
-    abs_sobelx = cv2.convertScaleAbs(sobelx)
-    blur = cv2.GaussianBlur(abs_sobelx, (5, 5), 0)
-    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 3))
-    morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-    contours, _ = cv2.findContours(morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # 5. Direct Blurriness Test on the Number Plate itself
+    pgray = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY) if len(plate_crop.shape) == 3 else plate_crop
+    plate_lap_var = float(cv2.Laplacian(pgray, cv2.CV_64F).var())
+    if plate_lap_var < 50.0:
+        return False, f"Number plate is blurry or out of focus (sharpness {plate_lap_var:.1f})"
 
-    valid_plate = False
-    for c in contours:
-        cx, cy, cw, ch = cv2.boundingRect(c)
-        aspect = cw / float(max(1, ch))
-        # HSRP aspect ratio 1.4 - 6.0 and minimum dimensions
-        if 1.4 <= aspect <= 6.0 and cw >= 32 and ch >= 10:
-            plate_sub = roi_gray[cy:cy+ch, cx:cx+cw]
-            if plate_sub.size > 0:
-                sub_sobel = cv2.Sobel(plate_sub, cv2.CV_16S, 1, 0)
-                edge_energy = float(np.mean(np.abs(sub_sobel)))
-                if edge_energy >= 12.0:
-                    valid_plate = True
-                    break
+    # 6. Direct Contrast Test on the Number Plate (embossed characters vs reflective backing)
+    contrast = float(np.std(pgray))
+    if contrast < 16.0:
+        return False, f"Number plate contrast too low or washed out ({contrast:.1f})"
 
-    if not valid_plate:
-        return False, "License plate is not fully or clearly visible"
+    # 7. Occlusion Test: Check both left and right halves of plate
+    # If a pole, pillar, or barrier cuts off one side, standard deviation drops to near zero on that half
+    mid_x = pw // 2
+    left_half = pgray[:, :mid_x]
+    right_half = pgray[:, mid_x:]
+    if left_half.size > 0 and right_half.size > 0:
+        left_std = float(np.std(left_half))
+        right_std = float(np.std(right_half))
+        if left_std < 10.0 or right_std < 10.0:
+            return False, f"Number plate partially occluded by pole or obstacle (L:{left_std:.1f}, R:{right_std:.1f})"
 
-    return True, "Full, clear vehicle with visible license plate"
+    # 8. Character Stroke Validation: Must contain at least 3 distinct character components
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))
+    c_img = clahe.apply(pgray)
+    thresh = cv2.adaptiveThreshold(c_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    num_labels, _, stats, _ = cv2.connectedComponentsWithStats(thresh)
+    char_count = 0
+    for i in range(1, num_labels):
+        cw = stats[i, cv2.CC_STAT_WIDTH]
+        ch = stats[i, cv2.CC_STAT_HEIGHT]
+        c_area = stats[i, cv2.CC_STAT_AREA]
+        if (ch >= ph * 0.20 and ch <= ph * 0.90) and (cw >= pw * 0.03 and cw <= pw * 0.35) and c_area >= 10:
+            char_count += 1
+    thresh_inv = cv2.bitwise_not(thresh)
+    num_labels_inv, _, stats_inv, _ = cv2.connectedComponentsWithStats(thresh_inv)
+    char_count_inv = 0
+    for i in range(1, num_labels_inv):
+        cw = stats_inv[i, cv2.CC_STAT_WIDTH]
+        ch = stats_inv[i, cv2.CC_STAT_HEIGHT]
+        c_area = stats_inv[i, cv2.CC_STAT_AREA]
+        if (ch >= ph * 0.20 and ch <= ph * 0.90) and (cw >= pw * 0.03 and cw <= pw * 0.35) and c_area >= 10:
+            char_count_inv += 1
+    best_chars = max(char_count, char_count_inv)
+    if best_chars < 3:
+        return False, f"Number plate characters blurry or unresolvable (found {best_chars} strokes)"
+
+    return True, f"Full, clear vehicle with fully visible license plate ({best_chars} characters, sharpness {plate_lap_var:.1f})"
 
 
 def wiener_deconvolution(img: np.ndarray, kernel_len: int = 5, k: float = 0.018) -> np.ndarray:
