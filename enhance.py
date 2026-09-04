@@ -222,23 +222,23 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
 
     # License plate mounting zones strictly on the lower bumper or license plate recess
     if is_truck_bus:
-        y1_search = int(vh * 0.70)
-        y2_search = min(vh, int(vh * 0.98))
-        x1_search = int(vw * 0.20)
-        x2_search = int(vw * 0.80)
+        y1_search = int(vh * 0.45)
+        y2_search = min(vh, int(vh * 0.95))
+        x1_search = int(vw * 0.15)
+        x2_search = int(vw * 0.85)
     elif is_two_wheeler:
         y1_search = int(vh * 0.45)
         y2_search = min(vh, int(vh * 0.88))
         x1_search = int(vw * 0.15)
         x2_search = int(vw * 0.85)
     elif is_auto:
-        y1_search = int(vh * 0.65)
-        y2_search = min(vh, int(vh * 0.96))
-        x1_search = int(vw * 0.25)
-        x2_search = int(vw * 0.75)
+        y1_search = int(vh * 0.50)
+        y2_search = min(vh, int(vh * 0.88))
+        x1_search = int(vw * 0.20)
+        x2_search = int(vw * 0.80)
     else:
         # Standard cars / passenger four-wheelers
-        y1_search = int(vh * 0.58)
+        y1_search = int(vh * 0.50)
         y2_search = min(vh, int(vh * 0.96))
         x1_search = int(vw * 0.18)
         x2_search = int(vw * 0.82)
@@ -253,7 +253,7 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
     # 1. Commercial Vehicle Color Saliency (Yellow Plate)
     hsv = cv2.cvtColor(search_roi, cv2.COLOR_BGR2HSV)
     lower_yellow = np.array([12, 50, 50])
-    upper_yellow = np.array([38, 255, 255])
+    upper_yellow = np.array([65, 255, 255])
     yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
     cnts_y, _ = cv2.findContours(yellow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     best_yellow_box = None
@@ -263,8 +263,8 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         cx, cy, cw, ch = cv2.boundingRect(c)
         aspect = cw / float(max(1, ch))
         area = cw * ch
-        if 1.3 <= aspect <= 5.5 and cw >= max(18, int(rw * 0.10)) and ch >= max(8, int(rh * 0.08)):
-            aspect_fit = 1.0 - min(1.0, abs(aspect - 2.5) / 3.0)
+        if 1.1 <= aspect <= 4.0 and cw >= max(15, int(rw * 0.08)) and ch >= max(8, int(rh * 0.06)):
+            aspect_fit = 1.0 - min(1.0, abs(aspect - 2.0) / 3.0)
             score = area * aspect_fit
             if score > best_y_score:
                 best_y_score = score

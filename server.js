@@ -1230,22 +1230,16 @@ const server = http.createServer((req, res) => {
       const cid = cam.id;
       const nowTs = Date.now();
       const nowIso = new Date().toISOString();
-      const capturesDir = path.join(ROOT_DIR, 'captures');
-      if (!fs.existsSync(capturesDir)) fs.mkdirSync(capturesDir, { recursive: true });
-
       const liveFrameSource = path.join(ROOT_DIR, 'assets', 'live_frames', `${cid}.jpg`);
-      const onDemandFilename = `ondemand_${cid}_${nowTs}.jpg`;
-      const onDemandDest = path.join(capturesDir, onDemandFilename);
 
-      let fullFrameUrl = `/assets/live_frames/${cid}.jpg`;
+      let fullFrameUrl = '';
       let rawSha256 = '8b724d003b91b96c1d122ec2a009a77ac6722326953bba17e5ae325f695cb953';
       let rawMd5 = '052c619c2558ea0abb16600643f449ca';
 
       if (fs.existsSync(liveFrameSource)) {
         try {
-          fs.copyFileSync(liveFrameSource, onDemandDest);
-          fullFrameUrl = `/captures/${onDemandFilename}`;
-          const buf = fs.readFileSync(onDemandDest);
+          const buf = fs.readFileSync(liveFrameSource);
+          fullFrameUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
           rawSha256 = crypto.createHash('sha256').update(buf).digest('hex');
           rawMd5 = crypto.createHash('md5').update(buf).digest('hex');
         } catch (e) {}
@@ -1254,18 +1248,14 @@ const server = http.createServer((req, res) => {
       let cropUrl = fullFrameUrl;
       let enhancedCropUrl = fullFrameUrl;
       try {
-        const liveFramesList = fs.readdirSync(path.join(ROOT_DIR, 'assets', 'live_frames'));
-        const existingCrop = liveFramesList.find(f => f.startsWith(`crop_${cid}_`) && f.endsWith('.jpg'));
-        if (existingCrop) {
-          cropUrl = `/assets/live_frames/${existingCrop}`;
-          enhancedCropUrl = `/assets/live_frames/${existingCrop}`;
-        } else {
-          const captureList = fs.readdirSync(capturesDir);
-          const captureCrop = captureList.find(f => f.startsWith(`crop_${cid}_`) && !f.includes('audit') && f.endsWith('.jpg'));
-          if (captureCrop) {
-            cropUrl = `/captures/${captureCrop}`;
-            const enh = captureCrop.replace('.jpg', '_enhanced.jpg');
-            enhancedCropUrl = fs.existsSync(path.join(capturesDir, enh)) ? `/captures/${enh}` : cropUrl;
+        const liveFramesDir = path.join(ROOT_DIR, 'assets', 'live_frames');
+        if (fs.existsSync(liveFramesDir)) {
+          const liveFramesList = fs.readdirSync(liveFramesDir);
+          const existingCrop = liveFramesList.find(f => f.startsWith(`crop_${cid}_`) && f.endsWith('.jpg'));
+          if (existingCrop) {
+            const cropBuf = fs.readFileSync(path.join(liveFramesDir, existingCrop));
+            cropUrl = `data:image/jpeg;base64,${cropBuf.toString('base64')}`;
+            enhancedCropUrl = cropUrl;
           }
         }
       } catch (e) {}
@@ -1377,6 +1367,21 @@ const server = http.createServer((req, res) => {
             }
           }
         });
+        // Also ensure captures directory has zero orphaned files
+        try {
+          if (fs.existsSync(capDir)) {
+            const files = fs.readdirSync(capDir);
+            for (const f of files) {
+              try {
+                const fullF = path.join(capDir, f);
+                if (fs.statSync(fullF).isFile()) {
+                  fs.unlinkSync(fullF);
+                  deletedCount++;
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
         res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ status: 'success', deleted: deletedCount }));
       } catch (err) {

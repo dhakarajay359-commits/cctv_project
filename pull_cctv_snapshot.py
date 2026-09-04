@@ -16,7 +16,7 @@ import sys
 import re
 import json
 import time
-import argparse
+import base64
 from datetime import datetime
 import hashlib
 
@@ -30,6 +30,17 @@ try:
 except ImportError:
     print(json.dumps({"status": "error", "message": "OpenCV missing"}))
     sys.exit(1)
+
+def to_base64_data_uri(img, quality=88):
+    """Encodes image in-memory as a Base64 data URI so zero files are written to disk."""
+    if img is None or img.size == 0:
+        return ""
+    success, buf = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, quality])
+    if not success:
+        return ""
+    return "data:image/jpeg;base64," + base64.b64encode(buf).decode('utf-8')
+
+import argparse
 
 try:
     from ultralytics import YOLO
@@ -546,8 +557,6 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
     # Raw Snapshot: Keep the CCTV video frame 100% RAW, pristine optical sensor pixels
     # Do NOT apply bilateral filtering or color alterations to clean video frames!
     annotated_full = frame.copy()
-    raw_full_filename = f"raw_full_{camera_id}_{now_ts}.jpg"
-    cv2.imwrite(os.path.join(CAPTURES_DIR, raw_full_filename), frame)
 
     # Top OSD bar
     cv2.rectangle(annotated_full, (0, 0), (fw, 46), (15, 23, 42), -1)
@@ -601,12 +610,10 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
                 plate_crop = c_tight
 
         # Certified Forensic Video Processing Pipeline (Daubert / Frye Standard Compliant)
-        audit_filename = f"crop_{camera_id}_{now_ts}_{idx}_audit.json"
-        audit_path = os.path.join(CAPTURES_DIR, audit_filename)
         enhanced_plate, audit_report = certified_forensic_plate_pipeline(
             plate_crop,
             camera_id=camera_id,
-            audit_output_path=audit_path
+            audit_output_path=None
         )
 
         display_plate = ocr_text
@@ -653,18 +660,13 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         cv2.rectangle(annotated_full, (x1, label_y - th - 6), (x1 + tw + 8, label_y + 4), box_color, 1)
         cv2.putText(annotated_full, badge_text, (x1 + 4, label_y - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.55, box_color, 2)
 
-        # Save individual raw plate crop and enhanced plate crop to captures/
-        crop_filename = f"crop_{camera_id}_{now_ts}_{idx}.jpg"
-        enhanced_filename = f"crop_{camera_id}_{now_ts}_{idx}_enhanced.jpg"
-        crop_path = os.path.join(CAPTURES_DIR, crop_filename)
-        enhanced_path = os.path.join(CAPTURES_DIR, enhanced_filename)
-
-        cv2.imwrite(crop_path, plate_crop)
-        cv2.imwrite(enhanced_path, enhanced_plate)
+        # Real-Time In-Memory Base64 Data URIs (ZERO disk file creation!)
+        crop_data_uri = to_base64_data_uri(plate_crop, 92)
+        enhanced_data_uri = to_base64_data_uri(enhanced_plate, 92)
 
         if idx == 0:
-            primary_crop_url = f"/captures/{crop_filename}"
-            primary_enhanced_crop_url = f"/captures/{enhanced_filename}"
+            primary_crop_url = crop_data_uri
+            primary_enhanced_crop_url = enhanced_data_uri
 
         vehicle_records.append({
             "index": idx + 1,
@@ -674,9 +676,9 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
             "box": [x1, y1, x2, y2],
             "plate": display_plate,
             "ocr_status": ocr_status,
-            "crop_url": f"/captures/{crop_filename}",
-            "enhanced_crop_url": f"/captures/{enhanced_filename}",
-            "audit_url": f"/captures/{audit_filename}",
+            "crop_url": crop_data_uri,
+            "enhanced_crop_url": enhanced_data_uri,
+            "audit_data": audit_report,
             "chain_of_custody": audit_report.get("chain_of_custody", {}),
             "legal_compliance": "DAUBERT_FRYE_EVIDENTIARY_STANDARD",
             "is_primary": (idx == 0)
@@ -688,9 +690,9 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
     sub_text = f"GPS: {lat:.4f}° N, {lng:.4f}° E | OPTICAL SENSOR 1080p | PRIMARY DETECT: {primary_label} | {len(vehicle_records)} REAL VEHICLES IN FRAME"
     cv2.putText(annotated_full, sub_text, (18, fh - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 242, 254), 1)
 
-    # Save full annotated evidentiary frame
-    full_filename = f"ondemand_{camera_id}_{now_ts}.jpg"
-    cv2.imwrite(os.path.join(CAPTURES_DIR, full_filename), annotated_full)
+    # Real-Time In-Memory Full Frame Data URIs (Zero files stored in captures/)
+    full_frame_data_uri = to_base64_data_uri(annotated_full, 85)
+    raw_full_data_uri = to_base64_data_uri(frame, 85)
 
     primary_record = vehicle_records[0] if vehicle_records else {
         "vehicle_type": "vehicle",
@@ -698,8 +700,8 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         "confidence": 0.5,
         "plate": "OCR UNRESOLVED",
         "ocr_status": "NO VEHICLES IN ACTIVE CONE",
-        "crop_url": f"/captures/{full_filename}",
-        "enhanced_crop_url": f"/captures/{full_filename}"
+        "crop_url": full_frame_data_uri,
+        "enhanced_crop_url": full_frame_data_uri
     }
 
     return {
@@ -710,10 +712,10 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         "lat": lat,
         "lng": lng,
         "timestamp": datetime.now().isoformat(),
-        "full_frame_url": f"/captures/{full_filename}",
-        "raw_full_url": f"/captures/{raw_full_filename}",
-        "crop_url": primary_crop_url or f"/captures/{full_filename}",
-        "enhanced_crop_url": primary_enhanced_crop_url if primary_crop_url else f"/captures/{full_filename}",
+        "full_frame_url": full_frame_data_uri,
+        "raw_full_url": raw_full_data_uri,
+        "crop_url": primary_crop_url or full_frame_data_uri,
+        "enhanced_crop_url": primary_enhanced_crop_url if primary_crop_url else full_frame_data_uri,
         "primary_vehicle": primary_record,
         "plate": primary_record["plate"],
         "vehicle_type": primary_record["vehicle_type"],
@@ -721,7 +723,7 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         "confidence": primary_record["confidence"],
         "vehicles_count": len(vehicle_records),
         "vehicles": vehicle_records,
-        "enhancement_pipeline": "Non-Local Means Denoise -> LAB-CLAHE Contrast -> Contour Deskew -> Lanczos Upscale -> Unsharp Mask"
+        "enhancement_pipeline": "Instant Real-Time In-Memory Optical Telemetry"
     }
 
 
