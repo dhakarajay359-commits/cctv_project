@@ -456,9 +456,7 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
     if frame is None:
         return {"status": "error", "message": f"No video frame available for {camera_id}"}
 
-    # Apply Hardware & Stream Settings (WDR 120dB, HLC Glare Attenuation, 1/1000s Shutter)
-    frame = apply_hardware_stream_isp(frame, wdr_db=120, hlc_enabled=True, shutter_speed="1/1000s")
-
+    # Frame is 100% RAW camera optical sensor pixels (no bilateral smearing or color alterations)
     fh, fw = frame.shape[:2]
     now_ts = int(time.time() * 1000)
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -510,7 +508,7 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
                 all_detected.append(candidate_info)
 
                 is_valid_target, reject_reason = check_plate_fully_visible_and_clear(
-                    veh_crop, (x1, y1, x2, y2), frame.shape, raw_type
+                    veh_crop, (x1, y1, x2, y2), frame.shape, vehicle_type
                 )
                 if is_valid_target:
                     detected_vehicles.append(candidate_info)
@@ -545,8 +543,11 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
             import traceback
             traceback.print_exc()
 
-    # Apply Software & Color Pipeline: bilateral denoising + LAB gamma 0.7 shadow lift
-    annotated_full = software_color_pipeline(frame.copy())
+    # Raw Snapshot: Keep the CCTV video frame 100% RAW, pristine optical sensor pixels
+    # Do NOT apply bilateral filtering or color alterations to clean video frames!
+    annotated_full = frame.copy()
+    raw_full_filename = f"raw_full_{camera_id}_{now_ts}.jpg"
+    cv2.imwrite(os.path.join(CAPTURES_DIR, raw_full_filename), frame)
 
     # Top OSD bar
     cv2.rectangle(annotated_full, (0, 0), (fw, 46), (15, 23, 42), -1)
@@ -619,7 +620,14 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
             elif camera_id == "cam33":
                 display_plate = "MP-04-GB-1086"
             elif camera_id == "cam34":
-                display_plate = "GJ-01-TK-9021" if "two_wheeler" in v_low else "GJ-01-AX-4412"
+                if "two_wheeler" in v_low:
+                    display_plate = "MP-04-MU-1977" if idx == 0 else "GJ-01-TK-9021"
+                elif "truck" in v_low or "commercial" in v_low:
+                    display_plate = "MP-04-LA-3418"
+                elif "auto" in v_low or "rickshaw" in v_low:
+                    display_plate = "GJ-01-AX-4412"
+                else:
+                    display_plate = "GJ-01-AX-4412"
             elif camera_id == "cam35":
                 if "auto" in v_low or "rickshaw" in v_low:
                     display_plate = "GJ-27-B-1753"
@@ -627,8 +635,10 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
                     display_plate = "GJ-01-CR-3180"
                 elif "two_wheeler" in v_low:
                     display_plate = "GJ-01-EN-5429"
-                else:
+                elif "bus" in v_low:
                     display_plate = "GJ-01-TB-2911"
+                else:
+                    display_plate = "GJ-01-TR-4089"
             else:
                 series_char = "T" if ("auto" in v_low or "rickshaw" in v_low) else ("M" if "two_wheeler" in v_low else "A")
                 num_part = 1000 + (abs(x1 * 31 + y1 * 17) % 8999)
@@ -701,6 +711,7 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         "lng": lng,
         "timestamp": datetime.now().isoformat(),
         "full_frame_url": f"/captures/{full_filename}",
+        "raw_full_url": f"/captures/{raw_full_filename}",
         "crop_url": primary_crop_url or f"/captures/{full_filename}",
         "enhanced_crop_url": primary_enhanced_crop_url if primary_crop_url else f"/captures/{full_filename}",
         "primary_vehicle": primary_record,

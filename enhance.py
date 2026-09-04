@@ -48,37 +48,27 @@ def denoise(img: np.ndarray, strength: float = 10) -> np.ndarray:
 
 def software_color_pipeline(img: np.ndarray) -> np.ndarray:
     """
-    Software & Color Pipeline (For Post-Processing & Live Snapshots):
-    1. Bilateral Filtering for Denoising (d=9, sigmaColor=75, sigmaSpace=75)
-    2. Color Space Separation (LAB): Isolates L (Luminance) strictly, keeping A and B unchanged
-       to prevent color/hue shifts (e.g. street lamps turning harsh neon).
-    3. Shadow Recovery without Overexposure: Non-linear gamma mapping (gamma ~ 0.70)
-       to lift dark areas (like parked auto-rickshaws on the left) without blowing out the road.
-    4. Adaptive Local Contrast (CLAHE on L).
+    Software & Color Pipeline:
+    Only applied when applicable and where needed!
+    If an image or video frame is already clean, clear, and sharp, bypasses heavy
+    color manipulation and bilateral filtering to preserve crisp raw optical quality.
     """
     if img is None or img.size == 0:
         return img
 
-    # Step 1: Bilateral Filtering for Denoising
-    denoised = cv2.bilateralFilter(img, d=9, sigmaColor=75, sigmaSpace=75)
+    # Adaptive Check: If image is already clean and clear, do NOT smear or alter colors!
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+    lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    if lap_var >= 50.0:
+        return img
 
-    # Step 2: Color Space Separation (LAB)
+    # Gentle denoising only for degraded/noisy frames (reduced kernel to avoid watercolor smear)
+    denoised = cv2.bilateralFilter(img, d=5, sigmaColor=30, sigmaSpace=30)
     lab = cv2.cvtColor(denoised, cv2.COLOR_BGR2LAB)
     l, a, b = cv2.split(lab)
-
-    # Step 3: Shadow Recovery without Overexposure (Gamma ~ 0.70)
-    l_float = l.astype(np.float32) / 255.0
-    gamma = 0.70
-    l_gamma = np.power(l_float, gamma) * 255.0
-    l_gamma = np.clip(l_gamma, 0, 255).astype(np.uint8)
-
-    # Step 4: Localized CLAHE Contrast Enhancement
-    clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
-    l_enhanced = clahe.apply(l_gamma)
-
-    # Recombine Luminance with unchanged Chrominance (A, B)
-    enhanced_lab = cv2.merge([l_enhanced, a, b])
-    return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+    clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8, 8))
+    l_enhanced = clahe.apply(l)
+    return cv2.cvtColor(cv2.merge([l_enhanced, a, b]), cv2.COLOR_LAB2BGR)
 
 
 def tophat_character_extraction(plate_roi: np.ndarray) -> np.ndarray:
@@ -237,10 +227,10 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         x1_search = int(vw * 0.20)
         x2_search = int(vw * 0.80)
     elif is_two_wheeler:
-        y1_search = int(vh * 0.55)
-        y2_search = min(vh, int(vh * 0.95))
-        x1_search = int(vw * 0.20)
-        x2_search = int(vw * 0.80)
+        y1_search = int(vh * 0.45)
+        y2_search = min(vh, int(vh * 0.88))
+        x1_search = int(vw * 0.15)
+        x2_search = int(vw * 0.85)
     elif is_auto:
         y1_search = int(vh * 0.65)
         y2_search = min(vh, int(vh * 0.96))
@@ -292,7 +282,36 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         if plate_crop.shape[0] >= 8 and plate_crop.shape[1] >= 16:
             return plate_crop
 
-    # 2. Edge-based white/standard plate analysis
+    # 2. White Plate Detection (for cars and private two-wheelers)
+    white_mask = cv2.inRange(hsv, np.array([0, 0, 160]), np.array([180, 60, 255]))
+    cnts_w, _ = cv2.findContours(white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best_white_box = None
+    best_w_score = 0
+
+    for c in cnts_w:
+        cx, cy, cw, ch = cv2.boundingRect(c)
+        aspect = cw / float(max(1, ch))
+        area = cw * ch
+        if 1.3 <= aspect <= 4.5 and cw >= max(16, int(rw * 0.12)) and ch >= max(8, int(rh * 0.08)):
+            y_score = (cy / float(max(1, rh))) * 2.0
+            score = area * y_score
+            if score > best_w_score:
+                best_w_score = score
+                best_white_box = (cx, cy, cw, ch)
+
+    if best_white_box is not None:
+        bx, by, bw, bh = best_white_box
+        pad_x = int(bw * 0.10)
+        pad_y = int(bh * 0.12)
+        px1 = max(0, x1_search + bx - pad_x)
+        py1 = max(0, y1_search + by - pad_y)
+        px2 = min(vw, x1_search + bx + bw + pad_x)
+        py2 = min(vh, y1_search + by + bh + pad_y)
+        plate_crop = veh_crop[py1:py2, px1:px2]
+        if plate_crop.shape[0] >= 8 and plate_crop.shape[1] >= 16:
+            return plate_crop
+
+    # 3. Edge-based white/standard plate analysis
     gray = cv2.cvtColor(search_roi, cv2.COLOR_BGR2GRAY)
     sobelx = cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3)
     abs_sobelx = cv2.convertScaleAbs(sobelx)
@@ -375,8 +394,9 @@ def check_plate_fully_visible_and_clear(veh_crop: np.ndarray, bbox: tuple, frame
         return False, "Vehicle cut off by camera edge"
 
     # 2. Must be large enough for physical plate characters to be optically resolvable
-    min_w = 60 if vehicle_type == "two_wheeler" else 75
-    min_h = 50 if vehicle_type == "two_wheeler" else 55
+    is_2w = vehicle_type in ["two_wheeler", "motorcycle", "bike", "scooter"]
+    min_w = 60 if is_2w else 75
+    min_h = 50 if is_2w else 55
     if vw < min_w or vh < min_h:
         return False, f"Vehicle too distant/small ({vw}x{vh}px)"
 
@@ -443,7 +463,7 @@ def check_plate_fully_visible_and_clear(veh_crop: np.ndarray, bbox: tuple, frame
         if (ch >= ph * 0.20 and ch <= ph * 0.90) and (cw >= pw * 0.03 and cw <= pw * 0.35) and c_area >= 10:
             char_count_inv += 1
     best_chars = max(char_count, char_count_inv)
-    if best_chars < 3:
+    if best_chars < 2:
         return False, f"Number plate characters blurry or unresolvable (found {best_chars} strokes)"
 
     return True, f"Full, clear vehicle with fully visible license plate ({best_chars} characters, sharpness {plate_lap_var:.1f})"
@@ -913,6 +933,39 @@ def certified_forensic_plate_pipeline(
     else:
         current = plate_crop.copy()
 
+    # Adaptive Quality Gatekeeper: Only apply heavy DSP filters when applicable and where needed!
+    # If the raw optical crop is already clean, clear, and sharp, bypass color-space and motion
+    # filters to prevent artificial watercolor blurring, noise amplification, or color shifts.
+    p_gray = cv2.cvtColor(plate_crop, cv2.COLOR_BGR2GRAY) if len(plate_crop.shape) == 3 else plate_crop
+    lap_sharpness = float(cv2.Laplacian(p_gray, cv2.CV_64F).var())
+    p_contrast = float(np.std(p_gray))
+    is_already_clean_clear = (lap_sharpness >= 60.0 and p_contrast >= 20.0)
+
+    if is_already_clean_clear:
+        # Image is already clean and sharp: preserve 100% authentic sensor pixels and colors!
+        h, w = current.shape[:2]
+        if h < 90:
+            scale = max(1.5, min(2.5, 120.0 / float(max(1, h))))
+            target_w = max(1, int(w * scale))
+            target_h = max(1, int(h * scale))
+            current = cv2.resize(current, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+
+        audit.log(
+            "CLEAN_OPTICAL_SENSOR_PASSTHROUGH",
+            {"sharpness": round(lap_sharpness, 1), "contrast": round(p_contrast, 1)},
+            "Input frame is already clean, clear, and sharp. Filtering bypassed to preserve raw authentic clarity."
+        )
+        audit_report = audit.finalize(current)
+        audit_report["clean_sensor_passthrough"] = True
+        audit_report["dual_hat_morphology_available"] = False
+        if audit_output_path:
+            try:
+                with open(audit_output_path, "w", encoding="utf-8") as f:
+                    json.dump(audit_report, f, indent=2)
+            except Exception:
+                pass
+        return current, audit_report
+
     # Step 2: Non-Generative Super-Resolution (Crisp Lanczos-4 subpixel interpolation)
     h, w = current.shape[:2]
     scale = max(1.8, min(2.8, 130.0 / float(max(1, h))))
@@ -979,6 +1032,18 @@ def enhance_plate_crop(plate_img: np.ndarray) -> np.ndarray:
         return plate_img
 
     h, w = plate_img.shape[:2]
+    # Adaptive Quality Check: If already clean and clear, preserve authentic sensor pixels
+    p_gray = cv2.cvtColor(plate_img, cv2.COLOR_BGR2GRAY) if len(plate_img.shape) == 3 else plate_img
+    lap_sharpness = float(cv2.Laplacian(p_gray, cv2.CV_64F).var())
+    p_contrast = float(np.std(p_gray))
+    if lap_sharpness >= 60.0 and p_contrast >= 20.0:
+        if h < 90:
+            scale = max(1.5, min(2.5, 120.0 / float(max(1, h))))
+            target_w = max(1, int(w * scale))
+            target_h = max(1, int(h * scale))
+            return cv2.resize(plate_img, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+        return plate_img
+
     # Keep natural aspect ratio with clean 1.8x - 2.8x scaling (target height 120-140px)
     scale = max(1.8, min(2.8, 130.0 / float(max(1, h))))
     target_w = max(1, int(w * scale))

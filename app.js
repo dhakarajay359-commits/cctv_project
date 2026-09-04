@@ -6306,7 +6306,7 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
     plate: res.plate,
     ocr_status: res.ocr_status
   };
-  let isEnhanced = true;
+  let isEnhanced = false;
 
   function updateCropDisplay() {
     if (!evCropImg || !activeVeh) return;
