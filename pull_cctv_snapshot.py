@@ -361,7 +361,7 @@ def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehi
     return "OCR UNRESOLVED", 0.0, False, None
 
 
-def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", lat=23.0, lng=72.5):
+def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", lat=23.0, lng=72.5, port="10000"):
     frame = None
 
     # STRICT REQUIREMENT: NEVER load stale/cached static snapshots from disk!
@@ -401,7 +401,7 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
     # 2. Live HLS Streams (cam01 - cam30)
     if frame is None:
         try:
-            stream_url = f"http://localhost:10000/cctv-stream/{camera_id}/index.m3u8"
+            stream_url = f"http://localhost:{port}/cctv-stream/{camera_id}/index.m3u8"
             cap = cv2.VideoCapture(
                 stream_url,
                 cv2.CAP_FFMPEG,
@@ -695,9 +695,10 @@ def main():
     parser.add_argument("--district", default="Ahmedabad (Urban)")
     parser.add_argument("--lat", type=float, default=23.111)
     parser.add_argument("--lng", type=float, default=72.595)
+    parser.add_argument("--port", default=os.environ.get("PORT", "10000"))
     args = parser.parse_args()
 
-    res = pull_frame_on_demand(args.camera_id, args.camera_name, args.district, args.lat, args.lng)
+    res = pull_frame_on_demand(args.camera_id, args.camera_name, args.district, args.lat, args.lng, port=args.port)
     print(json.dumps(res))
 
 
