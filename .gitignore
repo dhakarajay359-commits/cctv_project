@@ -67,6 +67,8 @@ recordings/
 *.mkv
 *.h264
 *.ts
+!cache/segments/**/*.ts
+!cache/segments/*.ts
 *.m3u8
 *.flv
 
@@ -119,5 +121,6 @@ evidentiary_audits/
 !assets/*.svg
 !assets/live_frames/*.jpg
 scratch/
-cache/
+cache/*
+!cache/segments/
 
