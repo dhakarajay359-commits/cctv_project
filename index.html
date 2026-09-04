@@ -801,6 +801,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               <option value="">-- Focus Camera Feed --</option>
             </select>
           </div>
+          <div class="wall-source-filter" style="display: flex; align-items: center; gap: 4px; background: rgba(15, 23, 42, 0.6); padding: 3px; border-radius: 6px; border: 1px solid var(--border-color);">
+            <button type="button" class="source-filter-btn active" data-source="all" id="filterWallAll" style="padding: 0.3rem 0.6rem; font-size: 0.72rem; border-radius: 4px; border: 1px solid #0284c7; background: #0284c7; color: #fff; cursor: pointer; font-weight: 700;">All Feeds</button>
+            <button type="button" class="source-filter-btn" data-source="api" id="filterWallApi" style="padding: 0.3rem 0.6rem; font-size: 0.72rem; border-radius: 4px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; font-weight: 600;"><span style="color: #10b981;">●</span> Sentinel Cloud API (30)</button>
+            <button type="button" class="source-filter-btn" data-source="uploaded" id="filterWallUploaded" style="padding: 0.3rem 0.6rem; font-size: 0.72rem; border-radius: 4px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; font-weight: 600;"><i class="fa-solid fa-file-video text-cyan"></i> Uploaded Videos</button>
+          </div>
           <div class="wall-grid-toggles">
             <span class="toggle-label">Grid Layout:</span>
             <button class="grid-btn" data-grid="1x1"><i class="fa-solid fa-square"></i> 1 View</button>

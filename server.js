@@ -133,7 +133,6 @@ const CORP8_DISTRICT_MAP = {
   'cam28': { district: 'Navsari (Dandi)', dept: 'dept-civil', lat: 20.7650, lng: 72.9680, name: 'Bilimora Port Circle 2' },
   'cam29': { district: 'Navsari (Dandi)', dept: 'dept-civil', lat: 20.7670, lng: 72.9710, name: 'Bilimora Market Gate 3' },
   'cam30': { district: 'Kutch (Ports, SEZ & Border)', dept: 'dept-police', lat: 23.0750, lng: 70.1330, name: 'Gandhidham Rambaugh P2' },
-  'cam31': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0335, lng: 72.5645, name: 'Overhead Traffic Aerial Corridor' },
   'cam32': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0285, lng: 72.5780, name: 'Urban Corridor Busy Arterial' },
   'cam33': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0385, lng: 72.5710, name: 'Bustling Urban Traffic Corridor' },
   'cam34': { district: 'Ahmedabad (Urban)', dept: 'dept-police', lat: 23.0420, lng: 72.5680, name: 'Motorbike & Rapid Transit Arterial' },
@@ -166,9 +165,10 @@ function syncCorp8Cameras(callback) {
               lng: 72.5714,
               name: c.name
             };
-            const existingCam = CAMERA_CATALOG.find(x => x.id === c.id);
-            const defaultStream = `/assets/cam${((parseInt(c.id.replace(/\D/g, '') || '1') - 1) % 5) + 31}_traffic.mp4`;
-            const streamUrl = (existingCam && existingCam.stream_url && !existingCam.stream_url.includes('.m3u8')) ? existingCam.stream_url : defaultStream;
+            // Cameras from Sentinel Corp8 Cloud are the 30 primary cameras driven by the API Key:
+            // Their stream URL is ALWAYS their dedicated HLS proxy endpoint (/cctv-stream/:camId/index.m3u8)
+            // They MUST NEVER be overwritten by or fall back to the additional uploaded videos!
+            const streamUrl = `/cctv-stream/${c.id}/index.m3u8`;
             return {
               id: c.id,
               name: meta.name || c.name,
@@ -177,6 +177,7 @@ function syncCorp8Cameras(callback) {
               lat: meta.lat,
               lng: meta.lng,
               type: 'ip',
+              source_type: 'sentinel_api',
               vendor: 'Sentinel Cloud CCTV',
               status: 'online',
               resolution: '1080p',
@@ -188,7 +189,7 @@ function syncCorp8Cameras(callback) {
               onboarded_at: new Date().toISOString()
             };
           });
-          const existingNonCorp8 = CAMERA_CATALOG.filter(c => !synced.some(s => s.id === c.id));
+          const existingNonCorp8 = CAMERA_CATALOG.filter(c => c.id !== 'cam31' && !synced.some(s => s.id === c.id));
           CAMERA_CATALOG = [...synced, ...existingNonCorp8];
           saveCatalog();
           console.log(`[SENTINEL] Synced ${synced.length} real live cameras from cctv.corp8.cloud`);
@@ -1550,15 +1551,23 @@ const server = http.createServer((req, res) => {
     const rawId = pathname.replace('/stream/', '').trim().toLowerCase();
     const num = parseInt(rawId.replace(/[^0-9]/g, ''), 10) || 1;
     const camKey = `cam${String(num).padStart(2, '0')}`;
-    const trafficFiles = ['cam33_traffic.mp4', 'cam34_traffic.mp4', 'cam35_traffic.mp4', 'cam31_traffic.mp4', 'cam32_traffic.mp4'];
-    let videoFile = path.join(ROOT_DIR, 'assets', `${camKey}_traffic.mp4`);
-    if (!fs.existsSync(videoFile)) {
-      videoFile = path.join(ROOT_DIR, 'assets', trafficFiles[(num - 1) % trafficFiles.length]);
+
+    // Sentinel Cloud API Cameras (cam01 - cam30):
+    // Directly route to their authentic HLS stream endpoint - NEVER cross-mix with uploaded videos!
+    if (num <= 30) {
+      res.writeHead(302, {
+        'Location': `/cctv-stream/${camKey}/index.m3u8`,
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end();
+      return;
     }
 
+    // Additional Uploaded Video Feeds (cam32 - cam35):
+    const videoFile = path.join(ROOT_DIR, 'assets', `${camKey}_traffic.mp4`);
     if (!fs.existsSync(videoFile)) {
       res.writeHead(404, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-      res.end(JSON.stringify({ error: 'Video stream not found' }));
+      res.end(JSON.stringify({ error: `Uploaded video stream not found for ${camKey}` }));
       return;
     }
 
@@ -1638,15 +1647,7 @@ const server = http.createServer((req, res) => {
         segList = ['fallback.ts'];
       }
       if (segList.length === 0) {
-        const num = parseInt(camId.replace(/[^0-9]/g, ''), 10) || 1;
-        const trafficFiles = ['cam33_traffic.mp4', 'cam34_traffic.mp4', 'cam35_traffic.mp4', 'cam31_traffic.mp4', 'cam32_traffic.mp4'];
-        const targetMp4 = `/assets/${trafficFiles[(num - 1) % trafficFiles.length]}`;
-        res.writeHead(302, {
-          'Location': targetMp4,
-          'Access-Control-Allow-Origin': '*'
-        });
-        res.end();
-        return;
+        segList = ['fallback.ts'];
       }
 
       const nowSec = Math.floor(Date.now() / 1000);

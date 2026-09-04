@@ -3114,6 +3114,8 @@ window.toggleWebcamFeed = async function(camId) {
   }
 };
 
+let currentWallSourceFilter = 'all'; // 'all', 'api', 'uploaded'
+
 async function renderLiveWall() {
   cleanupLiveStreamCanvases();
   const wallGrid = document.getElementById('videoWallGrid');
@@ -3121,7 +3123,47 @@ async function renderLiveWall() {
   const wanLoadEl = document.getElementById('liveWallWanLoad');
   if (!wallGrid) return;
 
-  const cameras = await window.apiClient.getCameras();
+  // Setup toolbar category filter buttons
+  const btnAll = document.getElementById('filterWallAll');
+  const btnApi = document.getElementById('filterWallApi');
+  const btnUp = document.getElementById('filterWallUploaded');
+  const updateFilterBtns = (active) => {
+    [btnAll, btnApi, btnUp].forEach(b => {
+      if (!b) return;
+      const isMatch = b.dataset.source === active;
+      b.classList.toggle('active', isMatch);
+      b.style.background = isMatch ? '#0284c7' : 'transparent';
+      b.style.borderColor = isMatch ? '#0284c7' : 'transparent';
+      b.style.color = isMatch ? '#ffffff' : '#94a3b8';
+      b.style.fontWeight = isMatch ? '700' : '600';
+    });
+  };
+  if (btnAll && !btnAll._bound) {
+    btnAll._bound = true;
+    btnAll.onclick = () => { currentWallSourceFilter = 'all'; updateFilterBtns('all'); renderLiveWall(); };
+  }
+  if (btnApi && !btnApi._bound) {
+    btnApi._bound = true;
+    btnApi.onclick = () => { currentWallSourceFilter = 'api'; updateFilterBtns('api'); renderLiveWall(); };
+  }
+  if (btnUp && !btnUp._bound) {
+    btnUp._bound = true;
+    btnUp.onclick = () => { currentWallSourceFilter = 'uploaded'; updateFilterBtns('uploaded'); renderLiveWall(); };
+  }
+  updateFilterBtns(currentWallSourceFilter);
+
+  const allRawCameras = await window.apiClient.getCameras();
+  // Filter out any obsolete cam31 reference containing Vecteezy watermark
+  const cleanCameras = allRawCameras.filter(c => c.id !== 'cam31');
+
+  // Filter cameras strictly by selected category
+  let cameras = cleanCameras;
+  if (currentWallSourceFilter === 'api') {
+    cameras = cleanCameras.filter(c => (parseInt(c.id.replace(/\D/g, ''), 10) || 1) <= 30);
+  } else if (currentWallSourceFilter === 'uploaded') {
+    cameras = cleanCameras.filter(c => (parseInt(c.id.replace(/\D/g, ''), 10) || 1) > 30);
+  }
+
   const maxSlots = getLiveWallMaxSlots();
 
   let displayCams = [];
@@ -3141,16 +3183,19 @@ async function renderLiveWall() {
 
   const camSelect = document.getElementById('liveWallCamSelect');
   if (camSelect) {
-    if (camSelect.options.length <= 1) {
-      camSelect.innerHTML = '<option value="">-- Focus Camera Feed --</option>' + 
-        cameras.map(c => `<option value="${c.id}">${c.id.toUpperCase()} • ${c.name}</option>`).join('');
-      camSelect.addEventListener('change', (e) => {
-        const val = e.target.value;
-        if (val) {
-          window.focusCameraCell(val);
-        }
-      });
-    }
+    const apiCams = cleanCameras.filter(c => (parseInt(c.id.replace(/\D/g, ''), 10) || 1) <= 30);
+    const uploadedCams = cleanCameras.filter(c => (parseInt(c.id.replace(/\D/g, ''), 10) || 1) > 30);
+    camSelect.innerHTML = '<option value="">-- Focus Camera Feed --</option>' + 
+      '<optgroup label="── Sentinel Cloud API Cameras (cam01 - cam30) ──">' +
+      apiCams.map(c => `<option value="${c.id}">${c.id.toUpperCase()} • ${c.name}</option>`).join('') +
+      '</optgroup>' +
+      '<optgroup label="── Direct Uploaded Video Feeds ──">' +
+      uploadedCams.map(c => `<option value="${c.id}">${c.id.toUpperCase()} • ${c.name} [Direct Video]</option>`).join('') +
+      '</optgroup>';
+    camSelect.onchange = (e) => {
+      const val = e.target.value;
+      if (val) window.focusCameraCell(val);
+    };
     camSelect.value = focusedCameraId || '';
   }
 
@@ -3160,9 +3205,9 @@ async function renderLiveWall() {
     wallGrid.innerHTML = `
       <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4.5rem 2rem; background: #0f172a; border: 1px dashed #334155; border-radius: 8px; text-align: center; color: #94a3b8;">
         <i class="fa-solid fa-video-slash" style="font-size: 2.5rem; color: #64748b; margin-bottom: 0.8rem;"></i>
-        <strong style="color: #f8fafc; font-size: 1.05rem; margin-bottom: 0.35rem;">No Live CCTV Camera Feeds Connected</strong>
+        <strong style="color: #f8fafc; font-size: 1.05rem; margin-bottom: 0.35rem;">No Cameras In This Filter</strong>
         <p style="font-size: 0.82rem; color: #64748b; max-width: 460px; line-height: 1.5;">
-          Connect your camera RTSP/WebRTC streams in Camera Registry or via the Edge Adapter Wizard to monitor live feeds on this video wall.
+          Select 'All Feeds' or switch filters above to view other active video streams.
         </p>
       </div>
     `;
@@ -3170,13 +3215,13 @@ async function renderLiveWall() {
   }
 
   displayCams.forEach((cam, idx) => {
-    // User Directive: Always pull and display all live CCTV camera feeds on the video wall automatically!
     const isSessionActive = true;
     const cell = document.createElement('div');
     cell.className = 'wall-feed-cell';
     cell.setAttribute('data-cam-id', cam.id);
 
     const camNum = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || (idx + 1);
+    const isApiCam = camNum <= 30;
     const activeTransit = (window.activeSuspectTransits && window.activeSuspectTransits.get(cam.id));
     let overlayHtml = '';
     if (activeTransit) {
@@ -3195,12 +3240,16 @@ async function renderLiveWall() {
       `;
     }
 
+    const videoSrc = isApiCam ? `/cctv-stream/${cam.id}/index.m3u8` : `/assets/${cam.id}_traffic.mp4`;
+
     cell.innerHTML = `
       <div class="wall-feed-top">
-        <span class="feed-title-badge" title="${cam.name}"><i class="fa-solid fa-video"></i> ${cam.id} &bull; ${cam.name.slice(0, 22)}...</span>
-        ${isSessionActive 
-          ? `<span class="feed-live-indicator"><span class="dot-sm" style="background: var(--accent-rose);"></span> LIVE RELAY</span>`
-          : `<span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">IDLE (0 Kbps)</span>`
+        <span class="feed-title-badge" title="${cam.name}">
+          <i class="fa-solid fa-video"></i> ${cam.id.toUpperCase()} &bull; ${cam.name.slice(0, 20)}...
+        </span>
+        ${isApiCam
+          ? `<span class="feed-live-indicator" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);"><span class="dot-sm" style="background: #10b981;"></span> CLOUD API</span>`
+          : `<span class="feed-live-indicator" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-film"></i> UPLOADED FEED</span>`
         }
       </div>
 
@@ -3208,10 +3257,9 @@ async function renderLiveWall() {
         ? `
           <div class="feed-media-wrapper" style="position: relative; width: 100%; height: 100%; overflow: hidden; background: #000;">
             <video class="live-stream-video" id="video_${cam.id}"
-              src="${cam.stream_url || '/assets/cam33_traffic.mp4'}"
+              src="${videoSrc}"
               poster="/assets/live_frames/${cam.id}.jpg"
               playsinline muted autoplay loop
-              onerror="this.onerror=null; this.src='/assets/cam33_traffic.mp4'; this.play().catch(()=>{});"
               style="width: 100%; height: 100%; object-fit: cover; display: block;">
             </video>
             ${overlayHtml}
@@ -3262,14 +3310,18 @@ async function renderLiveWall() {
     wallGrid.appendChild(cell);
   });
 
-  // Attach HLS streams to live CCTV camera cells
+  // Attach HLS streams strictly to Cloud API cameras (cam01 - cam30)
   displayCams.forEach((cam) => {
-    if (!cam.stream_url || !cam.stream_url.includes('.m3u8')) return;
+    const camNum = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || 1;
+    if (camNum > 30) return; // Uploaded cameras play direct MP4!
+
     const vidEl = document.getElementById(`video_${cam.id}`);
     if (!vidEl) return;
     if (window.cctvVideoEnhancer) {
       window.cctvVideoEnhancer.applyToVideo(vidEl);
     }
+
+    const hlsUrl = `/cctv-stream/${cam.id}/index.m3u8`;
 
     if (window.Hls && Hls.isSupported()) {
       if (window.activeHlsInstances && window.activeHlsInstances[cam.id]) {
@@ -3281,31 +3333,30 @@ async function renderLiveWall() {
         liveSyncDurationCount: 2,
         lowLatencyMode: true
       });
-      hls.loadSource(cam.stream_url);
+      hls.loadSource(hlsUrl);
       hls.attachMedia(vidEl);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         vidEl.play().catch(() => {});
       });
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
-          try { hls.destroy(); } catch(e){}
-          const num = parseInt(cam.id.replace(/[^0-9]/g, ''), 10) || 1;
-          const trafficFiles = [
-            '/assets/cam33_traffic.mp4',
-            '/assets/cam34_traffic.mp4',
-            '/assets/cam35_traffic.mp4',
-            '/assets/cam31_traffic.mp4',
-            '/assets/cam32_traffic.mp4'
-          ];
-          const fallback = trafficFiles[(num - 1) % trafficFiles.length];
-          vidEl.src = fallback;
-          vidEl.play().catch(() => {});
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              try { hls.destroy(); } catch(e){}
+              break;
+          }
         }
       });
       if (!window.activeHlsInstances) window.activeHlsInstances = {};
       window.activeHlsInstances[cam.id] = hls;
     } else if (vidEl.canPlayType('application/vnd.apple.mpegurl')) {
-      vidEl.src = cam.stream_url;
+      vidEl.src = hlsUrl;
       vidEl.play().catch(() => {});
     }
   });
@@ -3685,443 +3736,7 @@ window.getVehiclesAtTime = function(timeSec, targetCamId) {
   const t = rawT % 41.5; // continuous 41.8s video stream
   const vehicles = [];
 
-  if (cid === 'cam31') {
-    // -------------------------------------------------------------
-    // SCENE 1: 0.0s to 6.8s (5696 GXS, 8054 JXJ, 0407 DSL, 2694HKI, 6861 GNZ)
-    // -------------------------------------------------------------
-    if (t < 6.8) {
-      // 1. Red Hatchback (5696 GXS) - Front Left Lane
-      if (t >= 0.0 && t <= 3.8) {
-        const p = t / 3.8;
-        vehicles.push({
-          id: 'cam31_5696GXS',
-          plate: '5696 GXS',
-          aliases: ['5696GXS', 'GXS'],
-          type: 'CAR (RED HATCHBACK)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 14.6 + (3.9 * p),
-            top: 65.3 - (53.0 * p),
-            width: Math.max(4.6, 7.4 - (2.8 * p)),
-            height: Math.max(2.0, 3.5 - (1.5 * p))
-          }
-        });
-      }
-
-      // 2. White Dacia Duster SUV (8054 JXJ) - Front Right Lane
-      if (t >= 0.0 && t <= 4.2) {
-        const p = t / 4.2;
-        vehicles.push({
-          id: 'cam31_8054JXJ',
-          plate: '8054 JXJ',
-          aliases: ['8054JXJ', '8054 JXJ', 'JXJ'],
-          type: 'SUV (WHITE DUSTER)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 71.6 - (6.0 * p),
-            top: 68.6 - (55.0 * p),
-            width: Math.max(4.5, 7.0 - (2.5 * p)),
-            height: Math.max(2.0, 3.5 - (1.5 * p))
-          }
-        });
-      }
-
-      // 3. Lead Grey Car (0407 DSL) - Ahead in Left Lane
-      if (t >= 0.0 && t <= 2.2) {
-        const p = t / 2.2;
-        vehicles.push({
-          id: 'cam31_0407DSL',
-          plate: '0407 DSL',
-          aliases: ['0407DSL', 'DSL'],
-          type: 'CAR (LEAD ESTATE)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 23.2 + (1.6 * p),
-            top: 31.1 - (25.0 * p),
-            width: Math.max(4.2, 6.1 - (2.0 * p)),
-            height: Math.max(1.8, 2.8 - (1.0 * p))
-          }
-        });
-      }
-
-      // 4. Suspect Sedan (2694HKI) - Following in Right Lane (ARMED)
-      if (t >= 1.0 && t <= 6.2) {
-        const p = (t - 1.0) / 5.2;
-        vehicles.push({
-          id: 'cam31_2694HKI',
-          plate: '2694HKI',
-          aliases: ['2694HKI', '2694 HKI', 'MA 7684 DD'],
-          type: 'SEDAN (SUSPECT)',
-          suspect: true,
-          crime: 'ARMED',
-          isVisible: true,
-          plateBox: {
-            left: 72.9 - (7.5 * p),
-            top: 88.0 - (76.0 * p),
-            width: Math.max(5.0, 7.6 - (2.5 * p)),
-            height: Math.max(2.2, 3.5 - (1.3 * p))
-          }
-        });
-      }
-
-      // 5. Ahead Traffic (6861 GNZ)
-      if (t >= 0.0 && t <= 3.5) {
-        const p = t / 3.5;
-        vehicles.push({
-          id: 'cam31_6861GNZ',
-          plate: '6861 GNZ',
-          aliases: ['6861GNZ'],
-          type: 'CAR (TRAFFIC AHEAD)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 67.3 - (2.5 * p),
-            top: 25.0 - (20.0 * p),
-            width: 5.5,
-            height: 2.4
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------
-    // SCENE 2: 6.8s to 12.5s (Peugeot Wagon & Yellow Fiat Panda)
-    // -------------------------------------------------------------
-    else if (t >= 6.8 && t < 12.5) {
-      // 1. Silver Peugeot Wagon (7895 BVZ) - Left Lane
-      if (t >= 7.0 && t <= 11.5) {
-        const p = (t - 7.0) / 4.5;
-        vehicles.push({
-          id: 'cam31_7895BVZ',
-          plate: '7895 BVZ',
-          aliases: ['7895BVZ', '47895BVZ', 'BVZ'],
-          type: 'WAGON (SILVER PEUGEOT)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 17.5 + (6.5 * p),
-            top: 66.0 - (52.0 * p),
-            width: Math.max(5.0, 7.0 - (2.0 * p)),
-            height: Math.max(2.2, 3.6 - (1.2 * p))
-          }
-        });
-      }
-
-      // 2. Yellow Fiat Panda (0671 GGP) - Right Lane
-      if (t >= 7.0 && t <= 11.5) {
-        const p = (t - 7.0) / 4.5;
-        vehicles.push({
-          id: 'cam31_0671GGP',
-          plate: '0671 GGP',
-          aliases: ['0671GGP', '0621GGP', 'GGP'],
-          type: 'HATCHBACK (YELLOW FIAT)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 73.0 - (8.5 * p),
-            top: 66.0 - (52.0 * p),
-            width: Math.max(5.0, 6.5 - (1.8 * p)),
-            height: Math.max(2.2, 3.6 - (1.2 * p))
-          }
-        });
-      }
-
-      // 3. Suspect Sedan (MA 7684 DD / 2694HKI) - Right Lane (ARMED)
-      if (t >= 8.5 && t <= 13.0) {
-        const p = (t - 8.5) / 4.5;
-        vehicles.push({
-          id: 'cam31_MA7684DD',
-          plate: '2694HKI',
-          aliases: ['MA 7684 DD', 'MA7684DD', '2694HKI'],
-          type: 'SEDAN (SUSPECT)',
-          suspect: true,
-          crime: 'ARMED',
-          isVisible: true,
-          plateBox: {
-            left: 77.0 - (9.5 * p),
-            top: 86.0 - (68.0 * p),
-            width: Math.max(5.5, 7.8 - (2.5 * p)),
-            height: Math.max(2.4, 3.8 - (1.5 * p))
-          }
-        });
-      }
-
-      // 4. White Van (0273 GGJ) - Ahead Left Lane
-      if (t >= 9.5 && t <= 13.5) {
-        const p = (t - 9.5) / 4.0;
-        vehicles.push({
-          id: 'cam31_0273GGJ',
-          plate: '0273 GGJ',
-          aliases: ['0273GGJ', 'GGJ'],
-          type: 'VAN (PEUGEOT BOXER)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 18.0 + (5.0 * p),
-            top: 72.0 - (56.0 * p),
-            width: Math.max(5.0, 6.8 - (2.0 * p)),
-            height: Math.max(2.2, 3.2 - (1.0 * p))
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------
-    // SCENE 3: 12.5s to 19.5s (USER SCREENSHOT: 6380 CCS, 1245 HYW, CA 8463 BO, 8589 BXT)
-    // -------------------------------------------------------------
-    else if (t >= 12.5 && t < 19.5) {
-      // 1. Silver Peugeot 307 Wagon (6380 CCS) - Bottom Left Lane (Exact Plate Box)
-      if (t >= 13.0 && t <= 19.2) {
-        const p = (t - 13.0) / 6.2;
-        vehicles.push({
-          id: 'cam31_6380CCS',
-          plate: '6380 CCS',
-          aliases: ['6380CCS', '6380 CCS', 'CCS'],
-          type: 'WAGON (SILVER PEUGEOT)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            // At t=14.5s: plate is at left: 12.0%, top: 86.8%, width: 7.7%, height: 4.2%
-            left: 10.0 + (13.0 * p),
-            top: 96.0 - (74.0 * p),
-            width: Math.max(5.0, 8.2 - (3.0 * p)),
-            height: Math.max(2.2, 4.4 - (2.0 * p))
-          }
-        });
-      }
-
-      // 2. Dark SUV Ahead (1245 HYW) - Ahead Left Lane (Exact Plate Box)
-      if (t >= 12.5 && t <= 17.5) {
-        const p = (t - 12.5) / 5.0;
-        vehicles.push({
-          id: 'cam31_1245HYW',
-          plate: '1245 HYW',
-          aliases: ['1245HYW', '1245 HYW', 'HYW'],
-          type: 'SUV (DARK CROSSOVER)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            // At t=14.5s: plate is at left: 19.5%, top: 40.5%, width: 6.5%, height: 3.2%
-            left: 17.5 + (7.5 * p),
-            top: 60.0 - (42.0 * p),
-            width: Math.max(4.8, 6.8 - (2.0 * p)),
-            height: Math.max(2.0, 3.4 - (1.2 * p))
-          }
-        });
-      }
-
-      // 3. Red Car With Roof Rack (CA 8463 BO) - Right Lane (Exact Plate Box)
-      if (t >= 12.5 && t <= 17.5) {
-        const p = (t - 12.5) / 5.0;
-        vehicles.push({
-          id: 'cam31_CA8463BO',
-          plate: 'CA 8463 BO',
-          aliases: ['CA 8463 BO', 'CA8463BO', '8463 BO', '8463'],
-          type: 'HATCHBACK (RED CITROEN)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            // At t=14.5s: plate is at left: 73.4%, top: 34.0%, width: 7.2%, height: 3.2%
-            left: 77.0 - (9.5 * p),
-            top: 54.0 - (45.0 * p),
-            width: Math.max(5.0, 7.5 - (2.2 * p)),
-            height: Math.max(2.0, 3.4 - (1.2 * p))
-          }
-        });
-      }
-
-      // 4. Silver Car (8589 BXT) - Bottom Right Lane (Exact Plate Box)
-      if (t >= 13.8 && t <= 19.5) {
-        const p = (t - 13.8) / 5.7;
-        vehicles.push({
-          id: 'cam31_8589BXT',
-          plate: '8589 BXT',
-          aliases: ['8589BXT', '8589 BXT', 'BXT'],
-          type: 'FOUR-WHEELER (SILVER SEDAN)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            // At t=14.5s: plate is at left: 83.0%, top: 85.0%, width: 7.5%, height: 3.8%
-            left: 84.0 - (11.0 * p),
-            top: 94.0 - (72.0 * p),
-            width: Math.max(5.2, 7.8 - (2.4 * p)),
-            height: Math.max(2.2, 3.8 - (1.5 * p))
-          }
-        });
-      }
-
-      // 5. Ahead Traffic (0752 GJR)
-      if (t >= 16.0 && t <= 21.0) {
-        const p = (t - 16.0) / 5.0;
-        vehicles.push({
-          id: 'cam31_0752GJR',
-          plate: '0752 GJR',
-          aliases: ['0752GJR', 'GJR'],
-          type: 'CAR (AHEAD TRAFFIC)',
-          suspect: false,
-          isVisible: true,
-          plateBox: {
-            left: 15.0 + (5.0 * p),
-            top: 60.0 - (45.0 * p),
-            width: 6.0,
-            height: 2.6
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------
-    // SCENE 4: 19.5s to 27.0s
-    // -------------------------------------------------------------
-    else if (t >= 19.5 && t < 27.0) {
-      const p = (t - 19.5) / 7.5;
-      vehicles.push({
-        id: 'cam31_3693FSG',
-        plate: '3693 FSG',
-        aliases: ['3693FSG'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 14.5 + (5.0 * p),
-          top: 75.0 - (60.0 * p),
-          width: Math.max(5.0, 6.8 - (2.0 * p)),
-          height: 2.8
-        }
-      });
-      vehicles.push({
-        id: 'cam31_2835BSY',
-        plate: '2835 BSY',
-        aliases: ['2835BSY'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 76.0 - (8.0 * p),
-          top: 70.0 - (58.0 * p),
-          width: Math.max(5.0, 7.2 - (2.0 * p)),
-          height: 3.0
-        }
-      });
-      vehicles.push({
-        id: 'cam31_9079GCH',
-        plate: '9079 GCH',
-        aliases: ['9079GCH'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 70.0 - (7.0 * p),
-          top: 60.0 - (50.0 * p),
-          width: 6.2,
-          height: 2.6
-        }
-      });
-    }
-
-    // -------------------------------------------------------------
-    // SCENE 5: 27.0s to 34.0s
-    // -------------------------------------------------------------
-    else if (t >= 27.0 && t < 34.0) {
-      const p = (t - 27.0) / 7.0;
-      vehicles.push({
-        id: 'cam31_8934FHR',
-        plate: '8934 FHR',
-        aliases: ['8934FHR'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 15.0 + (6.0 * p),
-          top: 75.0 - (58.0 * p),
-          width: 6.2,
-          height: 2.8
-        }
-      });
-      vehicles.push({
-        id: 'cam31_9916GHS',
-        plate: '9916 GHS',
-        aliases: ['9916GHS'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 11.0 + (8.0 * p),
-          top: 85.0 - (68.0 * p),
-          width: 7.0,
-          height: 3.2
-        }
-      });
-      vehicles.push({
-        id: 'cam31_0262HFP',
-        plate: '0262 HFP',
-        aliases: ['0262HFP'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 68.0 - (7.0 * p),
-          top: 82.0 - (60.0 * p),
-          width: 7.5,
-          height: 3.5
-        }
-      });
-    }
-
-    // -------------------------------------------------------------
-    // SCENE 6: 34.0s to 41.8s
-    // -------------------------------------------------------------
-    else {
-      const p = (t - 34.0) / 7.8;
-      vehicles.push({
-        id: 'cam31_3092FRX',
-        plate: '3092 FRX',
-        aliases: ['3092FRX'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 24.0 + (3.0 * p),
-          top: 60.0 - (45.0 * p),
-          width: 6.0,
-          height: 2.8
-        }
-      });
-      vehicles.push({
-        id: 'cam31_7963JWJ',
-        plate: '7963 JWJ',
-        aliases: ['7963JWJ'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 71.0 - (5.0 * p),
-          top: 55.0 - (42.0 * p),
-          width: 6.5,
-          height: 2.8
-        }
-      });
-      vehicles.push({
-        id: 'cam31_1024DRJ',
-        plate: '1024 DRJ',
-        aliases: ['1024DRJ'],
-        type: 'CAR (FOUR-WHEELER)',
-        suspect: false,
-        isVisible: true,
-        plateBox: {
-          left: 30.0 + (8.0 * p),
-          top: 90.0 - (72.0 * p),
-          width: 7.2,
-          height: 3.2
-        }
-      });
-    }
-
-    return vehicles;
-  } else if (cid === 'cam32') {
+  if (cid === 'cam32') {
     const waveT = t % 8.0;
     const p1 = waveT / 8.0;
     const p2 = (t % 6.0) / 6.0;
@@ -4400,31 +4015,7 @@ window.getVehiclesAtTime = function(timeSec, targetCamId) {
 window.getCameraVehiclePlateCatalog = function(targetCamId, timeSec) {
   const cid = (targetCamId || '').toLowerCase();
   let list = [];
-  if (cid === 'cam31') {
-    const t = (timeSec || 0) % 41.5;
-    if (t >= 12.5 && t < 19.5) {
-      list = [
-        { id: 'cam31_6380CCS', plate: '6380 CCS', aliases: ['6380CCS'], type: 'WAGON (SILVER PEUGEOT)', suspect: false },
-        { id: 'cam31_1245HYW', plate: '1245 HYW', aliases: ['1245HYW'], type: 'SUV (DARK CROSSOVER)', suspect: false },
-        { id: 'cam31_CA8463BO', plate: 'CA 8463 BO', aliases: ['CA8463BO', '8463 BO'], type: 'HATCHBACK (RED CITROEN)', suspect: false },
-        { id: 'cam31_8589BXT', plate: '8589 BXT', aliases: ['8589BXT'], type: 'FOUR-WHEELER (SILVER SEDAN)', suspect: false }
-      ];
-    } else if (t >= 6.8 && t < 12.5) {
-      list = [
-        { id: 'cam31_7895BVZ', plate: '7895 BVZ', aliases: ['7895BVZ', '47895BVZ'], type: 'WAGON (SILVER PEUGEOT)', suspect: false },
-        { id: 'cam31_0671GGP', plate: '0671 GGP', aliases: ['0671GGP'], type: 'HATCHBACK (YELLOW FIAT)', suspect: false },
-        { id: 'cam31_MA7684DD', plate: '2694HKI', aliases: ['MA 7684 DD', '2694HKI'], type: 'SEDAN (SUSPECT)', suspect: true, crime: 'ARMED' },
-        { id: 'cam31_0273GGJ', plate: '0273 GGJ', aliases: ['0273GGJ'], type: 'VAN (PEUGEOT BOXER)', suspect: false }
-      ];
-    } else {
-      list = [
-        { id: 'cam31_5696GXS', plate: '5696 GXS', aliases: ['5696GXS'], type: 'CAR (RED HATCHBACK)', suspect: false },
-        { id: 'cam31_8054JXJ', plate: '8054 JXJ', aliases: ['8054JXJ'], type: 'SUV (WHITE DUSTER)', suspect: false },
-        { id: 'cam31_2694HKI', plate: '2694HKI', aliases: ['2694HKI', '2694 HKI'], type: 'SEDAN (SUSPECT)', suspect: true, crime: 'ARMED' },
-        { id: 'cam31_0407DSL', plate: '0407 DSL', aliases: ['0407DSL'], type: 'CAR (LEAD ESTATE)', suspect: false }
-      ];
-    }
-  } else if (cid === 'cam32') {
+  if (cid === 'cam32') {
     list = [
       { id: 'cam32_veh_1', plate: 'MH-02-EE-7762', aliases: ['MH02EE7762'], type: 'FOUR-WHEELER (CAR)', suspect: false },
       { id: 'cam32_veh_2', plate: 'MH-01-AB-1002', aliases: ['MH01AB1002'], type: 'TWO-WHEELER', suspect: false }
@@ -4630,7 +4221,7 @@ window.focusVehiclePlate = function(plate, targetCamId) {
   const cleanPlate = (plate || '').trim().toUpperCase();
   const video = document.getElementById('liveCctvVideoElement');
   const t = video ? (video.currentTime || 0) : 0;
-  const activeCam = (targetCamId || window.currentActiveLiveCamId || 'cam31').toLowerCase();
+  const activeCam = (targetCamId || window.currentActiveLiveCamId || 'cam01').toLowerCase();
 
   // Find active vehicles on screen right now
   const activeVehicles = window.getVehiclesAtTime(t, activeCam);
@@ -4732,7 +4323,7 @@ window.resumeLiveCctvFeed = function(video) {
 };
 
 window.openSuspectSightingCctv = async function(param1, param2) {
-  let targetCamId = 'cam31';
+  let targetCamId = 'cam01';
   let cleanPlate = '';
 
   const p1 = (param1 || '').toString().trim();
@@ -4747,9 +4338,9 @@ window.openSuspectSightingCctv = async function(param1, param2) {
     cleanPlate = p1.toUpperCase();
   } else if (p1) {
     cleanPlate = p1.toUpperCase();
-    targetCamId = p2 ? p2.toLowerCase() : (window.currentActiveLiveCamId || 'cam31');
+    targetCamId = p2 ? p2.toLowerCase() : (window.currentActiveLiveCamId || 'cam01');
   } else {
-    targetCamId = p2 ? p2.toLowerCase() : (window.currentActiveLiveCamId || 'cam31');
+    targetCamId = p2 ? p2.toLowerCase() : (window.currentActiveLiveCamId || 'cam01');
   }
 
   const suspect = cleanPlate ? await window.apiClient.isPlateSuspect(cleanPlate) : null;
@@ -4850,7 +4441,7 @@ window.openSuspectSightingCctv = async function(param1, param2) {
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
           try { hls.destroy(); } catch(e){}
-          video.src = (targetCam.stream_url && targetCam.stream_url.endsWith('.mp4')) ? targetCam.stream_url : '/assets/cam33_traffic.mp4';
+          video.src = (targetCam.stream_url && targetCam.stream_url.endsWith('.mp4')) ? targetCam.stream_url : '';
           video.play().catch(() => {});
         }
       });
@@ -4934,7 +4525,7 @@ function initLiveCctvModal() {
   // Focus / Wide-View toggle button: instantly locks current plate
   if (btnFreeze) {
     btnFreeze.addEventListener('click', () => {
-      const activeCamId = window.currentActiveLiveCamId || 'cam31';
+      const activeCamId = window.currentActiveLiveCamId || 'cam01';
       const video = document.getElementById('liveCctvVideoElement');
 
       // If already focused, toggle back to wide view
