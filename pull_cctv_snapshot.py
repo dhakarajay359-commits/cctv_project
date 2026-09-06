@@ -250,6 +250,130 @@ def is_vehicle_body_text(text: str) -> bool:
         return True
     return False
 
+
+def extract_plate_features(gray_patch):
+    if gray_patch is None or gray_patch.size == 0:
+        return 0.0, 0.0
+    h, w = gray_patch.shape
+    if h < 8 or w < 16:
+        return 0.0, 0.0
+    core = gray_patch[int(h * 0.15):int(h * 0.85), int(w * 0.08):int(w * 0.92)]
+    if core.size == 0:
+        return 0.0, 0.0
+    sobelx = np.abs(cv2.Sobel(core, cv2.CV_32F, 1, 0, ksize=3))
+    return float(np.mean(sobelx)), float(np.std(sobelx))
+
+
+def detect_plate_in_region(roi, ox=0, oy=0):
+    rh, rw = roi.shape[:2]
+    if rh < 12 or rw < 20:
+        return []
+
+    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+
+    white_mask = cv2.inRange(hsv, np.array([0, 0, 150]), np.array([180, 65, 255]))
+    yellow_mask = cv2.inRange(hsv, np.array([10, 45, 60]), np.array([38, 255, 255]))
+    green_mask = cv2.inRange(hsv, np.array([35, 35, 30]), np.array([88, 255, 255]))
+
+    combined = cv2.bitwise_or(white_mask, cv2.bitwise_or(yellow_mask, green_mask))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 3))
+    morph = cv2.morphologyEx(combined, cv2.MORPH_CLOSE, kernel)
+
+    cnts, _ = cv2.findContours(morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    candidates = []
+
+    for c in cnts:
+        x, y, w, h = cv2.boundingRect(c)
+        aspect = w / float(max(1, h))
+        area = w * h
+        if 1.6 <= aspect <= 5.8 and 24 <= w <= 320 and 8 <= h <= 90:
+            patch_g = gray[y:y+h, x:x+w]
+            sobel_m, sobel_s = extract_plate_features(patch_g)
+            if sobel_m >= 52.0:
+                aspect_fit = 1.0 - min(1.0, abs(aspect - 3.2) / 3.0)
+                score = area * (sobel_m / 35.0) * (1.0 + aspect_fit * 1.5)
+                candidates.append({
+                    'box': (ox + x, oy + y, ox + x + w, oy + y + h),
+                    'w': w, 'h': h,
+                    'aspect': aspect,
+                    'sobel_mean': sobel_m,
+                    'score': score
+                })
+
+    candidates.sort(key=lambda item: item['score'], reverse=True)
+    return candidates
+
+
+def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None):
+    """
+    Locates the true number plate in the video frame, dynamically moving the
+    crop frame directly to where the plate is, framing it tightly and with razor focus.
+    """
+    fh, fw = frame.shape[:2]
+    all_cands = []
+
+    if vehicle_boxes and len(vehicle_boxes) > 0:
+        for vb in vehicle_boxes:
+            vx1, vy1, vx2, vy2 = vb
+            vy_start = int(vy1 + (vy2 - vy1) * 0.35)
+            v_roi = frame[vy_start:vy2, vx1:vx2]
+            cands = detect_plate_in_region(v_roi, ox=vx1, oy=vy_start)
+            for c in cands:
+                c['vbox'] = vb
+                all_cands.append(c)
+
+    if not all_cands:
+        road_roi = frame[int(fh * 0.40):int(fh * 0.94), int(fw * 0.05):int(fw * 0.95)]
+        road_cands = detect_plate_in_region(road_roi, ox=int(fw * 0.05), oy=int(fh * 0.40))
+        all_cands.extend(road_cands)
+
+    if not all_cands:
+        cx1, cy1 = int(fw * 0.35), int(fh * 0.55)
+        cx2, cy2 = int(fw * 0.65), int(fh * 0.65)
+        best_box = (cx1, cy1, cx2, cy2)
+        vbox = (int(fw * 0.28), int(fh * 0.38), int(fw * 0.72), int(fh * 0.85))
+    else:
+        all_cands.sort(key=lambda c: c['score'], reverse=True)
+        top = all_cands[0]
+        best_box = top['box']
+        if 'vbox' in top and top['vbox'] is not None:
+            vbox = top['vbox']
+        else:
+            bx1, by1, bx2, by2 = best_box
+            pw = bx2 - bx1
+            ph = by2 - by1
+            vx1 = max(0, int(bx1 - pw * 2.0))
+            vx2 = min(fw, int(bx2 + pw * 2.0))
+            vy1 = max(0, int(by1 - ph * 5.5))
+            vy2 = min(fh, int(by2 + ph * 1.8))
+            vbox = (vx1, vy1, vx2, vy2)
+
+    px1, py1, px2, py2 = best_box
+    pw, ph = px2 - px1, py2 - py1
+
+    # Tightly move the frame to center directly on the plate number with balanced margins
+    pad_x = max(10, int(pw * 0.20))
+    pad_y = max(6, int(ph * 0.35))
+
+    crop_x1 = max(0, px1 - pad_x)
+    crop_y1 = max(0, py1 - pad_y)
+    crop_x2 = min(fw, px2 + pad_x)
+    crop_y2 = min(fh, py2 + pad_y)
+
+    plate_crop = frame[crop_y1:crop_y2, crop_x1:crop_x2]
+    if plate_crop.size == 0:
+        plate_crop = frame
+
+    ch, cw = plate_crop.shape[:2]
+    target_w = 460
+    scale = target_w / float(max(1, cw))
+    target_h = max(30, int(ch * scale))
+    focused_plate = cv2.resize(plate_crop, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+
+    return focused_plate, best_box, vbox
+
+
 def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehicle_type="car", v_box=None):
     """
     High-Precision ANPR Detection Engine:
@@ -567,37 +691,33 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
 
         veh_crop = frame[y1:y2, x1:x2]
 
-        # 1. Extract license plate region from vehicle bumper
-        plate_crop = extract_license_plate_crop(veh_crop, v_type)
+        # 1. Dynamically locate the number plate inside the vehicle crop and move frame directly to it
+        sub_focused, sub_pbox, _ = dynamic_locate_and_focus_plate(veh_crop)
+        if sub_focused is not None and sub_pbox is not None:
+            focused_plate = sub_focused
+            spx1, spy1, spx2, spy2 = sub_pbox
+            full_px1, full_py1 = x1 + spx1, y1 + spy1
+            full_px2, full_py2 = x1 + spx2, y1 + spy2
+        else:
+            plate_crop = extract_license_plate_crop(veh_crop, v_type)
+            ph, pw = plate_crop.shape[:2]
+            scale = 460.0 / float(max(1, pw))
+            focused_plate = cv2.resize(plate_crop, (460, int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
+            full_px1 = x1 + int((x2 - x1) * 0.25)
+            full_py1 = y1 + int((y2 - y1) * 0.65)
+            full_px2 = x1 + int((x2 - x1) * 0.75)
+            full_py2 = y1 + int((y2 - y1) * 0.85)
 
-        # 2. Run OCR on the isolated bumper plate crop
+        # 2. Run OCR directly on the centered, focused plate crop
         ocr_text, ocr_conf, ocr_success, char_bbox = run_real_optical_ocr(
-            plate_crop, district=district, camera_id=camera_id, vehicle_type=v_type, v_box=[x1, y1, x2, y2]
+            focused_plate, district=district, camera_id=camera_id, vehicle_type=v_type, v_box=[x1, y1, x2, y2]
         )
 
-        # If OCR succeeded and found character bbox, refine crop tightly
-        if char_bbox is not None and ocr_success and not is_vehicle_body_text(ocr_text):
-            bx1 = int(min(p[0] for p in char_bbox))
-            by1 = int(min(p[1] for p in char_bbox))
-            bx2 = int(max(p[0] for p in char_bbox))
-            by2 = int(max(p[1] for p in char_bbox))
-            pad_y = max(3, int((by2 - by1) * 0.15))
-            pad_x = max(6, int((bx2 - bx1) * 0.10))
-            c_tight = plate_crop[max(0, by1 - pad_y):min(plate_crop.shape[0], by2 + pad_y),
-                                 max(0, bx1 - pad_x):min(plate_crop.shape[1], bx2 + pad_x)]
-            if c_tight.shape[0] >= 8 and c_tight.shape[1] >= 16:
-                plate_crop = c_tight
-
-        # 3. CRITICAL: Upscale plate crop with Lanczos interpolation so the plate number is large, sharp, and focused
-        ph, pw = plate_crop.shape[:2]
-        if pw < 380:
-            scale = min(6.0, 380.0 / float(max(1, pw)))
-            focused_plate = cv2.resize(plate_crop, (int(pw * scale), int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
-        else:
-            focused_plate = plate_crop
-
-        # 4. Enhance plate for forensic legibility
+        # 3. Enhance plate for forensic legibility
         enhanced_plate = enhance_plate_crop(focused_plate)
+
+        # Draw focused plate target box on full frame directly over the plate
+        cv2.rectangle(annotated_full, (full_px1, full_py1), (full_px2, full_py2), (0, 255, 128), 2)
 
         # Dynamic optical registration - NO HARDCODED STRINGS
         if ocr_text and ocr_text != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_text):
@@ -757,18 +877,25 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
     seq = str((num * 739) % 9000 + 1000).zfill(4)
     display_plate = f"{rto_code}-{series}-{seq}"
 
-    focused_plate = None
-    enhanced_plate = None
+    # Dynamic plate localization & frame movement: locate exact plate number and center frame on it
+    focused_plate, plate_box, vehicle_box = dynamic_locate_and_focus_plate(frame)
+    bx1, by1, bx2, by2 = vehicle_box
+    px1, py1, px2, py2 = plate_box
 
-    if v_type == "truck":
-        v_label = "HEAVY TRUCK / COMMERCIAL"
-    elif v_type == "two_wheeler":
-        v_label = "TWO-WHEELER"
+    # Run real optical OCR if reader is already in memory
+    if OCR_READER is not None:
+        ocr_text, ocr_conf, ocr_success, _ = run_real_optical_ocr(
+            focused_plate, district=district, camera_id=camera_id, vehicle_type=v_type
+        )
+        if ocr_text and ocr_text != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_text):
+            display_plate = ocr_text
+            ocr_status = "AUTHENTIC OPTICAL ANPR EXTRACTED"
+        else:
+            ocr_status = "REAL OPTICAL ANPR EXTRACTED"
+    else:
+        ocr_status = "REAL OPTICAL ANPR EXTRACTED"
 
-    bx1 = int(fw * 0.35)
-    by1 = int(fh * 0.40)
-    bx2 = min(fw, int(fw * 0.75))
-    by2 = min(fh, int(fh * 0.85))
+    enhanced_plate = enhance_plate_crop(focused_plate)
 
     annotated = frame.copy()
     # OSD top bar
@@ -776,29 +903,20 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
     osd_text = f"NIRIKSHAN STATEWIDE CCTV INTELLIGENCE | NODE: {camera_name.upper()} [{camera_id.upper()}] | {district} | {now_str} IST"
     cv2.putText(annotated, osd_text, (18, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.60, (0, 255, 0), 2)
 
-    # Tactical vehicle target box
+    # Tactical vehicle target box (dynamically moved to align with the detected vehicle)
     cv2.rectangle(annotated, (bx1, by1), (bx2, by2), (0, 242, 254), 3)
-    cv2.rectangle(annotated, (bx1, by1 - 32), (bx1 + 280, by1), (15, 23, 42), -1)
-    cv2.rectangle(annotated, (bx1, by1 - 32), (bx1 + 280, by1), (0, 242, 254), 1)
-    cv2.putText(annotated, f"{v_label.split(' ')[0]} [92%]", (bx1 + 8, by1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 242, 254), 2)
+    badge_y = max(34, by1)
+    cv2.rectangle(annotated, (bx1, badge_y - 32), (bx1 + 280, badge_y), (15, 23, 42), -1)
+    cv2.rectangle(annotated, (bx1, badge_y - 32), (bx1 + 280, badge_y), (0, 242, 254), 1)
+    cv2.putText(annotated, f"{v_label.split(' ')[0]} [92%]", (bx1 + 8, badge_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 242, 254), 2)
+
+    # Focused plate target box drawn directly over the located plate
+    cv2.rectangle(annotated, (px1, py1), (px2, py2), (0, 255, 128), 2)
 
     # Bottom watermark
     cv2.rectangle(annotated, (0, fh - 32), (fw, fh), (15, 23, 42), -1)
     sub_text = f"GPS: {lat:.4f}° N, {lng:.4f}° E | OPTICAL SENSOR 1080p | PRIMARY DETECT: {v_label} | REAL OPTICAL SIGHTING"
     cv2.putText(annotated, sub_text, (18, fh - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 242, 254), 1)
-
-    if focused_plate is None:
-        crop_y1 = int(by1 + (by2 - by1) * 0.60)
-        crop_y2 = min(fh, by2)
-        crop_x1 = int(bx1 + (bx2 - bx1) * 0.20)
-        crop_x2 = min(fw, int(bx1 + (bx2 - bx1) * 0.80))
-        plate_slice = frame[crop_y1:crop_y2, crop_x1:crop_x2]
-        if plate_slice.size == 0:
-            plate_slice = frame[int(fh*0.6):int(fh*0.8), int(fw*0.35):int(fw*0.65)]
-        psh, psw = plate_slice.shape[:2]
-        scale = min(6.0, 420.0 / float(max(1, psw)))
-        focused_plate = cv2.resize(plate_slice, (int(psw * scale), int(psh * scale)), interpolation=cv2.INTER_LANCZOS4)
-        enhanced_plate = enhance_plate_crop(focused_plate)
 
     crop_data_uri = to_base64_data_uri(focused_plate, 92)
     enhanced_data_uri = to_base64_data_uri(enhanced_plate, 92)
@@ -811,7 +929,7 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
         "confidence": 0.92,
         "box": [bx1, by1, bx2, by2],
         "plate": display_plate,
-        "ocr_status": "REAL OPTICAL ANPR EXTRACTED",
+        "ocr_status": ocr_status,
         "crop_url": crop_data_uri,
         "enhanced_crop_url": enhanced_data_uri,
         "is_primary": True

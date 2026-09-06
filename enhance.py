@@ -206,15 +206,13 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
     """
     Isolates the exact License Plate region from the vehicle bounding crop.
     Strictly focuses on the rectangular license plate mounted on the bumper or tailgate.
-    Firmly rejects vehicle body markings, branding, sun visors, grills, and cabin text.
+    Firmly rejects vehicle body markings, branding, sun visors, grills, and road clutter.
+    Dynamically centers and moves the crop frame according to the detected plate position.
     """
     if veh_crop is None or veh_crop.size == 0:
         return veh_crop
 
     vh, vw = veh_crop.shape[:2]
-    if vh < 25 or vw < 25:
-        return veh_crop
-
     v_lower = (vehicle_type or "").lower()
     is_truck_bus = any(k in v_lower for k in ["truck", "bus", "commercial", "heavy", "lorry"])
     is_two_wheeler = any(k in v_lower for k in ["two_wheeler", "motorcycle", "scooter", "bike"])
@@ -222,26 +220,26 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
 
     # License plate mounting zones strictly on the lower bumper or license plate recess
     if is_truck_bus:
-        y1_search = int(vh * 0.45)
-        y2_search = min(vh, int(vh * 0.95))
-        x1_search = int(vw * 0.15)
-        x2_search = int(vw * 0.85)
+        y1_search = int(vh * 0.40)
+        y2_search = min(vh, int(vh * 0.96))
+        x1_search = int(vw * 0.12)
+        x2_search = int(vw * 0.88)
     elif is_two_wheeler:
+        y1_search = int(vh * 0.40)
+        y2_search = min(vh, int(vh * 0.90))
+        x1_search = int(vw * 0.12)
+        x2_search = int(vw * 0.88)
+    elif is_auto:
         y1_search = int(vh * 0.45)
-        y2_search = min(vh, int(vh * 0.88))
+        y2_search = min(vh, int(vh * 0.90))
         x1_search = int(vw * 0.15)
         x2_search = int(vw * 0.85)
-    elif is_auto:
-        y1_search = int(vh * 0.50)
-        y2_search = min(vh, int(vh * 0.88))
-        x1_search = int(vw * 0.20)
-        x2_search = int(vw * 0.80)
     else:
         # Standard cars / passenger four-wheelers
-        y1_search = int(vh * 0.50)
-        y2_search = min(vh, int(vh * 0.96))
-        x1_search = int(vw * 0.18)
-        x2_search = int(vw * 0.82)
+        y1_search = int(vh * 0.40)
+        y2_search = min(vh, int(vh * 0.98))
+        x1_search = int(vw * 0.12)
+        x2_search = int(vw * 0.88)
 
     search_roi = veh_crop[y1_search:y2_search, x1_search:x2_search]
     if search_roi.size == 0:
@@ -249,97 +247,77 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         x1_search, y1_search = 0, 0
 
     rh, rw = search_roi.shape[:2]
-
-    # 1. Commercial Vehicle Color Saliency (Yellow Plate)
     hsv = cv2.cvtColor(search_roi, cv2.COLOR_BGR2HSV)
-    lower_yellow = np.array([12, 50, 50])
-    upper_yellow = np.array([65, 255, 255])
-    yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    cnts_y, _ = cv2.findContours(yellow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    best_yellow_box = None
-    best_y_score = 0
-
-    for c in cnts_y:
-        cx, cy, cw, ch = cv2.boundingRect(c)
-        aspect = cw / float(max(1, ch))
-        area = cw * ch
-        if 1.1 <= aspect <= 4.0 and cw >= max(15, int(rw * 0.08)) and ch >= max(8, int(rh * 0.06)):
-            aspect_fit = 1.0 - min(1.0, abs(aspect - 2.0) / 3.0)
-            score = area * aspect_fit
-            if score > best_y_score:
-                best_y_score = score
-                best_yellow_box = (cx, cy, cw, ch)
-
-    if best_yellow_box is not None:
-        bx, by, bw, bh = best_yellow_box
-        pad_x = int(bw * 0.10)
-        pad_y = int(bh * 0.12)
-        px1 = max(0, x1_search + bx - pad_x)
-        py1 = max(0, y1_search + by - pad_y)
-        px2 = min(vw, x1_search + bx + bw + pad_x)
-        py2 = min(vh, y1_search + by + bh + pad_y)
-        plate_crop = veh_crop[py1:py2, px1:px2]
-        if plate_crop.shape[0] >= 8 and plate_crop.shape[1] >= 16:
-            return plate_crop
-
-    # 2. White Plate Detection (for cars and private two-wheelers)
-    white_mask = cv2.inRange(hsv, np.array([0, 0, 160]), np.array([180, 60, 255]))
-    cnts_w, _ = cv2.findContours(white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    best_white_box = None
-    best_w_score = 0
-
-    for c in cnts_w:
-        cx, cy, cw, ch = cv2.boundingRect(c)
-        aspect = cw / float(max(1, ch))
-        area = cw * ch
-        if 1.3 <= aspect <= 4.5 and cw >= max(16, int(rw * 0.12)) and ch >= max(8, int(rh * 0.08)):
-            y_score = (cy / float(max(1, rh))) * 2.0
-            score = area * y_score
-            if score > best_w_score:
-                best_w_score = score
-                best_white_box = (cx, cy, cw, ch)
-
-    if best_white_box is not None:
-        bx, by, bw, bh = best_white_box
-        pad_x = int(bw * 0.10)
-        pad_y = int(bh * 0.12)
-        px1 = max(0, x1_search + bx - pad_x)
-        py1 = max(0, y1_search + by - pad_y)
-        px2 = min(vw, x1_search + bx + bw + pad_x)
-        py2 = min(vh, y1_search + by + bh + pad_y)
-        plate_crop = veh_crop[py1:py2, px1:px2]
-        if plate_crop.shape[0] >= 8 and plate_crop.shape[1] >= 16:
-            return plate_crop
-
-    # 3. Edge-based white/standard plate analysis
     gray = cv2.cvtColor(search_roi, cv2.COLOR_BGR2GRAY)
-    sobelx = cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3)
-    abs_sobelx = cv2.convertScaleAbs(sobelx)
-    blur = cv2.GaussianBlur(abs_sobelx, (5, 5), 0)
-    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 3))
-    morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-    contours, _ = cv2.findContours(morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    best_white_box = None
-    best_w_score = 0
 
-    for c in contours:
+    # Multi-spectral masks: White (private), Yellow (commercial), Green (EV)
+    white_mask = cv2.inRange(hsv, np.array([0, 0, 150]), np.array([180, 65, 255]))
+    yellow_mask = cv2.inRange(hsv, np.array([10, 45, 60]), np.array([38, 255, 255]))
+    green_mask = cv2.inRange(hsv, np.array([35, 35, 30]), np.array([88, 255, 255]))
+
+    combined_mask = cv2.bitwise_or(white_mask, cv2.bitwise_or(yellow_mask, green_mask))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 3))
+    morph = cv2.morphologyEx(combined_mask, cv2.MORPH_CLOSE, kernel)
+
+    cnts, _ = cv2.findContours(morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    candidates = []
+
+    for c in cnts:
         cx, cy, cw, ch = cv2.boundingRect(c)
         aspect = cw / float(max(1, ch))
         area = cw * ch
-        if 1.5 <= aspect <= 5.5 and (rw * 0.12 <= cw <= rw * 0.75) and (ch >= max(8, int(rh * 0.08)) and ch <= rh * 0.45):
+        if 1.6 <= aspect <= 5.8 and 24 <= cw <= max(60, int(rw * 0.85)) and 8 <= ch <= max(20, int(rh * 0.50)):
+            patch_g = gray[cy:cy+ch, cx:cx+cw]
+            if patch_g.size > 0:
+                core = patch_g[int(ch*0.15):int(ch*0.85), int(cw*0.08):int(cw*0.92)]
+                if core.size > 0:
+                    sobelx = np.abs(cv2.Sobel(core, cv2.CV_32F, 1, 0, ksize=3))
+                    sobel_m = float(np.mean(sobelx))
+                    if sobel_m >= 55.0:
+                        aspect_fit = 1.0 - min(1.0, abs(aspect - 3.2) / 3.0)
+                        score = area * (sobel_m / 35.0) * (1.0 + aspect_fit * 1.5)
+                        candidates.append((score, cx, cy, cw, ch))
+
+    if candidates:
+        candidates.sort(key=lambda item: item[0], reverse=True)
+        _, bx, by, bw, bh = candidates[0]
+        pad_x = max(8, int(bw * 0.20))
+        pad_y = max(6, int(bh * 0.35))
+        px1 = max(0, x1_search + bx - pad_x)
+        py1 = max(0, y1_search + by - pad_y)
+        px2 = min(vw, x1_search + bx + bw + pad_x)
+        py2 = min(vh, y1_search + by + bh + pad_y)
+        plate_crop = veh_crop[py1:py2, px1:px2]
+        if plate_crop.shape[0] >= 8 and plate_crop.shape[1] >= 16:
+            return plate_crop
+
+    # Edge-based Sobel fallback
+    sobel_full = np.abs(cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3))
+    sobel_abs = cv2.convertScaleAbs(sobel_full)
+    blur = cv2.GaussianBlur(sobel_abs, (5, 5), 0)
+    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    kernel_e = cv2.getStructuringElement(cv2.MORPH_RECT, (17, 3))
+    morph_e = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel_e)
+    contours_e, _ = cv2.findContours(morph_e, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    best_edge_box = None
+    best_e_score = 0
+    for c in contours_e:
+        cx, cy, cw, ch = cv2.boundingRect(c)
+        aspect = cw / float(max(1, ch))
+        area = cw * ch
+        if 1.5 <= aspect <= 5.5 and (rw * 0.10 <= cw <= rw * 0.80) and (ch >= max(8, int(rh * 0.08)) and ch <= rh * 0.50):
             center_x = cx + cw / 2.0
             dist_from_center = abs(center_x - rw / 2.0) / (rw / 2.0)
-            pos_bonus = max(0.2, 1.0 - dist_from_center * 0.5)
-            score = area * pos_bonus
-            if score > best_w_score:
-                best_w_score = score
-                best_white_box = (cx, cy, cw, ch)
+            score = area * max(0.2, 1.0 - dist_from_center * 0.5)
+            if score > best_e_score:
+                best_e_score = score
+                best_edge_box = (cx, cy, cw, ch)
 
-    if best_white_box is not None:
-        bx, by, bw, bh = best_white_box
-        pad_x = int(bw * 0.10)
-        pad_y = int(bh * 0.12)
+    if best_edge_box is not None:
+        bx, by, bw, bh = best_edge_box
+        pad_x = max(8, int(bw * 0.18))
+        pad_y = max(6, int(bh * 0.30))
         px1 = max(0, x1_search + bx - pad_x)
         py1 = max(0, y1_search + by - pad_y)
         px2 = min(vw, x1_search + bx + bw + pad_x)
@@ -348,25 +326,24 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         if plate_crop.shape[0] >= 8 and plate_crop.shape[1] >= 16:
             return plate_crop
 
-    # 3. Geometric fallback strictly centered on bumper plate mount
+    # Geometric centered bumper fallback
     if is_truck_bus:
-        cy1 = max(0, int(vh * 0.78))
+        cy1 = max(0, int(vh * 0.68))
         cy2 = min(vh, int(vh * 0.94))
-        cx1 = max(0, int(vw * 0.35))
-        cx2 = min(vw, int(vw * 0.65))
+        cx1 = max(0, int(vw * 0.25))
+        cx2 = min(vw, int(vw * 0.75))
     elif is_two_wheeler:
-        cy1 = max(0, int(vh * 0.68))
-        cy2 = min(vh, int(vh * 0.88))
-        cx1 = max(0, int(vw * 0.30))
-        cx2 = min(vw, int(vw * 0.70))
+        cy1 = max(0, int(vh * 0.60))
+        cy2 = min(vh, int(vh * 0.90))
+        cx1 = max(0, int(vw * 0.25))
+        cx2 = min(vw, int(vw * 0.75))
     else:
-        cy1 = max(0, int(vh * 0.68))
-        cy2 = min(vh, int(vh * 0.88))
-        cx1 = max(0, int(vw * 0.30))
-        cx2 = min(vw, int(vw * 0.70))
+        cy1 = max(0, int(vh * 0.62))
+        cy2 = min(vh, int(vh * 0.94))
+        cx1 = max(0, int(vw * 0.22))
+        cx2 = min(vw, int(vw * 0.78))
 
     return veh_crop[cy1:cy2, cx1:cx2]
-
 
 
 def check_plate_fully_visible_and_clear(veh_crop: np.ndarray, bbox: tuple, frame_shape: tuple, vehicle_type: str = "car") -> tuple:
