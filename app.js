@@ -5816,7 +5816,7 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
   modal.classList.add('open');
 
   const targetCamId = camId || (detectionId ? (window.apiClient.detections?.find(d => d.detectionId === detectionId)?.cameraId || 'cam01') : 'cam01');
-  let res = await window.apiClient.getEvidentiarySnapshot(null, targetCamId, true);
+  let res = await window.apiClient.getEvidentiarySnapshot(detectionId, targetCamId, true);
   if (evLoadingSpinner) evLoadingSpinner.style.display = 'none';
 
   if (!res || res.status !== 'success') {

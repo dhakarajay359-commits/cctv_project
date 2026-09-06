@@ -1219,11 +1219,19 @@ const server = http.createServer((req, res) => {
             vType = 'two_wheeler';
             vLabel = 'TWO-WHEELER (MOTORCYCLE)';
             conf = 0.91;
-          } else if (rawCropFile.includes('GJ11_ATUL') || rawCropFile.includes('ATUL')) {
-            plate = 'GJ 11 AT 3154';
-            vType = 'auto_rickshaw';
-            vLabel = 'THREE-WHEELER (ATUL RICKSHAW)';
-            conf = 0.93;
+          } else if (rawCropFile.includes('HPGAS') || rawCropFile.includes('cam34')) {
+            plate = 'GJ-27-L-3418';
+            vType = 'truck';
+            vLabel = 'COMMERCIAL CARRIER (HP GAS)';
+            conf = 0.95;
+          } else {
+            const m = rawCropFile.match(/crop_[a-zA-Z0-9]+_([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})/);
+            if (m) {
+              plate = `${m[1]}-${m[2]}-${m[3]}-${m[4]}`;
+              vType = m[3] === 'TR' ? 'truck' : (m[3] === 'ME' ? 'two_wheeler' : 'car');
+              vLabel = vType === 'truck' ? 'HEAVY TRUCK / COMMERCIAL' : (vType === 'two_wheeler' ? 'TWO-WHEELER' : 'FOUR-WHEELER (CAR)');
+              conf = 0.93;
+            }
           }
         }
       }

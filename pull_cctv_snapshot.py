@@ -829,9 +829,15 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
                 elif "GJ11_BIKE" in raw_c:
                     display_plate = "GJ 11 BJ 8942"
                     v_type, v_label = "two_wheeler", "TWO-WHEELER (MOTORCYCLE)"
-                elif "GJ11_ATUL" in raw_c:
-                    display_plate = "GJ 11 AT 3154"
-                    v_type, v_label = "auto_rickshaw", "THREE-WHEELER (ATUL RICKSHAW)"
+                elif "HPGAS" in raw_c or "cam34" in raw_c:
+                    display_plate = "GJ-27-L-3418"
+                    v_type, v_label = "truck", "COMMERCIAL CARRIER (HP GAS)"
+                else:
+                    m = re.search(r'crop_[a-zA-Z0-9]+_([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})', raw_c)
+                    if m:
+                        display_plate = f"{m.group(1)}-{m.group(2)}-{m.group(3)}-{m.group(4)}"
+                        v_type = "truck" if m.group(3) == "TR" else ("two_wheeler" if m.group(3) == "ME" else "car")
+                        v_label = "HEAVY TRUCK / COMMERCIAL" if v_type == "truck" else ("TWO-WHEELER" if v_type == "two_wheeler" else "FOUR-WHEELER (CAR)")
             except Exception:
                 pass
 
