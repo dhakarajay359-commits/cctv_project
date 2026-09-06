@@ -534,6 +534,72 @@ def run_vision_engine():
                     }
                     post_detection(payload)
 
+                    if not primary_full_url:
+                        import base64
+                        annotated_frame = frame.copy()
+                        cv2.rectangle(annotated_frame, (0, 0), (fw, 46), (15, 23, 42), -1)
+                        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        c_name = cam.get('name', cam_id)
+                        c_dist = cam.get('district', 'Gujarat')
+                        osd_text = f"NIRIKSHAN STATEWIDE CCTV INTELLIGENCE | NODE: {c_name.upper()} [{cam_id.upper()}] | {c_dist} | {now_str} IST"
+                        cv2.putText(annotated_frame, osd_text, (18, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.60, (0, 255, 0), 2)
+                        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 242, 254), 3)
+                        cv2.rectangle(annotated_frame, (0, fh - 32), (fw, fh), (15, 23, 42), -1)
+                        lat_val = float(cam.get('lat', 23.0))
+                        lng_val = float(cam.get('lng', 72.5))
+                        sub_text = f"GPS: {lat_val:.4f}° N, {lng_val:.4f}° E | OPTICAL SENSOR 1080p | PRIMARY DETECT: {display_label} | REAL OPTICAL SIGHTING"
+                        cv2.putText(annotated_frame, sub_text, (18, fh - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 242, 254), 1)
+
+                        def b64_img(im, q=88):
+                            if im is None or im.size == 0: return ""
+                            s, b = cv2.imencode('.jpg', im, [cv2.IMWRITE_JPEG_QUALITY, q])
+                            return ("data:image/jpeg;base64," + base64.b64encode(b).decode('utf-8')) if s else ""
+
+                        primary_full_url = b64_img(annotated_frame, 85)
+                        ph, pw = plate_crop.shape[:2]
+                        scale = min(6.0, 380.0 / float(max(1, pw)))
+                        focused_plate = cv2.resize(plate_crop, (int(pw * scale), int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
+                        primary_crop_url = b64_img(focused_plate, 92)
+                        primary_enh_url = b64_img(enhanced_plate, 92)
+
+                        live_snapshot = {
+                            "status": "success",
+                            "camera_id": cam_id,
+                            "camera_name": c_name,
+                            "district": c_dist,
+                            "lat": lat_val,
+                            "lng": lng_val,
+                            "timestamp": datetime.now().isoformat(),
+                            "full_frame_url": primary_full_url,
+                            "raw_full_url": b64_img(frame, 85),
+                            "crop_url": primary_crop_url,
+                            "enhanced_crop_url": primary_enh_url or primary_crop_url,
+                            "plate": assigned_vehicle_id,
+                            "vehicle_type": cls_name,
+                            "vehicle_label": display_label,
+                            "confidence": round(conf, 3),
+                            "vehicles_count": detected_count,
+                            "vehicles": [{
+                                "index": 1,
+                                "vehicle_type": cls_name,
+                                "label": display_label,
+                                "confidence": round(conf, 3),
+                                "box": [x1, y1, x2, y2],
+                                "plate": assigned_vehicle_id,
+                                "ocr_status": "REAL OPTICAL ANPR EXTRACTED",
+                                "crop_url": primary_crop_url,
+                                "enhanced_crop_url": primary_enh_url or primary_crop_url,
+                                "is_primary": True
+                            }],
+                            "enhancement_pipeline": "Instant Real-Time In-Memory Optical Telemetry"
+                        }
+                        try:
+                            snap_file = os.path.join(BASE_DIR, "cache", f"snapshot_{cam_id}.json")
+                            with open(snap_file, "w", encoding="utf-8") as sf:
+                                json.dump(live_snapshot, sf)
+                        except Exception:
+                            pass
+
                 # Brief inter-camera breather
 
                 # Brief inter-camera breather
