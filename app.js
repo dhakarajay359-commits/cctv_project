@@ -5910,7 +5910,22 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
     }
   }
 
-  if (evPlateText) evPlateText.textContent = activePlate;
+  function stylePlateDisplay(plateStr) {
+    if (!evPlateText) return;
+    evPlateText.textContent = plateStr || 'NO VEHICLE DETECTED';
+    if (!plateStr || plateStr === 'NO VEHICLE DETECTED') {
+      evPlateText.style.color = '#94a3b8';
+      evPlateText.style.letterSpacing = '0.5px';
+    } else if (plateStr === 'OCR UNRESOLVED') {
+      evPlateText.style.color = '#fbbf24';
+      evPlateText.style.letterSpacing = '0.5px';
+    } else {
+      evPlateText.style.color = 'var(--accent-cyan)';
+      evPlateText.style.letterSpacing = '1px';
+    }
+  }
+
+  stylePlateDisplay(activePlate);
   if (evCameraName) evCameraName.textContent = `${res.camera_name} (${(res.camera_id || '').toUpperCase()})`;
   if (evRegionText) evRegionText.textContent = res.region || res.district || 'Gujarat';
   if (evTimestampText) {
@@ -5928,8 +5943,18 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
       evStatusBadge.style.color = '#ef4444';
       evStatusBadge.style.borderColor = '#ef4444';
       evStatusBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+    } else if (activePlate === 'NO VEHICLE DETECTED') {
+      evStatusBadge.textContent = 'MONITORING ACTIVE TRAFFIC';
+      evStatusBadge.style.color = '#94a3b8';
+      evStatusBadge.style.borderColor = '#64748b';
+      evStatusBadge.style.background = 'rgba(100, 116, 139, 0.2)';
+    } else if (activePlate === 'OCR UNRESOLVED') {
+      evStatusBadge.textContent = 'OPTICAL PLATE DETECTED';
+      evStatusBadge.style.color = '#fbbf24';
+      evStatusBadge.style.borderColor = '#f59e0b';
+      evStatusBadge.style.background = 'rgba(245, 158, 11, 0.2)';
     } else {
-      evStatusBadge.textContent = '✓ REAL OPTICAL SIGHTING';
+      evStatusBadge.textContent = '✓ AUTHENTIC OPTICAL ANPR';
       evStatusBadge.style.color = '#10b981';
       evStatusBadge.style.borderColor = '#10b981';
       evStatusBadge.style.background = 'rgba(16, 185, 129, 0.2)';

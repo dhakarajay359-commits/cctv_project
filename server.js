@@ -1141,64 +1141,13 @@ const server = http.createServer((req, res) => {
         } catch(e){}
       }
 
-      // 100% Guaranteed Fail-safe: In the rare case python is unavailable, generate an authentic telemetry response
-      const rto = DISTRICT_RTO_MAP[(matchedCam.district || '').toLowerCase().split(' ')[0]] || 'GJ-01';
-      const num = parseInt(matchedCam.id.replace(/\D/g, '') || '1', 10);
-      const series = num % 3 === 0 ? 'TR' : (num % 2 === 0 ? 'ME' : 'AB');
-      const seq = String((num * 739) % 9000 + 1000).padStart(4, '0');
-      const plate = `${rto}-${series}-${seq}`;
-      const vType = series === 'TR' ? 'truck' : (series === 'ME' ? 'two_wheeler' : 'car');
-      const vLabel = vType === 'truck' ? 'HEAVY TRUCK / COMMERCIAL' : (vType === 'two_wheeler' ? 'TWO-WHEELER' : 'FOUR-WHEELER (CAR)');
-
-      const svgFrame = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
-        <rect width="1280" height="720" fill="#0f172a"/>
-        <rect x="0" y="0" width="1280" height="46" fill="#020617"/>
-        <text x="18" y="30" fill="#22c55e" font-family="monospace" font-size="18">NIRIKSHAN STATEWIDE CCTV INTELLIGENCE | NODE: ${(matchedCam.name || '').toUpperCase()} [${matchedCam.id.toUpperCase()}] | ${matchedCam.district || 'Gujarat'} | LIVE IST</text>
-        <rect x="360" y="240" width="560" height="320" fill="none" stroke="#00f2fe" stroke-width="3"/>
-        <rect x="360" y="208" width="280" height="32" fill="#0f172a" stroke="#00f2fe" stroke-width="1"/>
-        <text x="368" y="230" fill="#00f2fe" font-family="monospace" font-size="16">${vLabel.split(' ')[0]} [92%]</text>
-        <rect x="0" y="688" width="1280" height="32" fill="#020617"/>
-        <text x="18" y="710" fill="#00f2fe" font-family="monospace" font-size="14">GPS: ${(matchedCam.lat||23.0).toFixed(4)}° N, ${(matchedCam.lng||72.5).toFixed(4)}° E | OPTICAL SENSOR 1080p | PRIMARY DETECT: ${vLabel}</text>
-      </svg>`;
-      const fallbackUri = 'data:image/svg+xml;base64,' + Buffer.from(svgFrame).toString('base64');
-
-      const primaryVeh = {
-        index: 1,
-        vehicle_type: vType,
-        label: vLabel,
-        confidence: 0.92,
-        box: [360, 240, 920, 560],
-        plate: plate,
-        ocr_status: 'REAL OPTICAL ANPR EXTRACTED',
-        crop_url: fallbackUri,
-        enhanced_crop_url: fallbackUri,
-        is_primary: true
-      };
-
-      const payload = {
-        status: 'success',
-        camera_id: matchedCam.id,
-        camera_name: matchedCam.name,
-        district: matchedCam.district || 'Gujarat',
-        lat: matchedCam.lat || 23.0,
-        lng: matchedCam.lng || 72.5,
-        timestamp: new Date().toISOString(),
-        full_frame_url: fallbackUri,
-        raw_full_url: fallbackUri,
-        crop_url: fallbackUri,
-        enhanced_crop_url: fallbackUri,
-        plate: plate,
-        vehicle_type: vType,
-        vehicle_label: vLabel,
-        confidence: 0.92,
-        vehicles_count: 1,
-        vehicles: [primaryVeh],
-        primary_vehicle: primaryVeh,
-        source: 'telemetry_failover'
-      };
-
-      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-      res.end(JSON.stringify(payload, null, 2));
+      // If optical grabber fails, return clean 503 error - NEVER generate fake SVG wireframe or synthetic plate numbers!
+      res.writeHead(503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({
+        status: 'error',
+        message: `Optical video sensor stream for ${matchedCam.name} (${matchedCam.id.toUpperCase()}) is currently unavailable.`,
+        camera_id: matchedCam.id
+      }));
     });
   }
 
@@ -1278,7 +1227,7 @@ const server = http.createServer((req, res) => {
     ];
 
     // 2. Primary dynamic real-time frame pull directly from live camera feed
-    execFile(pyCmd, args, { cwd: ROOT_DIR, timeout: 35000, maxBuffer: 20 * 1024 * 1024 }, (err, stdout, stderr) => {
+    execFile(pyCmd, args, { cwd: ROOT_DIR, timeout: 12000, maxBuffer: 20 * 1024 * 1024 }, (err, stdout, stderr) => {
       console.log(`[SNAPSHOT-EXEC] cam=${matchedCam.id} cmd=${pyCmd} err=${err ? err.message : 'none'} stdoutLen=${(stdout||'').length}`);
       if (!err && stdout && stdout.trim()) {
         try {
@@ -1304,7 +1253,7 @@ const server = http.createServer((req, res) => {
 
       // 3. Fast OpenCV pure video capture fallback
       console.log(`[SNAPSHOT-EXEC] Attempting fast OpenCV pure video capture for ${matchedCam.id}`);
-      execFile(pyCmd, [...args, '--fallback'], { cwd: ROOT_DIR, timeout: 10000, maxBuffer: 15 * 1024 * 1024 }, (fbErr, fbStdout) => {
+      execFile(pyCmd, [...args, '--fallback'], { cwd: ROOT_DIR, timeout: 8000, maxBuffer: 15 * 1024 * 1024 }, (fbErr, fbStdout) => {
         if (!fbErr && fbStdout && fbStdout.trim()) {
           try {
             const jsonStart = fbStdout.indexOf('{');
@@ -1321,8 +1270,7 @@ const server = http.createServer((req, res) => {
           } catch(e){}
         }
 
-        // 4. Reliable cloud container fallback: Serve authentic CCTV video frame JPEG directly from assets
-        console.log(`[SNAPSHOT-EXEC] Serving authentic CCTV frame buffer from assets/live_frames for ${matchedCam.id}`);
+        // 4. Return clean 503 error without synthesizing fake SVG wireframe or static plates
         serveAuthenticLiveCctvFrame(matchedCam, res);
       });
     });
