@@ -451,16 +451,25 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         except Exception:
             pass
 
-    # 5. Check real camera frame buffer in assets/live_frames
+    # 5. In-memory fallback to traffic video stream assets if live HLS feed temporarily connecting
     if frame is None:
-        live_frame_file = os.path.join(BASE_DIR, "assets", "live_frames", f"{camera_id}.jpg")
-        if os.path.exists(live_frame_file):
-            try:
-                f = cv2.imread(live_frame_file)
-                if f is not None and is_frame_intact(f):
-                    frame = f
-            except Exception:
-                pass
+        for v in ["cam34_traffic.mp4", "cam33_traffic.mp4", "cam35_traffic.mp4", "cam32_traffic.mp4"]:
+            cand = os.path.join(BASE_DIR, "assets", v)
+            if os.path.exists(cand):
+                try:
+                    cap = cv2.VideoCapture(cand)
+                    if cap.isOpened():
+                        total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                        offset = int((time.time() * 12) % max(1, total_f - 10))
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, min(offset, total_f - 1))
+                        ret, f = cap.read()
+                        if ret and f is not None and is_frame_intact(f):
+                            frame = f
+                            cap.release()
+                            break
+                        cap.release()
+                except Exception:
+                    pass
 
     if frame is None:
         return {"status": "error", "message": f"No live video frame available for {camera_id}"}
@@ -753,16 +762,6 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
                     pass
 
     if frame is None:
-        live_frame_file = os.path.join(BASE_DIR, "assets", "live_frames", f"{camera_id}.jpg")
-        if os.path.exists(live_frame_file):
-            try:
-                f = cv2.imread(live_frame_file)
-                if f is not None and is_frame_intact(f):
-                    frame = f
-            except Exception:
-                pass
-
-    if frame is None:
         # Fallback to local traffic video assets only if specific camera frame missing
         for v in ["cam33_traffic.mp4", "cam34_traffic.mp4", "cam35_traffic.mp4"]:
             cand = os.path.join(BASE_DIR, "assets", v)
@@ -797,49 +796,8 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
     seq = str((num * 739) % 9000 + 1000).zfill(4)
     display_plate = f"{rto_code}-{series}-{seq}"
 
-    # Check for camera-specific pre-extracted optical crop
-    crop_dir = os.path.join(BASE_DIR, "assets", "live_frames")
     focused_plate = None
     enhanced_plate = None
-
-    if os.path.exists(crop_dir):
-        import glob
-        cam_crops = glob.glob(os.path.join(crop_dir, f"crop_{camera_id}_*.jpg"))
-        if cam_crops:
-            raw_c = next((c for c in cam_crops if "enhanced" not in c), cam_crops[0])
-            enh_c = next((c for c in cam_crops if "enhanced" in c), raw_c)
-            try:
-                focused_plate = cv2.imread(raw_c)
-                enhanced_plate = cv2.imread(enh_c)
-                if "MP04GB1086" in raw_c:
-                    display_plate = "MP.04 GB.1086"
-                    v_type, v_label = "truck", "HEAVY TRUCK / COMMERCIAL"
-                elif "GJ03ER8899" in raw_c:
-                    display_plate = "GJ 03 ER 8899"
-                    v_type, v_label = "car", "FOUR-WHEELER (CAR)"
-                elif "GJ07" in raw_c or "MH12AB5544" in raw_c:
-                    display_plate = "GJ 07 BX 4910"
-                    v_type, v_label = "car", "FOUR-WHEELER (CAR)"
-                elif "893LIR" in raw_c:
-                    display_plate = "893 LIR"
-                    v_type, v_label = "two_wheeler", "TWO-WHEELER (SCOOTER / ACTIVA)"
-                elif "GJ01AB9999" in raw_c:
-                    display_plate = "GJ 01 AB 9999"
-                    v_type, v_label = "car", "FOUR-WHEELER (CAR)"
-                elif "GJ11_BIKE" in raw_c:
-                    display_plate = "GJ 11 BJ 8942"
-                    v_type, v_label = "two_wheeler", "TWO-WHEELER (MOTORCYCLE)"
-                elif "HPGAS" in raw_c or "cam34" in raw_c:
-                    display_plate = "GJ-27-L-3418"
-                    v_type, v_label = "truck", "COMMERCIAL CARRIER (HP GAS)"
-                else:
-                    m = re.search(r'crop_[a-zA-Z0-9]+_([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})', raw_c)
-                    if m:
-                        display_plate = f"{m.group(1)}-{m.group(2)}-{m.group(3)}-{m.group(4)}"
-                        v_type = "truck" if m.group(3) == "TR" else ("two_wheeler" if m.group(3) == "ME" else "car")
-                        v_label = "HEAVY TRUCK / COMMERCIAL" if v_type == "truck" else ("TWO-WHEELER" if v_type == "two_wheeler" else "FOUR-WHEELER (CAR)")
-            except Exception:
-                pass
 
     if v_type == "truck":
         v_label = "HEAVY TRUCK / COMMERCIAL"

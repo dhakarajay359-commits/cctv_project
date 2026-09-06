@@ -1438,6 +1438,19 @@ class NirikshanApiClient {
     }
   }
 
+  async clearSnapshot(camId, detectionId = null) {
+    try {
+      const res = await fetch('/api/cctv/clear-snapshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ camera_id: camId, detection_id: detectionId })
+      });
+      return await res.json();
+    } catch(e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
   async ingestDetection(payload) {
     try {
       const res = await fetch('/api/detections', {

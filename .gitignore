@@ -119,7 +119,7 @@ evidentiary_audits/
 !assets/*.jpg
 !assets/*.jpeg
 !assets/*.svg
-!assets/live_frames/*.jpg
+assets/live_frames/
 scratch/
 cache/*
 !cache/segments/

@@ -6279,6 +6279,8 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
   // Back & Close handlers
   const btnEvHeaderBack = document.getElementById('btnEvHeaderBack');
   const evBtnBackAction = document.getElementById('evBtnBackAction');
+  const evBtnClearSnapshot = document.getElementById('evBtnClearSnapshot');
+  const evBtnClearSnapshotFoot = document.getElementById('evBtnClearSnapshotFoot');
 
   const closeModal = () => {
     // Instant automatic deletion of transient snapshot files - never retained on disk
@@ -6286,10 +6288,36 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
       window.apiClient.deleteSnapshotFiles(transientSnapshotUrls).catch(() => {});
       transientSnapshotUrls.length = 0;
     }
+    // Release in-memory image sources so RAM is freed immediately
+    if (evFullFrameImg) evFullFrameImg.src = '';
+    if (evCropImg) evCropImg.src = '';
     modal.classList.remove('open');
     modal.style.display = 'none';
   };
 
+  const purgeAndClearSnapshot = async () => {
+    try {
+      if (evPullStatusText) evPullStatusText.textContent = 'Purging snapshot from storage...';
+      await window.apiClient.clearSnapshot(activeCamId, detectionId);
+      if (evFullFrameImg) evFullFrameImg.src = '';
+      if (evCropImg) evCropImg.src = '';
+      transientSnapshotUrls.length = 0;
+      showRealtimeAlertToast({
+        title: '🗑️ SNAPSHOT STORAGE PURGED',
+        location: `${res.camera_name || activeCamId} • Zero storage acquired in database • Cache wiped`,
+        camera_id: activeCamId
+      });
+      closeModal();
+      if (typeof window.refreshLiveDetections === 'function') {
+        window.refreshLiveDetections();
+      }
+    } catch(e) {
+      closeModal();
+    }
+  };
+
+  if (evBtnClearSnapshot) evBtnClearSnapshot.onclick = purgeAndClearSnapshot;
+  if (evBtnClearSnapshotFoot) evBtnClearSnapshotFoot.onclick = purgeAndClearSnapshot;
   if (btnEvHeaderBack) btnEvHeaderBack.onclick = closeModal;
   if (evBtnBackAction) evBtnBackAction.onclick = closeModal;
   if (btnCloseX) btnCloseX.onclick = closeModal;

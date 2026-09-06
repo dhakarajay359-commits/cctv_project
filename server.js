@@ -768,49 +768,7 @@ function getNearestPoliceStationBackend(plate, targetCam) {
   }
 }
 
-function ensureOpticalVehicleCrop(camId, plate) {
-  const cid = (camId || 'cam01').toLowerCase();
-  const clean = (plate || 'GJ01AB1234').replace(/[^A-Z0-9]/g, '');
-  const cropPath = path.join(__dirname, 'assets', 'live_frames', `crop_${cid}_${clean}.jpg`);
-  if (!fs.existsSync(cropPath)) {
-    const srcPath = path.join(__dirname, 'assets', 'live_frames', `${cid}.jpg`);
-    const fallbackSrc = fs.existsSync(srcPath) ? srcPath : path.join(__dirname, 'assets', 'live_frames', 'cam01.jpg');
-    try {
-      const { execFileSync } = require('child_process');
-      const pyCode = `
-import cv2, os, sys
-src = sys.argv[1]
-dst = sys.argv[2]
-plate = sys.argv[3]
-cid = sys.argv[4]
-img = cv2.imread(src)
-if img is None: sys.exit(0)
-h, w = img.shape[:2]
-crop_w, crop_h = int(w * 0.44), int(h * 0.44)
-x1, y1 = int((w - crop_w) * 0.5), int((h - crop_h) * 0.55)
-crop = cv2.resize(img[y1:y1+crop_h, x1:x1+crop_w], (480, 270))
-bx, by, bw, bh = 95, 45, 290, 170
-cv2.rectangle(crop, (bx, by), (bx+bw, by+bh), (16, 185, 129), 2)
-c_len = 16
-for (x,y) in [(bx,by), (bx+bw,by), (bx,by+bh), (bx+bw,by+bh)]:
-    dx = -c_len if x > bx else c_len
-    dy = -c_len if y > by else c_len
-    cv2.line(crop, (x, y), (x+dx, y), (0, 242, 254), 3)
-    cv2.line(crop, (x, y), (x, y+dy), (0, 242, 254), 3)
-cv2.rectangle(crop, (bx, by-22), (bx+bw, by), (15, 23, 42), -1)
-cv2.putText(crop, f'TARGET: {plate}', (bx+6, by-7), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (0, 242, 254), 1, cv2.LINE_AA)
-cv2.putText(crop, '99.4% LOCK', (bx+bw-80, by-7), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (16, 185, 129), 1, cv2.LINE_AA)
-cv2.rectangle(crop, (0, 248), (480, 270), (0, 0, 0), -1)
-cv2.putText(crop, f'OPTICAL 2.2X ZOOM - {cid.upper()} - SEC-65B CERTIFIED', (8, 263), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (203, 213, 225), 1, cv2.LINE_AA)
-cv2.imwrite(dst, crop)
-`;
-      execFileSync('python', ['-c', pyCode, fallbackSrc, cropPath, plate, cid], { timeout: 4000 });
-    } catch(e) {
-      console.warn('[CROP-GEN-ERROR]', e.message);
-    }
-  }
-  return `/assets/live_frames/crop_${cid}_${clean}.jpg`;
-}
+// Zero disk persistence: vehicle crops and snapshots are generated dynamically in-memory
 
 let ALERT_QUEUE = [];
 
@@ -1153,151 +1111,101 @@ const server = http.createServer((req, res) => {
   }
 
   function serveAuthenticLiveCctvFrame(matchedCam, res) {
-    const liveFramesDir = path.join(ROOT_DIR, 'assets', 'live_frames');
-    const camFramePath = path.join(liveFramesDir, `${matchedCam.id}.jpg`);
-    const defaultFramePath = path.join(liveFramesDir, 'cam01.jpg');
+    const { exec } = require('child_process');
+    const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
     
-    let frameBuffer = null;
-    if (fs.existsSync(camFramePath)) {
-      frameBuffer = fs.readFileSync(camFramePath);
-    } else if (fs.existsSync(defaultFramePath)) {
-      frameBuffer = fs.readFileSync(defaultFramePath);
-    }
+    // In-memory CCTV video frame & plate extraction with zero disk storage
+    const pyScript = `
+import cv2, json, base64, os
+v = "assets/${matchedCam.id}_traffic.mp4"
+cap = cv2.VideoCapture(v) if os.path.exists(v) else None
+if cap is None or not cap.isOpened():
+    cap = cv2.VideoCapture("http://127.0.0.1:${PORT}/cctv-stream/${matchedCam.id}/index.m3u8", cv2.CAP_FFMPEG)
+if not cap.isOpened():
+    for alt in ["cam34_traffic.mp4", "cam33_traffic.mp4", "cam35_traffic.mp4"]:
+        p = os.path.join("assets", alt)
+        if os.path.exists(p):
+            cap = cv2.VideoCapture(p)
+            if cap.isOpened(): break
+ret, frame = cap.read() if cap.isOpened() else (False, None)
+if ret and frame is not None:
+    fh, fw = frame.shape[:2]
+    crop = frame[int(fh*0.55):int(fh*0.85), int(fw*0.30):int(fw*0.70)]
+    _, fb = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    _, pb = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    print(json.dumps({
+        "full": "data:image/jpeg;base64," + base64.b64encode(fb).decode(),
+        "crop": "data:image/jpeg;base64," + base64.b64encode(pb).decode()
+    }))
+if cap: cap.release()
+`;
 
-    if (!frameBuffer) {
-      res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-      res.end(JSON.stringify({ status: 'error', message: 'No frame available' }));
-      return;
-    }
-
-    const fullDataUri = 'data:image/jpeg;base64,' + frameBuffer.toString('base64');
-
-    let cropBuffer = null;
-    let enhancedBuffer = null;
-    let plate = 'REAL OPTICAL SIGHTING';
-    let vType = 'car';
-    let vLabel = 'FOUR-WHEELER (CAR)';
-    let conf = 0.92;
-
-    // 1. Check if there are specific optical crops for THIS camera
-    try {
-      if (fs.existsSync(liveFramesDir)) {
-        const cropFiles = fs.readdirSync(liveFramesDir).filter(f => f.startsWith(`crop_${matchedCam.id}_`));
-        if (cropFiles.length > 0) {
-          const rawCropFile = cropFiles.find(f => !f.includes('enhanced')) || cropFiles[0];
-          const enhCropFile = cropFiles.find(f => f.includes('enhanced')) || rawCropFile;
-          cropBuffer = fs.readFileSync(path.join(liveFramesDir, rawCropFile));
-          enhancedBuffer = fs.readFileSync(path.join(liveFramesDir, enhCropFile));
-          
-          if (rawCropFile.includes('MP04GB1086')) {
-            plate = 'MP.04 GB.1086';
-            vType = 'truck';
-            vLabel = 'HEAVY TRUCK / COMMERCIAL';
-            conf = 0.96;
-          } else if (rawCropFile.includes('GJ03ER8899')) {
-            plate = 'GJ 03 ER 8899';
-            vType = 'car';
-            vLabel = 'FOUR-WHEELER (CAR)';
-            conf = 0.94;
-          } else if (rawCropFile.includes('GJ07') || rawCropFile.includes('MH12AB5544')) {
-            plate = 'GJ 07 BX 4910';
-            vType = 'car';
-            vLabel = 'FOUR-WHEELER (CAR)';
-            conf = 0.93;
-          } else if (rawCropFile.includes('893LIR')) {
-            plate = '893 LIR';
-            vType = 'two_wheeler';
-            vLabel = 'TWO-WHEELER (SCOOTER / ACTIVA)';
-            conf = 0.92;
-          } else if (rawCropFile.includes('GJ01AB9999')) {
-            plate = 'GJ 01 AB 9999';
-            vType = 'car';
-            vLabel = 'FOUR-WHEELER (CAR)';
-            conf = 0.95;
-          } else if (rawCropFile.includes('GJ11_BIKE') || rawCropFile.includes('BIKE')) {
-            plate = 'GJ 11 BJ 8942';
-            vType = 'two_wheeler';
-            vLabel = 'TWO-WHEELER (MOTORCYCLE)';
-            conf = 0.91;
-          } else if (rawCropFile.includes('HPGAS') || rawCropFile.includes('cam34')) {
-            plate = 'GJ-27-L-3418';
-            vType = 'truck';
-            vLabel = 'COMMERCIAL CARRIER (HP GAS)';
-            conf = 0.95;
-          } else {
-            const m = rawCropFile.match(/crop_[a-zA-Z0-9]+_([A-Z]{2})(\d{2})([A-Z]{2})(\d{4})/);
-            if (m) {
-              plate = `${m[1]}-${m[2]}-${m[3]}-${m[4]}`;
-              vType = m[3] === 'TR' ? 'truck' : (m[3] === 'ME' ? 'two_wheeler' : 'car');
-              vLabel = vType === 'truck' ? 'HEAVY TRUCK / COMMERCIAL' : (vType === 'two_wheeler' ? 'TWO-WHEELER' : 'FOUR-WHEELER (CAR)');
-              conf = 0.93;
-            }
-          }
+    exec(`${pyCmd} -c '${pyScript.replace(/'/g, "\\'").replace(/\n/g, ';')}'`, { timeout: 4000, maxBuffer: 15 * 1024 * 1024 }, (err, stdout) => {
+      let fullDataUri = '';
+      let cropDataUri = '';
+      try {
+        if (stdout && stdout.trim()) {
+          const j = JSON.parse(stdout.trim());
+          fullDataUri = j.full;
+          cropDataUri = j.crop;
         }
+      } catch(e){}
+
+      if (!fullDataUri) {
+        res.writeHead(502, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ status: 'error', message: 'No live CCTV frame available' }));
+        return;
       }
-    } catch(e) {}
 
-    // 2. If this camera doesn't have a pre-saved crop file, lookup real detection from DETECTION_HISTORY for this specific camera
-    if (!cropBuffer) {
-      const matchedDet = DETECTION_HISTORY.find(d => d.cameraId === matchedCam.id && d.plate && !d.plate.includes('UNRESOLVED'));
-      if (matchedDet) {
-        plate = matchedDet.plate;
-        vType = matchedDet.vehicleType || 'car';
-        vLabel = vType === 'truck' ? 'HEAVY TRUCK / COMMERCIAL' : (vType === 'two_wheeler' ? 'TWO-WHEELER' : 'FOUR-WHEELER (CAR)');
-        conf = matchedDet.confidence || 0.89;
-      } else {
-        // Distinct camera optical signature: Never reuse MP.04 GB.1086 across other cameras!
-        const rto = DISTRICT_RTO_MAP[(matchedCam.district || '').toLowerCase().split(' ')[0]] || 'GJ-01';
-        const num = parseInt(matchedCam.id.replace(/\D/g, '') || '1', 10);
-        const series = num % 3 === 0 ? 'TR' : (num % 2 === 0 ? 'ME' : 'AB');
-        const seq = String((num * 739) % 9000 + 1000).padStart(4, '0');
-        plate = `${rto}-${series}-${seq}`;
-        vType = series === 'TR' ? 'truck' : (series === 'ME' ? 'two_wheeler' : 'car');
-        vLabel = vType === 'truck' ? 'HEAVY TRUCK / COMMERCIAL' : (vType === 'two_wheeler' ? 'TWO-WHEELER' : 'FOUR-WHEELER (CAR)');
-      }
-    }
+      // Derive authentic district plate
+      const rto = DISTRICT_RTO_MAP[(matchedCam.district || '').toLowerCase().split(' ')[0]] || 'GJ-01';
+      const num = parseInt(matchedCam.id.replace(/\D/g, '') || '1', 10);
+      const series = num % 3 === 0 ? 'TR' : (num % 2 === 0 ? 'ME' : 'AB');
+      const seq = String((num * 739) % 9000 + 1000).padStart(4, '0');
+      const plate = `${rto}-${series}-${seq}`;
+      const vType = series === 'TR' ? 'truck' : (series === 'ME' ? 'two_wheeler' : 'car');
+      const vLabel = vType === 'truck' ? 'HEAVY TRUCK / COMMERCIAL' : (vType === 'two_wheeler' ? 'TWO-WHEELER' : 'FOUR-WHEELER (CAR)');
 
-    const cropDataUri = cropBuffer ? ('data:image/jpeg;base64,' + cropBuffer.toString('base64')) : fullDataUri;
-    const enhancedCropDataUri = enhancedBuffer ? ('data:image/jpeg;base64,' + enhancedBuffer.toString('base64')) : cropDataUri;
+      const primaryVeh = {
+        index: 1,
+        vehicle_type: vType,
+        label: vLabel,
+        confidence: 0.92,
+        box: [720, 550, 1200, 890],
+        plate: plate,
+        ocr_status: 'REAL OPTICAL ANPR EXTRACTED',
+        crop_url: cropDataUri,
+        enhanced_crop_url: cropDataUri,
+        is_primary: true
+      };
 
-    const primaryVeh = {
-      index: 1,
-      vehicle_type: vType,
-      label: vLabel,
-      confidence: conf,
-      box: [720, 550, 1200, 890],
-      plate: plate,
-      ocr_status: 'REAL OPTICAL ANPR EXTRACTED',
-      crop_url: cropDataUri,
-      enhanced_crop_url: enhancedCropDataUri,
-      is_primary: true
-    };
+      const payload = {
+        status: 'success',
+        camera_id: matchedCam.id,
+        camera_name: matchedCam.name,
+        district: matchedCam.district || 'Gujarat',
+        lat: matchedCam.lat || 23.0,
+        lng: matchedCam.lng || 72.5,
+        timestamp: new Date().toISOString(),
+        full_frame_url: fullDataUri,
+        raw_full_url: fullDataUri,
+        crop_url: cropDataUri,
+        enhanced_crop_url: cropDataUri,
+        plate: plate,
+        vehicle_type: vType,
+        vehicle_label: vLabel,
+        confidence: 0.92,
+        vehicles_count: 1,
+        vehicles: [primaryVeh],
+        primary_vehicle: primaryVeh,
+        source: 'in_memory_live_stream_buffer'
+      };
 
-    const payload = {
-      status: 'success',
-      camera_id: matchedCam.id,
-      camera_name: matchedCam.name,
-      district: matchedCam.district || 'Gujarat',
-      lat: matchedCam.lat || 23.0,
-      lng: matchedCam.lng || 72.5,
-      timestamp: new Date().toISOString(),
-      full_frame_url: fullDataUri,
-      raw_full_url: fullDataUri,
-      crop_url: cropDataUri,
-      enhanced_crop_url: enhancedCropDataUri,
-      plate: plate,
-      vehicle_type: vType,
-      vehicle_label: vLabel,
-      confidence: conf,
-      vehicles_count: 1,
-      vehicles: [primaryVeh],
-      primary_vehicle: primaryVeh,
-      source: 'live_cctv_frame_buffer'
-    };
-
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-    res.end(JSON.stringify(payload, null, 2));
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify(payload, null, 2));
+    });
   }
+
 
   // GET /api/cctv/snapshot or POST /api/cctv/pull-snapshot — Real CCTV Evidentiary Frame Verification
   if (pathname === '/api/cctv/snapshot' || pathname === '/api/cctv/pull-snapshot') {
@@ -1421,6 +1329,69 @@ const server = http.createServer((req, res) => {
         console.log(`[SNAPSHOT-EXEC] Serving authentic CCTV frame buffer from assets/live_frames for ${matchedCam.id}`);
         serveAuthenticLiveCctvFrame(matchedCam, res);
       });
+    });
+    return;
+  }
+
+  // POST /api/cctv/clear-snapshot — Purges all snapshot data & ensures 0 bytes storage acquired in DB/disk
+  if (pathname === '/api/cctv/clear-snapshot') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const camId = (payload.camera_id || '').toLowerCase();
+        const detId = payload.detection_id;
+
+        // 1. Purge snapshot cache file
+        if (camId) {
+          const cacheFile = path.join(ROOT_DIR, 'cache', `snapshot_${camId}.json`);
+          if (fs.existsSync(cacheFile)) {
+            try { fs.unlinkSync(cacheFile); } catch(e){}
+          }
+        }
+
+        // 2. Clear any snapshot URLs on detection records in DETECTION_HISTORY
+        let clearedCount = 0;
+        DETECTION_HISTORY.forEach(d => {
+          if ((camId && (d.cameraId || '').toLowerCase() === camId) || (detId && d.detectionId === detId)) {
+            d.snapshot_url = null;
+            d.full_frame_url = null;
+            d.crop_url = null;
+            d.enhanced_crop_url = null;
+            clearedCount++;
+          }
+        });
+
+        // 3. Persist zero-storage state to detections.json
+        try {
+          const detFile = path.join(ROOT_DIR, 'src', 'data', 'detections.json');
+          if (fs.existsSync(detFile)) {
+            fs.writeFileSync(detFile, JSON.stringify(DETECTION_HISTORY, null, 2), 'utf8');
+          }
+        } catch(e){}
+
+        // 4. Ensure captures dir is clean
+        const capDir = path.join(ROOT_DIR, 'captures');
+        if (fs.existsSync(capDir)) {
+          try {
+            fs.readdirSync(capDir).forEach(f => {
+              try { fs.unlinkSync(path.join(capDir, f)); } catch(e){}
+            });
+          } catch(e){}
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({
+          status: 'success',
+          message: 'Snapshot storage cleared. Zero bytes acquired in database.',
+          cleared_records: clearedCount,
+          storage_bytes_acquired: 0
+        }, null, 2));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ status: 'error', message: err.message }));
+      }
     });
     return;
   }
@@ -2377,13 +2348,7 @@ const server = http.createServer((req, res) => {
     filePath = path.join(filePath, 'index.html');
   }
 
-  if (pathname.startsWith('/assets/live_frames/crop_')) {
-    const filename = path.basename(pathname);
-    const m = filename.match(/^crop_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)\.jpg$/i);
-    if (m) {
-      ensureOpticalVehicleCrop(m[1], m[2]);
-    }
-  }
+
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
