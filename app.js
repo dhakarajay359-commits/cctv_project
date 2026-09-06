@@ -4127,13 +4127,26 @@ window.startLiveVideoTracking = function(video, targetCamId) {
       const currentReticleIds = new Set();
 
       activeVehicles.forEach(veh => {
+        const isFocused = window.currentActiveFocusedPlate && (
+          window.currentActiveFocusedPlate === veh.plate || 
+          (veh.aliases && veh.aliases.some(a => window.currentActiveFocusedPlate.includes(a) || a.includes(window.currentActiveFocusedPlate)))
+        );
+
+        // STRICT REQUIREMENT: Bounding frames appear ONLY when the plate is clearly focused.
+        // Otherwise unnecessary floating frames are NOT shown over the video scene.
+        if (!isFocused && !veh.suspect) {
+          const existing = document.getElementById(`reticle_${veh.id}`);
+          if (existing) existing.remove();
+          return;
+        }
+
         currentReticleIds.add(`reticle_${veh.id}`);
         let reticle = document.getElementById(`reticle_${veh.id}`);
         if (!reticle) {
           reticle = document.createElement('div');
           reticle.id = `reticle_${veh.id}`;
           reticle.className = `live-plate-reticle ${veh.suspect ? 'suspect' : ''}`;
-          reticle.title = `Click to Focus Moving Plate: ${veh.plate}`;
+          reticle.title = `Focused Plate: ${veh.plate}`;
           const icon = veh.suspect ? 'fa-triangle-exclamation' : 'fa-crosshairs';
           reticle.innerHTML = `
             <div class="bbox-corner tl"></div>
@@ -4144,29 +4157,17 @@ window.startLiveVideoTracking = function(video, targetCamId) {
               <i class="fa-solid ${icon}"></i> ${veh.plate}
             </div>
           `;
-          reticle.onclick = (e) => {
-            e.stopPropagation();
-            window.focusVehiclePlate(veh.plate, targetCamId);
-          };
           overlayLayer.appendChild(reticle);
         }
 
-        // Instantaneous 60fps positioning directly on the actual moving license plate
+        // Tightly position only on the focused number plate
         reticle.style.left = `${veh.plateBox.left}%`;
         reticle.style.top = `${veh.plateBox.top}%`;
         reticle.style.width = `${veh.plateBox.width}%`;
         reticle.style.height = `${veh.plateBox.height}%`;
-        reticle.style.opacity = veh.isVisible ? '1' : '0';
-        reticle.style.pointerEvents = veh.isVisible ? 'auto' : 'none';
-
-        if (window.currentActiveFocusedPlate && (
-          window.currentActiveFocusedPlate === veh.plate || 
-          (veh.aliases && veh.aliases.some(a => window.currentActiveFocusedPlate.includes(a) || a.includes(window.currentActiveFocusedPlate)))
-        )) {
-          reticle.classList.add('active-focused');
-        } else {
-          reticle.classList.remove('active-focused');
-        }
+        reticle.style.opacity = '1';
+        reticle.style.pointerEvents = 'auto';
+        reticle.classList.add('active-focused');
       });
 
       // Remove reticles of vehicles no longer present

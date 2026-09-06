@@ -328,26 +328,35 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None):
         road_cands = detect_plate_in_region(road_roi, ox=int(fw * 0.05), oy=int(fh * 0.40))
         all_cands.extend(road_cands)
 
-    if not all_cands:
-        cx1, cy1 = int(fw * 0.35), int(fh * 0.55)
-        cx2, cy2 = int(fw * 0.65), int(fh * 0.65)
-        best_box = (cx1, cy1, cx2, cy2)
-        vbox = (int(fw * 0.28), int(fh * 0.38), int(fw * 0.72), int(fh * 0.85))
+    has_plate = len(all_cands) > 0
+    if not has_plate:
+        # Plate is NOT clearly shown in this frame!
+        # STRICT RULE: Do not invent fake/dummy boxes over trees, billboards, or empty bus panels!
+        # Return empty coordinates so NO unnecessary bounding frames are drawn!
+        crop_x1, crop_y1 = int(fw * 0.20), int(fh * 0.35)
+        crop_x2, crop_y2 = int(fw * 0.80), int(fh * 0.85)
+        plate_crop = frame[crop_y1:crop_y2, crop_x1:crop_x2]
+        ch, cw = plate_crop.shape[:2]
+        target_w = 460
+        scale = target_w / float(max(1, cw))
+        target_h = max(30, int(ch * scale))
+        focused_plate = cv2.resize(plate_crop, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+        return focused_plate, (0, 0, 0, 0), (0, 0, 0, 0), False
+
+    all_cands.sort(key=lambda c: c['score'], reverse=True)
+    top = all_cands[0]
+    best_box = top['box']
+    if 'vbox' in top and top['vbox'] is not None:
+        vbox = top['vbox']
     else:
-        all_cands.sort(key=lambda c: c['score'], reverse=True)
-        top = all_cands[0]
-        best_box = top['box']
-        if 'vbox' in top and top['vbox'] is not None:
-            vbox = top['vbox']
-        else:
-            bx1, by1, bx2, by2 = best_box
-            pw = bx2 - bx1
-            ph = by2 - by1
-            vx1 = max(0, int(bx1 - pw * 2.0))
-            vx2 = min(fw, int(bx2 + pw * 2.0))
-            vy1 = max(0, int(by1 - ph * 5.5))
-            vy2 = min(fh, int(by2 + ph * 1.8))
-            vbox = (vx1, vy1, vx2, vy2)
+        bx1, by1, bx2, by2 = best_box
+        pw = bx2 - bx1
+        ph = by2 - by1
+        vx1 = max(0, int(bx1 - pw * 2.0))
+        vx2 = min(fw, int(bx2 + pw * 2.0))
+        vy1 = max(0, int(by1 - ph * 5.5))
+        vy2 = min(fh, int(by2 + ph * 1.8))
+        vbox = (vx1, vy1, vx2, vy2)
 
     px1, py1, px2, py2 = best_box
     pw, ph = px2 - px1, py2 - py1
@@ -371,7 +380,7 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None):
     target_h = max(30, int(ch * scale))
     focused_plate = cv2.resize(plate_crop, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
 
-    return focused_plate, best_box, vbox
+    return focused_plate, best_box, vbox, True
 
 
 def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehicle_type="car", v_box=None):
@@ -538,8 +547,8 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
             cap = cv2.VideoCapture(source_video)
             if cap.isOpened():
                 total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                # Dynamic frame offset based on current timestamp so every snapshot is fresh and changing
-                offset = int((time.time() * 12) % max(1, total_f - 10))
+                # Dynamic frame offset: advances 30 frames per second continuously so snapshots change visibly in seconds
+                offset = int((time.time() * 30) % max(1, total_f - 10))
                 cap.set(cv2.CAP_PROP_POS_FRAMES, min(offset, total_f - 1))
                 ret, f = cap.read()
                 if ret and f is not None and is_frame_intact(f):
@@ -703,8 +712,8 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         veh_crop = frame[y1:y2, x1:x2]
 
         # 1. Dynamically locate the number plate inside the vehicle crop and move frame directly to it
-        sub_focused, sub_pbox, _ = dynamic_locate_and_focus_plate(veh_crop)
-        if sub_focused is not None and sub_pbox is not None:
+        sub_focused, sub_pbox, _, sub_has_plate = dynamic_locate_and_focus_plate(veh_crop)
+        if sub_has_plate and sub_focused is not None and sub_pbox != (0, 0, 0, 0):
             focused_plate = sub_focused
             spx1, spy1, spx2, spy2 = sub_pbox
             full_px1, full_py1 = x1 + spx1, y1 + spy1
@@ -714,10 +723,7 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
             ph, pw = plate_crop.shape[:2]
             scale = 460.0 / float(max(1, pw))
             focused_plate = cv2.resize(plate_crop, (460, int(ph * scale)), interpolation=cv2.INTER_LANCZOS4)
-            full_px1 = x1 + int((x2 - x1) * 0.25)
-            full_py1 = y1 + int((y2 - y1) * 0.65)
-            full_px2 = x1 + int((x2 - x1) * 0.75)
-            full_py2 = y1 + int((y2 - y1) * 0.85)
+            full_px1, full_py1, full_px2, full_py2 = 0, 0, 0, 0
 
         # 2. Run OCR directly on the centered, focused plate crop
         ocr_text, ocr_conf, ocr_success, char_bbox = run_real_optical_ocr(
@@ -727,8 +733,9 @@ def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", la
         # 3. Enhance plate for forensic legibility
         enhanced_plate = enhance_plate_crop(focused_plate)
 
-        # Draw focused plate target box on full frame directly over the plate
-        cv2.rectangle(annotated_full, (full_px1, full_py1), (full_px2, full_py2), (0, 255, 128), 2)
+        # STRICT RULE: Draw focused plate target box ONLY when the plate is clearly shown
+        if sub_has_plate and (full_px2 - full_px1) > 15 and (full_py2 - full_py1) > 6:
+            cv2.rectangle(annotated_full, (full_px1, full_py1), (full_px2, full_py2), (0, 255, 128), 2)
 
         # Dynamic optical registration - 100% DEPENDENT ON REAL OPTICAL SENSOR (NO SYNTHETIC FAKE PLATES)
         if ocr_text and ocr_text != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_text):
@@ -850,7 +857,8 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
             cap = cv2.VideoCapture(source_video)
             if cap.isOpened():
                 total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                offset = int((time.time() * 12) % max(1, total_f - 10))
+                # Dynamic frame offset: advances 30 frames per second continuously so snapshots change visibly in seconds
+                offset = int((time.time() * 30) % max(1, total_f - 10))
                 cap.set(cv2.CAP_PROP_POS_FRAMES, min(offset, total_f - 1))
                 ret, f = cap.read()
                 if ret and f is not None and is_frame_intact(f):
@@ -885,12 +893,12 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Dynamic plate localization & frame movement: locate exact plate number and center frame on it
-    focused_plate, plate_box, vehicle_box = dynamic_locate_and_focus_plate(frame)
+    focused_plate, plate_box, vehicle_box, has_plate = dynamic_locate_and_focus_plate(frame)
     bx1, by1, bx2, by2 = vehicle_box
     px1, py1, px2, py2 = plate_box
 
     # Run real optical OCR if reader is already initialized in memory (preserves sub-100ms response)
-    if OCR_READER is not None:
+    if OCR_READER is not None and has_plate:
         ocr_text, ocr_conf, ocr_success, _ = run_real_optical_ocr(
             focused_plate, district=district, camera_id=camera_id, vehicle_type="car"
         )
@@ -899,27 +907,27 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
             ocr_status = "AUTHENTIC OPTICAL ANPR EXTRACTED"
             v_type = "car"
             v_label = "FOUR-WHEELER (CAR)"
-        elif plate_box != (0, 0, 0, 0):
+        elif has_plate:
             display_plate = "OCR UNRESOLVED"
             ocr_status = "OPTICAL PLATE DETECTED (OCR PENDING)"
             v_type = "car"
             v_label = "FOUR-WHEELER (CAR)"
         else:
-            display_plate = "NO VEHICLE DETECTED"
-            ocr_status = "MONITORING ACTIVE TRAFFIC"
-            v_type = "none"
-            v_label = "NO VEHICLE DETECTED"
+            display_plate = "NO VISIBLE PLATE IN FRAME"
+            ocr_status = "OPTICAL SENSOR SCANNING"
+            v_type = "vehicle"
+            v_label = "OPTICAL VEHICLE IN VIEW"
     else:
-        if plate_box != (0, 0, 0, 0):
+        if has_plate:
             display_plate = "OCR UNRESOLVED"
             ocr_status = "OPTICAL PLATE DETECTED (OCR PENDING)"
             v_type = "car"
             v_label = "FOUR-WHEELER (CAR)"
         else:
-            display_plate = "NO VEHICLE DETECTED"
-            ocr_status = "MONITORING ACTIVE TRAFFIC"
-            v_type = "none"
-            v_label = "NO VEHICLE DETECTED"
+            display_plate = "NO VISIBLE PLATE IN FRAME"
+            ocr_status = "OPTICAL SENSOR SCANNING"
+            v_type = "vehicle"
+            v_label = "OPTICAL VEHICLE IN VIEW"
 
     enhanced_plate = enhance_plate_crop(focused_plate)
 
@@ -929,15 +937,18 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
     osd_text = f"NIRIKSHAN STATEWIDE CCTV INTELLIGENCE | NODE: {camera_name.upper()} [{camera_id.upper()}] | {district} | {now_str} IST"
     cv2.putText(annotated, osd_text, (18, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.60, (0, 255, 0), 2)
 
-    # Tactical vehicle target box (dynamically moved to align with the detected vehicle)
-    cv2.rectangle(annotated, (bx1, by1), (bx2, by2), (0, 242, 254), 3)
-    badge_y = max(34, by1)
-    cv2.rectangle(annotated, (bx1, badge_y - 32), (bx1 + 280, badge_y), (15, 23, 42), -1)
-    cv2.rectangle(annotated, (bx1, badge_y - 32), (bx1 + 280, badge_y), (0, 242, 254), 1)
-    cv2.putText(annotated, f"{v_label.split(' ')[0]} [92%]", (bx1 + 8, badge_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 242, 254), 2)
-
-    # Focused plate target box drawn directly over the located plate
-    cv2.rectangle(annotated, (px1, py1), (px2, py2), (0, 255, 128), 2)
+    # STRICT RULE: These frames appear ONLY when the plate is clearly shown.
+    # Otherwise these frames are NOT shown unnecessarily (focus only the plate number).
+    if has_plate and (px2 - px1) > 15 and (py2 - py1) > 6:
+        # Tactical vehicle target box
+        if bx2 > bx1 and by2 > by1:
+            cv2.rectangle(annotated, (bx1, by1), (bx2, by2), (0, 242, 254), 2)
+            badge_y = max(34, by1)
+            cv2.rectangle(annotated, (bx1, badge_y - 28), (bx1 + 220, badge_y), (15, 23, 42), -1)
+            cv2.rectangle(annotated, (bx1, badge_y - 28), (bx1 + 220, badge_y), (0, 242, 254), 1)
+            cv2.putText(annotated, f"{v_label.split(' ')[0]} [ANPR LOCK]", (bx1 + 6, badge_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 242, 254), 1)
+        # Focused plate target box drawn directly over the located plate
+        cv2.rectangle(annotated, (px1, py1), (px2, py2), (0, 255, 128), 2)
 
     # Bottom watermark
     cv2.rectangle(annotated, (0, fh - 32), (fw, fh), (15, 23, 42), -1)

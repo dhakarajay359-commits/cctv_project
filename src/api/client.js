@@ -1416,6 +1416,7 @@ class NirikshanApiClient {
       if (detectionId) params.append('detection_id', detectionId);
       if (camId) params.append('camera_id', camId);
       if (isLive) params.append('live', 'true');
+      params.append('_t', String(Date.now()));
       const res = await fetch(`/api/cctv/snapshot?${params.toString()}`);
       if (res.ok) {
         return await res.json();
