@@ -1,5 +1,38 @@
 [
   {
+    "detectionId": "DET-MTPELBME-676",
+    "vehicleId": "OCR UNRESOLVED",
+    "plate": "OCR UNRESOLVED",
+    "cameraId": "cam04",
+    "cameraName": "Paldi Circle Arterial",
+    "region": "Ahmedabad (Urban)",
+    "latitude": 23.0135,
+    "longitude": 72.563,
+    "vehicleType": "car",
+    "confidence": 0.504,
+    "timestamp": "2026-09-06T06:01:01.718Z",
+    "attributes": {},
+    "sourceId": "cctv_live_video_stream",
+    "camera_status": "online",
+    "suspect_match": {
+      "matched": false,
+      "status": "NO_MATCH",
+      "confidence": 0,
+      "message": "No suspect match found."
+    },
+    "is_suspect": false,
+    "snapshot_url": null,
+    "full_frame_url": null,
+    "crop_url": null,
+    "enhanced_crop_url": null,
+    "bounding_box": [
+      865,
+      183,
+      954,
+      290
+    ]
+  },
+  {
     "detectionId": "DET-MTPEJOEA-865",
     "vehicleId": "OCR UNRESOLVED",
     "plate": "OCR UNRESOLVED",
@@ -16465,39 +16498,6 @@
       670,
       492,
       775
-    ]
-  },
-  {
-    "detectionId": "DET-MTN4AWF7-129",
-    "vehicleId": "OCR UNRESOLVED",
-    "plate": "OCR UNRESOLVED",
-    "cameraId": "cam04",
-    "cameraName": "Paldi Circle Arterial",
-    "region": "Ahmedabad (Urban)",
-    "latitude": 23.0135,
-    "longitude": 72.563,
-    "vehicleType": "two_wheeler",
-    "confidence": 0.627,
-    "timestamp": "2026-09-04T15:37:26.947Z",
-    "attributes": {},
-    "sourceId": "cctv_live_video_stream",
-    "camera_status": "online",
-    "suspect_match": {
-      "matched": false,
-      "status": "NO_MATCH",
-      "confidence": 0,
-      "message": "No suspect match found."
-    },
-    "is_suspect": false,
-    "snapshot_url": null,
-    "full_frame_url": null,
-    "crop_url": null,
-    "enhanced_crop_url": null,
-    "bounding_box": [
-      1313,
-      402,
-      1391,
-      517
     ]
   }
 ]
