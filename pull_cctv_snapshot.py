@@ -889,25 +889,37 @@ def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat
     bx1, by1, bx2, by2 = vehicle_box
     px1, py1, px2, py2 = plate_box
 
-    # Run real optical OCR
-    ocr_text, ocr_conf, ocr_success, _ = run_real_optical_ocr(
-        focused_plate, district=district, camera_id=camera_id, vehicle_type="car"
-    )
-    if ocr_text and ocr_text != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_text):
-        display_plate = ocr_text
-        ocr_status = "AUTHENTIC OPTICAL ANPR EXTRACTED"
-        v_type = "car"
-        v_label = "FOUR-WHEELER (CAR)"
-    elif plate_box != (0, 0, 0, 0):
-        display_plate = "OCR UNRESOLVED"
-        ocr_status = "OPTICAL PLATE DETECTED (OCR PENDING)"
-        v_type = "car"
-        v_label = "FOUR-WHEELER (CAR)"
+    # Run real optical OCR if reader is already initialized in memory (preserves sub-100ms response)
+    if OCR_READER is not None:
+        ocr_text, ocr_conf, ocr_success, _ = run_real_optical_ocr(
+            focused_plate, district=district, camera_id=camera_id, vehicle_type="car"
+        )
+        if ocr_text and ocr_text != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_text):
+            display_plate = ocr_text
+            ocr_status = "AUTHENTIC OPTICAL ANPR EXTRACTED"
+            v_type = "car"
+            v_label = "FOUR-WHEELER (CAR)"
+        elif plate_box != (0, 0, 0, 0):
+            display_plate = "OCR UNRESOLVED"
+            ocr_status = "OPTICAL PLATE DETECTED (OCR PENDING)"
+            v_type = "car"
+            v_label = "FOUR-WHEELER (CAR)"
+        else:
+            display_plate = "NO VEHICLE DETECTED"
+            ocr_status = "MONITORING ACTIVE TRAFFIC"
+            v_type = "none"
+            v_label = "NO VEHICLE DETECTED"
     else:
-        display_plate = "NO VEHICLE DETECTED"
-        ocr_status = "MONITORING ACTIVE TRAFFIC"
-        v_type = "none"
-        v_label = "NO VEHICLE DETECTED"
+        if plate_box != (0, 0, 0, 0):
+            display_plate = "OCR UNRESOLVED"
+            ocr_status = "OPTICAL PLATE DETECTED (OCR PENDING)"
+            v_type = "car"
+            v_label = "FOUR-WHEELER (CAR)"
+        else:
+            display_plate = "NO VEHICLE DETECTED"
+            ocr_status = "MONITORING ACTIVE TRAFFIC"
+            v_type = "none"
+            v_label = "NO VEHICLE DETECTED"
 
     enhanced_plate = enhance_plate_crop(focused_plate)
 
@@ -982,6 +994,25 @@ def main():
     parser.add_argument("--port", default=os.environ.get("PORT", "10000"))
     parser.add_argument("--fallback", action="store_true", help="Pure OpenCV instant frame pull")
     args = parser.parse_args()
+
+    # Automatically resolve metadata from camera_catalog.json if default or missing
+    cat_file = os.path.join(BASE_DIR, "src", "data", "camera_catalog.json")
+    if os.path.exists(cat_file):
+        try:
+            with open(cat_file, "r", encoding="utf-8") as cf:
+                cams = json.load(cf)
+                target = next((c for c in cams if c.get("id", "").lower() == args.camera_id.lower()), None)
+                if target:
+                    if args.camera_name == "Visat P2 Sector":
+                        args.camera_name = target.get("name", args.camera_name)
+                    if args.district == "Ahmedabad (Urban)":
+                        args.district = target.get("district", args.district)
+                    if args.lat == 23.111:
+                        args.lat = float(target.get("lat", args.lat))
+                    if args.lng == 72.595:
+                        args.lng = float(target.get("lng", args.lng))
+        except Exception:
+            pass
 
     if args.fallback:
         res = pull_frame_fallback(args.camera_id, args.camera_name, args.district, args.lat, args.lng, port=args.port)

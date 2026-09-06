@@ -1117,10 +1117,6 @@ const server = http.createServer((req, res) => {
     const args = [
       scriptPath,
       '--camera_id', matchedCam.id,
-      '--camera_name', matchedCam.name,
-      '--district', matchedCam.district || 'Gujarat',
-      '--lat', String(matchedCam.lat || 23.0),
-      '--lng', String(matchedCam.lng || 72.5),
       '--port', String(PORT),
       '--fallback'
     ];
@@ -1219,16 +1215,52 @@ const server = http.createServer((req, res) => {
     const args = [
       scriptPath,
       '--camera_id', matchedCam.id,
-      '--camera_name', matchedCam.name,
-      '--district', matchedCam.district,
-      '--lat', String(matchedCam.lat),
-      '--lng', String(matchedCam.lng),
       '--port', String(PORT)
     ];
 
+    let hasResponded = false;
+    function sendSnapshotSuccess(parsed) {
+      if (hasResponded || res.headersSent) return;
+      hasResponded = true;
+      try {
+        if (!fs.existsSync(snapshotCacheDir)) fs.mkdirSync(snapshotCacheDir, { recursive: true });
+        fs.writeFileSync(snapshotCacheFile, JSON.stringify(parsed), 'utf8');
+      } catch(e){}
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify(parsed, null, 2));
+    }
+
+    let fallbackLaunched = false;
+    function runFallbackCapture() {
+      if (fallbackLaunched || hasResponded || res.headersSent) return;
+      fallbackLaunched = true;
+      execFile(pyCmd, [...args, '--fallback'], { cwd: ROOT_DIR, timeout: 10000, maxBuffer: 15 * 1024 * 1024 }, (fbErr, fbStdout) => {
+        if (!fbErr && fbStdout && fbStdout.trim()) {
+          try {
+            const jsonStart = fbStdout.indexOf('{');
+            const jsonEnd = fbStdout.lastIndexOf('}');
+            if (jsonStart !== -1 && jsonEnd !== -1) {
+              const fbParsed = JSON.parse(fbStdout.substring(jsonStart, jsonEnd + 1));
+              if (fbParsed.status === 'success') {
+                sendSnapshotSuccess(fbParsed);
+                return;
+              }
+            }
+          } catch(e){}
+        }
+        if (!hasResponded && !res.headersSent) {
+          res.writeHead(503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify({
+            status: 'error',
+            message: `Optical video sensor stream for ${matchedCam.name} is currently offline.`,
+            camera_id: matchedCam.id
+          }));
+        }
+      });
+    }
+
     // 2. Primary dynamic real-time frame pull directly from live camera feed
-    execFile(pyCmd, args, { cwd: ROOT_DIR, timeout: 12000, maxBuffer: 20 * 1024 * 1024 }, (err, stdout, stderr) => {
-      console.log(`[SNAPSHOT-EXEC] cam=${matchedCam.id} cmd=${pyCmd} err=${err ? err.message : 'none'} stdoutLen=${(stdout||'').length}`);
+    execFile(pyCmd, args, { cwd: ROOT_DIR, timeout: 20000, maxBuffer: 20 * 1024 * 1024 }, (err, stdout, stderr) => {
       if (!err && stdout && stdout.trim()) {
         try {
           const jsonStart = stdout.indexOf('{');
@@ -1237,12 +1269,7 @@ const server = http.createServer((req, res) => {
             const jsonStr = stdout.substring(jsonStart, jsonEnd + 1);
             const parsed = JSON.parse(jsonStr);
             if (parsed.status === 'success') {
-              try {
-                if (!fs.existsSync(snapshotCacheDir)) fs.mkdirSync(snapshotCacheDir, { recursive: true });
-                fs.writeFileSync(snapshotCacheFile, JSON.stringify(parsed), 'utf8');
-              } catch(e){}
-              res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-              res.end(JSON.stringify(parsed, null, 2));
+              sendSnapshotSuccess(parsed);
               return;
             }
           }
@@ -1250,30 +1277,17 @@ const server = http.createServer((req, res) => {
           console.error('[SNAPSHOT-EXEC] Parse error:', e.message);
         }
       }
-
-      // 3. Fast OpenCV pure video capture fallback
-      console.log(`[SNAPSHOT-EXEC] Attempting fast OpenCV pure video capture for ${matchedCam.id}`);
-      execFile(pyCmd, [...args, '--fallback'], { cwd: ROOT_DIR, timeout: 8000, maxBuffer: 15 * 1024 * 1024 }, (fbErr, fbStdout) => {
-        if (!fbErr && fbStdout && fbStdout.trim()) {
-          try {
-            const jsonStart = fbStdout.indexOf('{');
-            const jsonEnd = fbStdout.lastIndexOf('}');
-            if (jsonStart !== -1 && jsonEnd !== -1) {
-              const jsonStr = fbStdout.substring(jsonStart, jsonEnd + 1);
-              const fbParsed = JSON.parse(jsonStr);
-              if (fbParsed.status === 'success') {
-                res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-                res.end(JSON.stringify(fbParsed, null, 2));
-                return;
-              }
-            }
-          } catch(e){}
-        }
-
-        // 4. Return clean 503 error without synthesizing fake SVG wireframe or static plates
-        serveAuthenticLiveCctvFrame(matchedCam, res);
-      });
+      if (!hasResponded) {
+        runFallbackCapture();
+      }
     });
+
+    // 3. Fast pure video capture fallback (triggers after 2.5s if primary is still running)
+    setTimeout(() => {
+      if (!hasResponded) {
+        runFallbackCapture();
+      }
+    }, 2500);
     return;
   }
 
