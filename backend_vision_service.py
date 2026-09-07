@@ -104,58 +104,58 @@ VEHICLE_CLASSES = {2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}
 
 def refine_vehicle_classification(veh_crop, raw_cls, bbox, frame_shape):
     """
-    Refines YOLO's standard COCO classification for Indian traffic conditions.
-    Accurately identifies Cars, Auto-Rickshaws (three-wheelers / tuk-tuks), Two-Wheelers, and Trucks.
-    Prevents false-positive auto-rickshaw classification on white/metallic passenger cars.
+    Accurately classifies vehicles under Indian traffic conditions:
+    - Auto-Rickshaws (Three-Wheelers / Tuk-Tuks / Chhakdas like ATUL, Bajaj RE, Piaggio Ape)
+    - Two-Wheelers (Scooters, Activa, Motorcycles)
+    - Four-Wheelers (Cars, Sedans, Hatchbacks, SUVs)
+    - Heavy Trucks & Commercial Carriers (e.g. Ashok Leyland, Tata)
+    - Passenger Buses
     """
     if veh_crop is None or veh_crop.size == 0:
         return raw_cls, raw_cls.upper()
 
     vh, vw = veh_crop.shape[:2]
     aspect_ratio = vw / float(max(1, vh))
+    gray = cv2.cvtColor(veh_crop, cv2.COLOR_BGR2GRAY) if len(veh_crop.shape) == 3 else veh_crop
 
-    # 1. Two-wheelers (scooters, Activa, motorcycles):
-    # Any oncoming or departing vehicle with rider is physically taller than wide (aspect_ratio < 0.88 and vw < 420px).
-    # Standard passenger cars and trucks are NEVER tall vertical objects with aspect_ratio < 0.88 and vw < 420.
-    if (aspect_ratio < 0.88 and vw < 420 and vh >= 75) or raw_cls in ["two_wheeler", "motorcycle"]:
+    # Structural feature extraction
+    # A. Mid-cabin passenger cavity (dark passenger or cargo opening)
+    mid_cabin = gray[int(vh * 0.30):int(vh * 0.70), int(vw * 0.15):int(vw * 0.85)]
+    dark_cavity = (mid_cabin < 95).sum() / float(max(1, mid_cabin.size)) if mid_cabin.size > 0 else 0.0
+
+    # B. Roof profile across top 15%: Auto-rickshaws have a solid wide canopy; two-wheelers have a narrow head/helmet
+    top_slice = gray[:int(vh * 0.18), :]
+    top_w_occ = float((top_slice > 40).sum()) / float(max(1, top_slice.size)) if top_slice.size > 0 else 0.0
+
+    # 1. AUTO-RICKSHAW (THREE-WHEELER / TUK-TUK / CHHAKDA)
+    # Proportions: 0.60 <= aspect_ratio <= 1.25, width vw >= 120px, height vh >= 130px
+    # Enclosed or canvas roof canopy, mid-body cavity, compact width (< 400px)
+    is_3w_proportions = (0.60 <= aspect_ratio <= 1.25) and (120 <= vw <= 390) and (125 <= vh <= 380)
+    if is_3w_proportions and (raw_cls in ["truck", "motorcycle", "car", "two_wheeler"]):
+        # A) Detected as truck by YOLO (standard COCO confusion for 3-wheelers / Chhakda / Atul)
+        if raw_cls == "truck":
+            return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
+        # B) Detected as motorcycle/car but has wide canopy or open passenger cavity
+        if (dark_cavity > 0.08 or top_w_occ > 0.55) and vw >= 150:
+            return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
+
+    # 2. TWO-WHEELERS (SCOOTER / ACTIVA / MOTORCYCLE)
+    # Physically narrow: vw < 155px or aspect_ratio < 0.68, exposed rider silhouette
+    if raw_cls in ["two_wheeler", "motorcycle"] or (aspect_ratio < 0.65 and vw < 165):
         return "two_wheeler", "TWO-WHEELER (SCOOTER / ACTIVA)"
 
-    # 2. Four-Wheelers (Car / Sedan / Hatchback / SUV)
+    # 3. FOUR-WHEELERS (CAR / SEDAN / HATCHBACK / SUV)
     if raw_cls == "car":
         return "car", "FOUR-WHEELER (CAR)"
 
-    # 3. Passenger Bus
+    # 4. PASSENGER BUS
     if raw_cls == "bus":
         return "bus", "PASSENGER BUS"
 
-    # 4. Handle raw_cls == 'truck'
-    # YOLO often misclassifies Auto-Rickshaws or compact hatchbacks as 'truck'.
+    # 5. TRUCK / COMMERCIAL CARRIER
     if raw_cls == "truck":
-        gray = cv2.cvtColor(veh_crop, cv2.COLOR_BGR2GRAY)
-        
-        # Analyze the mid-lower passenger cabin zone: y from 35% to 75%, x from 25% to 75%
-        cabin_zone = gray[int(vh * 0.35):int(vh * 0.75), int(vw * 0.25):int(vw * 0.75)]
-        if cabin_zone.size > 0:
-            solid_bright = (cabin_zone > 165).sum() / float(cabin_zone.size)
-            dark_cavity = (cabin_zone < 95).sum() / float(cabin_zone.size)
-        else:
-            solid_bright, dark_cavity = 0.0, 0.0
-
-        is_compact = (vw < 380) and (vh < 320)
-
-        # Check A: Solid painted passenger door panel (e.g. white hatchback, sedan, metallic car)
-        if solid_bright > 0.60 and dark_cavity < 0.06:
-            return "car", "FOUR-WHEELER (CAR)"
-
-        # Check B: Open-cabin passenger entrance cavity (unmistakable Auto-Rickshaw / Tuk-Tuk)
-        if is_compact and (dark_cavity > 0.10 or (0.85 <= aspect_ratio <= 1.25)):
+        if is_3w_proportions and vw < 340:
             return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
-
-        # Check C: Compact vehicle without truck cargo bed is a passenger car / van
-        if is_compact:
-            return "car", "FOUR-WHEELER (CAR)"
-
-        # Check D: Standard commercial / heavy freight truck
         return "truck", "HEAVY TRUCK / COMMERCIAL"
 
     return raw_cls, raw_cls.upper()

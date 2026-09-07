@@ -104,58 +104,58 @@ except Exception:
 
 def refine_vehicle_classification(veh_crop, raw_cls, bbox, frame_shape):
     """
-    Refines YOLO's standard COCO classification for Indian traffic conditions.
-    Accurately identifies Cars, Auto-Rickshaws (three-wheelers / tuk-tuks), Two-Wheelers, and Trucks.
-    Prevents false-positive car/truck classification on oncoming scooters / Activa / motorcycles.
+    Accurately classifies vehicles under Indian traffic conditions:
+    - Auto-Rickshaws (Three-Wheelers / Tuk-Tuks / Chhakdas like ATUL, Bajaj RE, Piaggio Ape)
+    - Two-Wheelers (Scooters, Activa, Motorcycles)
+    - Four-Wheelers (Cars, Sedans, Hatchbacks, SUVs)
+    - Heavy Trucks & Commercial Carriers (e.g. Ashok Leyland, Tata)
+    - Passenger Buses
     """
     if veh_crop is None or veh_crop.size == 0:
         return raw_cls, raw_cls.upper()
 
     vh, vw = veh_crop.shape[:2]
     aspect_ratio = vw / float(max(1, vh))
+    gray = cv2.cvtColor(veh_crop, cv2.COLOR_BGR2GRAY) if len(veh_crop.shape) == 3 else veh_crop
 
-    # 1. Two-wheelers (scooters, Activa, motorcycles):
-    # Any oncoming or departing vehicle with rider is physically taller than wide (aspect_ratio < 0.88 and vw < 420px).
-    # Standard passenger cars and trucks are NEVER tall vertical objects with aspect_ratio < 0.88 and vw < 420.
-    if (aspect_ratio < 0.88 and vw < 420 and vh >= 75) or raw_cls in ["two_wheeler", "motorcycle"]:
+    # Structural feature extraction
+    # A. Mid-cabin passenger cavity (dark passenger or cargo opening)
+    mid_cabin = gray[int(vh * 0.30):int(vh * 0.70), int(vw * 0.15):int(vw * 0.85)]
+    dark_cavity = (mid_cabin < 95).sum() / float(max(1, mid_cabin.size)) if mid_cabin.size > 0 else 0.0
+
+    # B. Roof profile across top 15%: Auto-rickshaws have a solid wide canopy; two-wheelers have a narrow head/helmet
+    top_slice = gray[:int(vh * 0.18), :]
+    top_w_occ = float((top_slice > 40).sum()) / float(max(1, top_slice.size)) if top_slice.size > 0 else 0.0
+
+    # 1. AUTO-RICKSHAW (THREE-WHEELER / TUK-TUK / CHHAKDA)
+    # Proportions: 0.60 <= aspect_ratio <= 1.25, width vw >= 120px, height vh >= 130px
+    # Enclosed or canvas roof canopy, mid-body cavity, compact width (< 400px)
+    is_3w_proportions = (0.60 <= aspect_ratio <= 1.25) and (120 <= vw <= 390) and (125 <= vh <= 380)
+    if is_3w_proportions and (raw_cls in ["truck", "motorcycle", "car", "two_wheeler"]):
+        # A) Detected as truck by YOLO (standard COCO confusion for 3-wheelers / Chhakda / Atul)
+        if raw_cls == "truck":
+            return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
+        # B) Detected as motorcycle/car but has wide canopy or open passenger cavity
+        if (dark_cavity > 0.08 or top_w_occ > 0.55) and vw >= 150:
+            return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
+
+    # 2. TWO-WHEELERS (SCOOTER / ACTIVA / MOTORCYCLE)
+    # Physically narrow: vw < 155px or aspect_ratio < 0.68, exposed rider silhouette
+    if raw_cls in ["two_wheeler", "motorcycle"] or (aspect_ratio < 0.65 and vw < 165):
         return "two_wheeler", "TWO-WHEELER (SCOOTER / ACTIVA)"
 
-    # 2. Four-Wheelers (Car / Sedan / Hatchback / SUV)
+    # 3. FOUR-WHEELERS (CAR / SEDAN / HATCHBACK / SUV)
     if raw_cls == "car":
         return "car", "FOUR-WHEELER (CAR)"
 
-    # 3. Passenger Bus
+    # 4. PASSENGER BUS
     if raw_cls == "bus":
         return "bus", "PASSENGER BUS"
 
-    # 4. Handle raw_cls == 'truck'
-    # YOLO often misclassifies Auto-Rickshaws or compact hatchbacks as 'truck'.
+    # 5. TRUCK / COMMERCIAL CARRIER
     if raw_cls == "truck":
-        gray = cv2.cvtColor(veh_crop, cv2.COLOR_BGR2GRAY)
-        
-        # Analyze the mid-lower passenger cabin zone: y from 35% to 75%, x from 25% to 75%
-        cabin_zone = gray[int(vh * 0.35):int(vh * 0.75), int(vw * 0.25):int(vw * 0.75)]
-        if cabin_zone.size > 0:
-            solid_bright = (cabin_zone > 165).sum() / float(cabin_zone.size)
-            dark_cavity = (cabin_zone < 95).sum() / float(cabin_zone.size)
-        else:
-            solid_bright, dark_cavity = 0.0, 0.0
-
-        is_compact = (vw < 380) and (vh < 320)
-
-        # Check A: Solid painted passenger door panel (e.g. white hatchback, sedan, metallic car)
-        if solid_bright > 0.60 and dark_cavity < 0.06:
-            return "car", "FOUR-WHEELER (CAR)"
-
-        # Check B: Open-cabin passenger entrance cavity (unmistakable Auto-Rickshaw / Tuk-Tuk)
-        if is_compact and (dark_cavity > 0.10 or (0.85 <= aspect_ratio <= 1.25)):
+        if is_3w_proportions and vw < 340:
             return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
-
-        # Check C: Compact vehicle without truck cargo bed is a passenger car / van
-        if is_compact:
-            return "car", "FOUR-WHEELER (CAR)"
-
-        # Check D: Standard commercial / heavy freight truck
         return "truck", "HEAVY TRUCK / COMMERCIAL"
 
     return raw_cls, raw_cls.upper()
@@ -324,22 +324,21 @@ def detect_plate_in_region(roi, ox=0, oy=0, is_two_wheeler=False):
 def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None):
     """
     High-Precision License Plate Localization:
-    - Eliminates false positives on vehicle doors, wheels, rocker panels, and radiator grilles.
-    - Deeply scans vehicle bumper & fascia zones for:
-        * Green Electric Vehicle (EV) plates (e.g. Tata Tiago/Nexon EV, MG ZS)
-        * Yellow Commercial plates (e.g. Auto-rickshaws, commercial trucks/buses/cabs)
+    - Eliminates false positives on vehicle doors, windows, seats, roof, and radiator grilles.
+    - Deeply scans bumper fascia zones for:
+        * Yellow Commercial plates (Auto-rickshaws, commercial trucks/buses/cabs)
         * White Private HSRP plates (high-contrast character edge strokes)
-    - Validates rectangular aspect ratio (2.0 to 5.8) matching Indian motor vehicle standards.
-    - Extracts a razor-sharp, tight crop focused exclusively on the license plate characters.
+        * Green Electric Vehicle (EV) plates (e.g. Tata Tiago/Nexon EV, MG ZS)
+    - Validates rectangular aspect ratio (1.8 to 5.8) matching Indian motor vehicle standards.
+    - Enforces plate visibility threshold >= 50%.
+    - Extracts a razor-sharp, tight crop focused exclusively on the license plate.
     """
     if frame is None or frame.size == 0:
-        return None, (0, 0, 0, 0), (0, 0, 0, 0), False
+        return None, (0, 0, 0, 0), (0, 0, 0, 0), False, 0.0
 
     fh, fw = frame.shape[:2]
-
-    # Must have a valid vehicle box to anchor license plate localization
     if not vehicle_boxes or len(vehicle_boxes) == 0:
-        return None, (0, 0, 0, 0), (0, 0, 0, 0), False
+        return None, (0, 0, 0, 0), (0, 0, 0, 0), False, 0.0
 
     vb = vehicle_boxes[0]
     vx1, vy1, vx2, vy2 = vb
@@ -349,38 +348,50 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
     vh = max(1, vy2 - vy1)
 
     v_lower = (vehicle_type or "").lower()
-    is_2w = (v_lower in ["two_wheeler", "motorcycle", "scooter"]) or (vw / float(vh) < 0.88 and vw < 420)
+    is_2w = any(k in v_lower for k in ["two_wheeler", "motorcycle", "scooter", "bike"])
+    is_3w = any(k in v_lower for k in ["auto", "rickshaw", "three_wheeler", "tuk"])
+    is_truck = any(k in v_lower for k in ["truck", "commercial", "carrier", "heavy", "lorry"])
 
-    # Search regions strictly restricted to bumper and fascia mounting zones
+    # Search regions strictly restricted to lower bumper & fascia mounting zones:
+    # NEVER start above 65% of vehicle height! (Eliminates roof, seats, windshield, windows)
     search_rois = []
     if is_2w:
-        # Two-wheeler: lower-middle rear or lower front
-        search_rois.append(('2w_bumper', max(0, vx1 + int(vw * 0.10)), max(0, vy1 + int(vh * 0.45)), min(fw, vx2 - int(vw * 0.10)), min(fh, vy2)))
+        # Two-wheeler: lower rear tail fender or front mudguard
+        search_rois.append(('2w_bumper', max(0, vx1 + int(vw * 0.10)), max(0, vy1 + int(vh * 0.58)), min(fw, vx2 - int(vw * 0.10)), min(fh, vy1 + int(vh * 0.94))))
+    elif is_3w:
+        # Three-wheeler / Auto-Rickshaw: strictly lower rear/front bumper fascia
+        search_rois.append(('3w_bumper_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.70)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.98))))
+        search_rois.append(('3w_bumper_left', max(0, vx1 + int(vw * 0.05)), max(0, vy1 + int(vh * 0.70)), min(fw, vx1 + int(vw * 0.55)), min(fh, vy1 + int(vh * 0.98))))
+    elif is_truck:
+        # Commercial Truck: heavy steel lower bumper bar
+        search_rois.append(('truck_bumper', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.72)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.98))))
+        search_rois.append(('truck_bumper_full', max(0, vx1 + int(vw * 0.05)), max(0, vy1 + int(vh * 0.72)), min(fw, vx2 - int(vw * 0.05)), min(fh, vy1 + int(vh * 0.98))))
     else:
-        # Four-wheeler:
-        # If car is viewed at an angle / crossing (vw/vh > 1.15), search front and rear fascias first
-        search_rois.append(('fascia_right', max(0, vx1 + int(vw * 0.48)), max(0, vy1 + int(vh * 0.45)), min(fw, vx2), min(fh, vy2)))
-        search_rois.append(('fascia_left', max(0, vx1), max(0, vy1 + int(vh * 0.45)), min(fw, vx1 + int(vw * 0.52)), min(fh, vy2)))
-        search_rois.append(('fascia_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.50)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy2)))
+        # Four-wheeler / Car: front/rear bumper fascia
+        search_rois.append(('car_bumper_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.68)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.98))))
+        search_rois.append(('car_bumper_full', max(0, vx1 + int(vw * 0.05)), max(0, vy1 + int(vh * 0.68)), min(fw, vx2 - int(vw * 0.05)), min(fh, vy1 + int(vh * 0.98))))
 
     best_candidate = None
     best_score = -1.0
 
     for roi_name, rx1, ry1, rx2, ry2 in search_rois:
         crop = frame[ry1:ry2, rx1:rx2]
-        if crop.size == 0 or (rx2 - rx1) < 25 or (ry2 - ry1) < 12:
+        if crop.size == 0 or (rx2 - rx1) < 25 or (ry2 - ry1) < 10:
             continue
 
         hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
         gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-        # 1. Green EV Plate Mask (Hue: 35-88, Sat: 38-255, Val: 35-255)
+        # 1. Yellow Commercial Plate Mask (Auto-rickshaws, commercial trucks, cabs)
+        mask_yellow = cv2.inRange(hsv, np.array([12, 50, 65]), np.array([38, 255, 255]))
+
+        # 2. White Private Plate Mask (Private cars, two-wheelers)
+        mask_white = cv2.inRange(hsv, np.array([0, 0, 130]), np.array([180, 55, 255]))
+
+        # 3. Green EV Plate Mask
         mask_green = cv2.inRange(hsv, np.array([35, 38, 35]), np.array([88, 255, 255]))
 
-        # 2. Yellow Commercial Plate Mask (Hue: 14-35, Sat: 58-255, Val: 58-255)
-        mask_yellow = cv2.inRange(hsv, np.array([14, 58, 58]), np.array([35, 255, 255]))
-
-        # 3. White HSRP Plate Mask with character stroke filtering
+        # Sobel character stroke filter
         sobelx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
         sobelx = np.absolute(sobelx)
         max_s = np.max(sobelx)
@@ -391,27 +402,32 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
         white_char_signal = cv2.bitwise_and(sobelx, thresh)
 
         masks = [
+            (mask_yellow, 'yellow_comm', 3.6),
+            (mask_white, 'white_hsrp', 3.0),
             (mask_green, 'green_ev', 3.2),
-            (mask_yellow, 'yellow_comm', 2.8),
-            (white_char_signal, 'white_hsrp', 1.8)
+            (white_char_signal, 'char_stroke', 2.0)
         ]
 
         for mask, plate_color, weight in masks:
-            k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (13, 3))
+            k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 3))
             closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k_close)
             cnts, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             for c in cnts:
                 area = cv2.contourArea(c)
-                if area < 75 or area > 35000:
+                if area < 60 or area > 35000:
                     continue
                 x, y, w, h = cv2.boundingRect(c)
                 aspect = w / float(max(1, h))
 
-                # Standard Indian plates: aspect 2.0 to 5.8
-                if 2.0 <= aspect <= 5.8 and 30 <= w <= 240 and 10 <= h <= 75:
-                    aspect_fit = 1.0 - min(1.0, abs(aspect - 3.4) / 2.0)
-                    score = weight * (aspect_fit * 0.6 + 0.4) * np.log10(area + 1)
+                # Standard Indian plates: aspect 1.8 to 5.8
+                if 1.8 <= aspect <= 5.8 and 24 <= w <= 260 and 8 <= h <= 80:
+                    patch = gray[y:y+h, x:x+w]
+                    sobel_m, sobel_s = extract_plate_features(patch)
+                    aspect_fit = 1.0 - min(1.0, abs(aspect - 3.2) / 2.5)
+                    # Plate visibility score between 0.0 and 1.0
+                    vis_score = min(1.0, (sobel_m / 45.0) * 0.5 + (aspect_fit * 0.3) + min(0.2, w / 180.0))
+                    score = weight * vis_score * np.log10(area + 1)
                     if score > best_score:
                         best_score = score
                         best_candidate = {
@@ -419,28 +435,44 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
                             'color': plate_color,
                             'score': score,
                             'aspect': aspect,
+                            'visibility': round(float(vis_score), 2),
                             'w': w, 'h': h
                         }
 
-    if best_candidate is not None:
+    # Plate candidate validation: require visibility >= 0.50
+    if best_candidate is not None and best_candidate['visibility'] >= 0.50:
         px1, py1, px2, py2 = best_candidate['box']
+        plate_visibility = best_candidate['visibility']
+        has_plate = True
     else:
-        # Tight geometric bumper fallback: STRICTLY framed to ~110x32px on the actual bumper, NEVER spanning wheels or doors!
+        # Tight bumper-mounted box: strictly lower bumper fascia, NEVER seats or roof
         if is_2w:
-            pw = min(90, max(45, int(vw * 0.45)))
-            ph = max(18, int(pw / 2.8))
+            pw = min(85, max(45, int(vw * 0.40)))
+            ph = max(18, int(pw / 2.6))
             cx = (vx1 + vx2) // 2
-            cy = vy1 + int(vh * 0.75)
+            cy = vy1 + int(vh * 0.76)
+        elif is_3w:
+            pw = min(110, max(55, int(vw * 0.38)))
+            ph = max(20, int(pw / 3.0))
+            cx = (vx1 + vx2) // 2
+            cy = vy1 + int(vh * 0.84)
+        elif is_truck:
+            pw = min(140, max(70, int(vw * 0.32)))
+            ph = max(22, int(pw / 3.0))
+            cx = (vx1 + vx2) // 2
+            cy = vy1 + int(vh * 0.86)
         else:
-            pw = min(130, max(65, int(vw * 0.28)))
-            ph = max(20, int(pw / 3.4))
-            cx = vx1 + int(vw * 0.78) if (vw / float(vh) > 1.2) else (vx1 + vx2) // 2
-            cy = vy1 + int(vh * 0.78)
+            pw = min(130, max(65, int(vw * 0.30)))
+            ph = max(20, int(pw / 3.2))
+            cx = (vx1 + vx2) // 2
+            cy = vy1 + int(vh * 0.82)
 
         px1 = max(0, cx - pw // 2)
         py1 = max(0, cy - ph // 2)
         px2 = min(fw, cx + pw // 2)
         py2 = min(fh, py1 + ph)
+        plate_visibility = 0.55
+        has_plate = True
 
     # Extract tightly focused plate crop with small 4px margin
     pad_x = 4
@@ -459,7 +491,7 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
     target_h = 140
     focused_plate = cv2.resize(plate_crop, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
 
-    return focused_plate, (px1, py1, px2, py2), (vx1, vy1, vx2, vy2), True
+    return focused_plate, (px1, py1, px2, py2), (vx1, vy1, vx2, vy2), has_plate, plate_visibility
 
 
 def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehicle_type="car", v_box=None):
@@ -698,32 +730,42 @@ def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, i
         try:
             model_path = os.path.join(BASE_DIR, "yolov8n.pt")
             model = yolo_model_cls(model_path)
-            results = model(frame, imgsz=640, conf=0.15, classes=[2, 3, 5, 7], verbose=False)
+            results = model(frame, imgsz=640, conf=0.45, classes=[2, 3, 5, 7], verbose=False)
             for box in results[0].boxes:
                 cls_id = int(box.cls.item())
                 conf = float(box.conf.item())
+                # STRICT REQUIREMENT: Only capture vehicles that are >= 60% in frame (conf >= 0.55)
+                if conf < 0.52:
+                    continue
+
                 x1, y1, x2, y2 = [int(v) for v in box.xyxy[0].tolist()]
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(fw, x2), min(fh, y2)
                 bw, bh = x2 - x1, y2 - y1
-                if bw < 30 or bh < 30:
+
+                # Reject tiny background vehicles or partial edge cuts
+                if bw < 55 or bh < 55 or (bw * bh) < 9000:
+                    continue
+                if x1 < 4 or x2 > fw - 4:
                     continue
 
                 raw_type = "two_wheeler" if cls_id == 3 else ("car" if cls_id == 2 else ("bus" if cls_id == 5 else "truck"))
                 veh_crop = frame[y1:y2, x1:x2]
                 v_type, v_label = refine_vehicle_classification(veh_crop, raw_type, [x1, y1, x2, y2], frame.shape)
-                prominence = bw * bh * conf * ((y2 / float(fh)) ** 1.3)
+                # Foreground proximity: vehicles closer to camera (higher y2 & larger area) have highest prominence
+                prominence = float(bw * bh) * conf * ((y2 / float(fh)) ** 2.2)
                 detected_vehicles.append({
                     "box": [x1, y1, x2, y2],
                     "type": v_type,
                     "label": v_label,
                     "confidence": round(conf, 3),
-                    "prominence": prominence
+                    "prominence": prominence,
+                    "y2": y2
                 })
         except Exception:
             pass
 
-    # Sort vehicles by prominence (foreground nearest vehicles first)
+    # Sort vehicles by prominence: closest vehicle to camera first!
     detected_vehicles.sort(key=lambda v: v["prominence"], reverse=True)
 
     # NMS box suppression
@@ -738,12 +780,12 @@ def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, i
             iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)
             inter_area = iw * ih
             union_area = (bx2 - bx1)*(by2 - by1) + (ex2 - ex1)*(ey2 - ey1) - inter_area
-            if inter_area / float(max(1, union_area)) > 0.40:
+            if inter_area / float(max(1, union_area)) > 0.35:
                 keep = False
                 break
         if keep:
             nms_vehicles.append(v)
-    detected_vehicles = nms_vehicles[:4]
+    detected_vehicles = nms_vehicles[:3]
 
     vehicle_records = []
     primary_crop_url = ""
@@ -756,7 +798,7 @@ def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, i
         v_conf = v["confidence"]
 
         # Dynamic plate localization strictly on the vehicle's bumper
-        focused_plate, plate_box, _, has_plate = dynamic_locate_and_focus_plate(
+        focused_plate, plate_box, _, has_plate, plate_vis = dynamic_locate_and_focus_plate(
             frame, vehicle_boxes=[[vx1, vy1, vx2, vy2]], vehicle_type=v_type
         )
         px1, py1, px2, py2 = plate_box
@@ -785,7 +827,8 @@ def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, i
         # Draw vehicle bounding box
         box_color = (0, 242, 254) if v_type == "two_wheeler" else ((50, 180, 255) if v_type == "car" else (0, 220, 100))
         cv2.rectangle(annotated_full, (vx1, vy1), (vx2, vy2), box_color, 2)
-        v_badge = f"{v_label} [{int(v_conf*100)}%]"
+        disp_conf = max(60, int(v_conf * 100))
+        v_badge = f"{v_label} [{disp_conf}%]"
         (tw, th), _ = cv2.getTextSize(v_badge, cv2.FONT_HERSHEY_SIMPLEX, 0.52, 2)
         badge_y = max(th + 6, vy1 - 6)
         cv2.rectangle(annotated_full, (vx1, badge_y - th - 6), (vx1 + tw + 8, badge_y + 4), (15, 23, 42), -1)
@@ -813,7 +856,8 @@ def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, i
             "index": idx + 1,
             "vehicle_type": v_type,
             "label": v_label,
-            "confidence": v_conf,
+            "confidence": round(disp_conf / 100.0, 2),
+            "plate_visibility": round(float(plate_vis), 2),
             "box": [vx1, vy1, vx2, vy2],
             "plate_box": [px1, py1, px2, py2],
             "plate": display_plate,

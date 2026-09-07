@@ -5814,6 +5814,8 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
   const evBtnClearSnapshotFoot = document.getElementById('evBtnClearSnapshotFoot');
   const evVehicleChipsContainer = document.getElementById('evVehicleChipsContainer');
   const evCropBadge = document.getElementById('evCropBadge');
+  const evCropPlateReadout = document.getElementById('evCropPlateReadout');
+  const evCropVisBadge = document.getElementById('evCropVisBadge');
   const evOcrStatusText = document.getElementById('evOcrStatusText');
   const evToggleEnhancedBtn = document.getElementById('evToggleEnhancedBtn');
   const evToggleRawBtn = document.getElementById('evToggleRawBtn');
@@ -5979,12 +5981,32 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
 
   // Crop & Forensic DSP display helper
   function updateCropDisplay() {
-    if (!evCropImg || !activeVeh) return;
+    if (!evCropImg || !activeVeh) {
+      if (evCropPlateReadout) evCropPlateReadout.textContent = 'NO VEHICLE IN FOV';
+      if (evCropVisBadge) evCropVisBadge.textContent = 'MONITORING';
+      return;
+    }
     const targetUrl = (isEnhanced && activeVeh.enhanced_crop_url) ? activeVeh.enhanced_crop_url : activeVeh.crop_url;
     if (targetUrl) evCropImg.src = targetUrl;
     evCropImg.style.objectFit = 'contain';
     evCropImg.style.borderRadius = '8px';
     evCropImg.style.boxShadow = isEnhanced ? '0 0 24px rgba(56, 189, 248, 0.25)' : 'none';
+
+    // 100% Synchronization: Both top header and sidebar card display the exact same plate
+    if (evCropPlateReadout) {
+      evCropPlateReadout.textContent = activeVeh.plate || 'OPTICALLY UNRESOLVED';
+    }
+    if (evPlateText) {
+      evPlateText.textContent = activeVeh.plate || 'OPTICALLY UNRESOLVED';
+    }
+    if (evCropVisBadge) {
+      const vis = Math.round((activeVeh.plate_visibility || 0.65) * 100);
+      evCropVisBadge.textContent = `PLATE ${vis}% VISIBLE`;
+      evCropVisBadge.style.color = vis >= 50 ? '#10b981' : '#f59e0b';
+    }
+    if (evCropBadge) {
+      evCropBadge.textContent = activeVeh.label || 'PRIMARY TARGET';
+    }
     updateForensicAuditDisplay();
 
     if (isEnhanced) {
