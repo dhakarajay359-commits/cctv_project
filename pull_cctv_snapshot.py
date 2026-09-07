@@ -131,11 +131,11 @@ def refine_vehicle_classification(veh_crop, raw_cls, bbox, frame_shape):
     # Proportions: 0.60 <= aspect_ratio <= 1.25, width vw >= 120px, height vh >= 130px
     # Enclosed or canvas roof canopy, mid-body cavity, compact width (< 400px)
     is_3w_proportions = (0.60 <= aspect_ratio <= 1.25) and (120 <= vw <= 390) and (125 <= vh <= 380)
-    if is_3w_proportions and (raw_cls in ["truck", "motorcycle", "car", "two_wheeler"]):
+    if is_3w_proportions and (raw_cls in ["truck", "motorcycle", "two_wheeler"]):
         # A) Detected as truck by YOLO (standard COCO confusion for 3-wheelers / Chhakda / Atul)
         if raw_cls == "truck":
             return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
-        # B) Detected as motorcycle/car but has wide canopy or open passenger cavity
+        # B) Detected as motorcycle but has wide canopy or open passenger cavity
         if (dark_cavity > 0.08 or top_w_occ > 0.55) and vw >= 150:
             return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
 
@@ -352,24 +352,28 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
     is_3w = any(k in v_lower for k in ["auto", "rickshaw", "three_wheeler", "tuk"])
     is_truck = any(k in v_lower for k in ["truck", "commercial", "carrier", "heavy", "lorry"])
 
-    # Search regions strictly restricted to lower bumper & fascia mounting zones:
-    # NEVER start above 65% of vehicle height! (Eliminates roof, seats, windshield, windows)
+    # Search regions strictly restricted to authentic license plate mounting zones:
+    # - NEVER start above 52% of vehicle height (eliminates roof, windows, windshield, bonnet, seats)
+    # - Tailgate plates (Hatchbacks / SUVs / Crossovers): 54% to 80% of vehicle height, centered
+    # - Bumper plates (Sedans / Hatchbacks / Vans): 68% to 90% of vehicle height, centered
+    # - NEVER include wheels/tires (> 90% of height and lateral corners)
     search_rois = []
     if is_2w:
-        # Two-wheeler: lower rear tail fender or front mudguard
-        search_rois.append(('2w_bumper', max(0, vx1 + int(vw * 0.10)), max(0, vy1 + int(vh * 0.58)), min(fw, vx2 - int(vw * 0.10)), min(fh, vy1 + int(vh * 0.94))))
+        # Two-wheeler: lower rear tail fender or front mudguard (centered)
+        search_rois.append(('2w_tail', max(0, vx1 + int(vw * 0.12)), max(0, vy1 + int(vh * 0.55)), min(fw, vx2 - int(vw * 0.12)), min(fh, vy1 + int(vh * 0.92))))
     elif is_3w:
-        # Three-wheeler / Auto-Rickshaw: strictly lower rear/front bumper fascia
-        search_rois.append(('3w_bumper_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.70)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.98))))
-        search_rois.append(('3w_bumper_left', max(0, vx1 + int(vw * 0.05)), max(0, vy1 + int(vh * 0.70)), min(fw, vx1 + int(vw * 0.55)), min(fh, vy1 + int(vh * 0.98))))
+        # Three-wheeler / Auto-Rickshaw: strictly lower rear/front bumper fascia (centered)
+        search_rois.append(('3w_bumper_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.60)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.92))))
+        search_rois.append(('3w_bumper_full', max(0, vx1 + int(vw * 0.10)), max(0, vy1 + int(vh * 0.62)), min(fw, vx2 - int(vw * 0.10)), min(fh, vy1 + int(vh * 0.92))))
     elif is_truck:
         # Commercial Truck: heavy steel lower bumper bar
-        search_rois.append(('truck_bumper', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.72)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.98))))
-        search_rois.append(('truck_bumper_full', max(0, vx1 + int(vw * 0.05)), max(0, vy1 + int(vh * 0.72)), min(fw, vx2 - int(vw * 0.05)), min(fh, vy1 + int(vh * 0.98))))
+        search_rois.append(('truck_bumper', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.65)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.92))))
     else:
-        # Four-wheeler / Car: front/rear bumper fascia
-        search_rois.append(('car_bumper_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.68)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.98))))
-        search_rois.append(('car_bumper_full', max(0, vx1 + int(vw * 0.05)), max(0, vy1 + int(vh * 0.68)), min(fw, vx2 - int(vw * 0.05)), min(fh, vy1 + int(vh * 0.98))))
+        # Four-wheeler / Car / SUV / Hatchback:
+        # 1. Tailgate mounting zone (central hatch door, 54% to 80% of vehicle height)
+        search_rois.append(('car_tailgate', max(0, vx1 + int(vw * 0.12)), max(0, vy1 + int(vh * 0.54)), min(fw, vx2 - int(vw * 0.12)), min(fh, vy1 + int(vh * 0.80))))
+        # 2. Bumper fascia mounting zone (68% to 90% of vehicle height)
+        search_rois.append(('car_bumper', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.68)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy1 + int(vh * 0.90))))
 
     best_candidate = None
     best_score = -1.0
@@ -415,57 +419,97 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
 
             for c in cnts:
                 area = cv2.contourArea(c)
-                if area < 60 or area > 35000:
+                if area < 18 or area > 35000:
                     continue
                 x, y, w, h = cv2.boundingRect(c)
                 aspect = w / float(max(1, h))
 
-                # Standard Indian plates: aspect 1.8 to 5.8
-                if 1.8 <= aspect <= 5.8 and 24 <= w <= 260 and 8 <= h <= 80:
-                    patch = gray[y:y+h, x:x+w]
-                    sobel_m, sobel_s = extract_plate_features(patch)
-                    aspect_fit = 1.0 - min(1.0, abs(aspect - 3.2) / 2.5)
-                    # Plate visibility score between 0.0 and 1.0
-                    vis_score = min(1.0, (sobel_m / 45.0) * 0.5 + (aspect_fit * 0.3) + min(0.2, w / 180.0))
-                    score = weight * vis_score * np.log10(area + 1)
-                    if score > best_score:
-                        best_score = score
-                        best_candidate = {
-                            'box': [rx1 + x, ry1 + y, rx1 + x + w, ry1 + y + h],
-                            'color': plate_color,
-                            'score': score,
-                            'aspect': aspect,
-                            'visibility': round(float(vis_score), 2),
-                            'w': w, 'h': h
-                        }
+                # Standard Indian plates: aspect 1.6 to 5.5, size constraints
+                if not (1.6 <= aspect <= 5.5 and 15 <= w <= 260 and 6 <= h <= 80):
+                    continue
+
+                # Relative to vehicle size (plates are between 10% and 45% of vehicle width)
+                if not (0.10 <= (w / float(vw)) <= 0.45):
+                    continue
+
+                if not (0.04 <= (h / float(vh)) <= 0.25):
+                    continue
+
+                # Center alignment check: plates are centrally mounted on the vehicle
+                cand_cx = rx1 + x + (w / 2.0)
+                cand_cy = ry1 + y + (h / 2.0)
+                veh_cx = (vx1 + vx2) / 2.0
+                rel_dev_x = abs(cand_cx - veh_cx) / float(vw)
+
+                # Plate must be within 24% of the vehicle centerline (excludes lateral door panels and outer rims)
+                if rel_dev_x > 0.24:
+                    continue
+
+                # STRICT WHEEL/TIRE EXCLUSION:
+                # Tires are located at bottom lateral corners (rel_y > 0.74 and rel_dev_x > 0.18)
+                rel_y = (cand_cy - vy1) / float(vh)
+                if rel_y > 0.74 and rel_dev_x > 0.18:
+                    continue
+
+                patch = gray[y:y+h, x:x+w]
+                sobel_m, sobel_s = extract_plate_features(patch)
+                aspect_fit = 1.0 - min(1.0, abs(aspect - 3.2) / 2.5)
+                # Plate visibility score between 0.0 and 1.0
+                vis_score = min(1.0, (sobel_m / 45.0) * 0.5 + (aspect_fit * 0.3) + min(0.2, w / 180.0))
+                # Boost candidate score for centered location, penalize off-center
+                center_boost = max(0.4, 1.0 - (rel_dev_x / 0.25))
+                score = weight * vis_score * np.log10(area + 1) * center_boost
+                if score > best_score:
+                    best_score = score
+                    best_candidate = {
+                        'box': [rx1 + x, ry1 + y, rx1 + x + w, ry1 + y + h],
+                        'color': plate_color,
+                        'score': score,
+                        'aspect': aspect,
+                        'visibility': round(float(vis_score), 2),
+                        'w': w, 'h': h
+                    }
 
     # Plate candidate validation: require visibility >= 0.50
     if best_candidate is not None and best_candidate['visibility'] >= 0.50:
         px1, py1, px2, py2 = best_candidate['box']
         plate_visibility = best_candidate['visibility']
         has_plate = True
+        pw = px2 - px1
+        ph = py2 - py1
+        # If candidate is tight around character strokes, expand slightly to neatly frame the plate
+        if pw < 34 or ph < 14:
+            target_pw = max(pw, 36)
+            target_ph = max(ph, 16)
+            cx = (px1 + px2) // 2
+            cy = (py1 + py2) // 2
+            px1 = max(0, cx - target_pw // 2)
+            py1 = max(0, cy - target_ph // 2)
+            px2 = min(fw, cx + target_pw // 2)
+            py2 = min(fh, cy + target_ph // 2)
     else:
-        # Tight bumper-mounted box: strictly lower bumper fascia, NEVER seats or roof
+        # Tight central plate box: strictly license plate mounting zone, NEVER wheels or roof
         if is_2w:
-            pw = min(85, max(45, int(vw * 0.40)))
+            pw = min(85, max(45, int(vw * 0.38)))
             ph = max(18, int(pw / 2.6))
             cx = (vx1 + vx2) // 2
-            cy = vy1 + int(vh * 0.76)
+            cy = vy1 + int(vh * 0.74)
         elif is_3w:
-            pw = min(110, max(55, int(vw * 0.38)))
+            pw = min(110, max(55, int(vw * 0.36)))
             ph = max(20, int(pw / 3.0))
             cx = (vx1 + vx2) // 2
-            cy = vy1 + int(vh * 0.84)
+            cy = vy1 + int(vh * 0.82)
         elif is_truck:
-            pw = min(140, max(70, int(vw * 0.32)))
+            pw = min(140, max(70, int(vw * 0.30)))
             ph = max(22, int(pw / 3.0))
             cx = (vx1 + vx2) // 2
-            cy = vy1 + int(vh * 0.86)
+            cy = vy1 + int(vh * 0.84)
         else:
-            pw = min(130, max(65, int(vw * 0.30)))
-            ph = max(20, int(pw / 3.2))
+            # Four-wheeler / Car / SUV: centrally mounted between tailgate and bumper
+            pw = min(120, max(60, int(vw * 0.28)))
+            ph = max(18, int(pw / 3.2))
             cx = (vx1 + vx2) // 2
-            cy = vy1 + int(vh * 0.82)
+            cy = vy1 + int(vh * 0.72)
 
         px1 = max(0, cx - pw // 2)
         py1 = max(0, cy - ph // 2)

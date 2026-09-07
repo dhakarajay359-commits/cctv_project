@@ -131,11 +131,11 @@ def refine_vehicle_classification(veh_crop, raw_cls, bbox, frame_shape):
     # Proportions: 0.60 <= aspect_ratio <= 1.25, width vw >= 120px, height vh >= 130px
     # Enclosed or canvas roof canopy, mid-body cavity, compact width (< 400px)
     is_3w_proportions = (0.60 <= aspect_ratio <= 1.25) and (120 <= vw <= 390) and (125 <= vh <= 380)
-    if is_3w_proportions and (raw_cls in ["truck", "motorcycle", "car", "two_wheeler"]):
+    if is_3w_proportions and (raw_cls in ["truck", "motorcycle", "two_wheeler"]):
         # A) Detected as truck by YOLO (standard COCO confusion for 3-wheelers / Chhakda / Atul)
         if raw_cls == "truck":
             return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
-        # B) Detected as motorcycle/car but has wide canopy or open passenger cavity
+        # B) Detected as motorcycle but has wide canopy or open passenger cavity
         if (dark_cavity > 0.08 or top_w_occ > 0.55) and vw >= 150:
             return "auto_rickshaw", "AUTO RICKSHAW (THREE-WHEELER)"
 
@@ -545,9 +545,12 @@ def run_vision_engine():
                 plate_box = (0, 0, 0, 0)
                 if dynamic_locate_and_focus_plate:
                     try:
-                        focused_plate, plate_box, _, _ = dynamic_locate_and_focus_plate(
+                        plate_res = dynamic_locate_and_focus_plate(
                             frame, vehicle_boxes=[[vx1, vy1, vx2, vy2]], vehicle_type=cls_name
                         )
+                        if plate_res:
+                            focused_plate = plate_res[0]
+                            plate_box = plate_res[1]
                     except Exception:
                         pass
 
