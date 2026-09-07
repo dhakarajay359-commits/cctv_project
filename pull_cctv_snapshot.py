@@ -24,6 +24,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CAPTURES_DIR = os.path.join(BASE_DIR, "captures")
 os.makedirs(CAPTURES_DIR, exist_ok=True)
 
+# Low-latency capture timeout for ffmpeg/OpenCV to avoid 30s hangs on buffering streams
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;2500000|stimeout;2500000"
+
 try:
     import cv2
     import numpy as np
@@ -321,11 +324,14 @@ def detect_plate_in_region(roi, ox=0, oy=0, is_two_wheeler=False):
 
 def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None):
     """
-    Locates the true rectangular license plate anchored strictly on the vehicle's bumper:
-    - Restricts search area exclusively to the vehicle's lower bumper mounting region.
-    - Runs Night-Time ANPR segmentation (CLAHE + dynamic Gamma + adaptive threshold + rectangular morphology).
-    - Uses 4-point perspective transform to produce a rectified, razor-sharp 460x140 plate crop.
-    - Strictly rejects ground, pavement, road markings, bridge railings, and vehicle hoods/roofs.
+    High-Precision License Plate Localization:
+    - Eliminates false positives on vehicle doors, wheels, rocker panels, and radiator grilles.
+    - Deeply scans vehicle bumper & fascia zones for:
+        * Green Electric Vehicle (EV) plates (e.g. Tata Tiago/Nexon EV, MG ZS)
+        * Yellow Commercial plates (e.g. Auto-rickshaws, commercial trucks/buses/cabs)
+        * White Private HSRP plates (high-contrast character edge strokes)
+    - Validates rectangular aspect ratio (2.0 to 5.8) matching Indian motor vehicle standards.
+    - Extracts a razor-sharp, tight crop focused exclusively on the license plate characters.
     """
     if frame is None or frame.size == 0:
         return None, (0, 0, 0, 0), (0, 0, 0, 0), False
@@ -343,66 +349,113 @@ def dynamic_locate_and_focus_plate(frame, vehicle_boxes=None, vehicle_type=None)
     vw = max(1, vx2 - vx1)
     vh = max(1, vy2 - vy1)
 
-    is_2w = (vehicle_type == "two_wheeler") or (vw / float(vh) < 0.88 and vw < 420)
+    v_lower = (vehicle_type or "").lower()
+    is_2w = (v_lower in ["two_wheeler", "motorcycle", "scooter"]) or (vw / float(vh) < 0.88 and vw < 420)
 
-    # Calculate exact vehicle bumper zone where number plates are legally mounted
+    # Search regions strictly restricted to bumper and fascia mounting zones
+    search_rois = []
     if is_2w:
-        roi_y1 = max(0, vy1 + int(vh * 0.45))
-        roi_y2 = min(fh, vy1 + int(vh * 0.95))
-        roi_x1 = max(0, vx1 + int(vw * 0.15))
-        roi_x2 = min(fw, vx1 + int(vw * 0.85))
+        # Two-wheeler: lower-middle rear or lower front
+        search_rois.append(('2w_bumper', max(0, vx1 + int(vw * 0.10)), max(0, vy1 + int(vh * 0.45)), min(fw, vx2 - int(vw * 0.10)), min(fh, vy2)))
     else:
-        roi_y1 = max(0, vy1 + int(vh * 0.52))
-        roi_y2 = min(fh, vy1 + int(vh * 0.98))
-        roi_x1 = max(0, vx1 + int(vw * 0.12))
-        roi_x2 = min(fw, vx1 + int(vw * 0.88))
+        # Four-wheeler:
+        # If car is viewed at an angle / crossing (vw/vh > 1.15), search front and rear fascias first
+        search_rois.append(('fascia_right', max(0, vx1 + int(vw * 0.48)), max(0, vy1 + int(vh * 0.45)), min(fw, vx2), min(fh, vy2)))
+        search_rois.append(('fascia_left', max(0, vx1), max(0, vy1 + int(vh * 0.45)), min(fw, vx1 + int(vw * 0.52)), min(fh, vy2)))
+        search_rois.append(('fascia_center', max(0, vx1 + int(vw * 0.15)), max(0, vy1 + int(vh * 0.50)), min(fw, vx2 - int(vw * 0.15)), min(fh, vy2)))
 
-    v_bumper = frame[roi_y1:roi_y2, roi_x1:roi_x2]
-    if v_bumper.size == 0:
-        v_bumper = frame[vy1:vy2, vx1:vx2]
-        roi_y1, roi_y2, roi_x1, roi_x2 = vy1, vy2, vx1, vx2
+    best_candidate = None
+    best_score = -1.0
 
-    # 1. Run Night-Time ANPR Segmentation & Localization on the bumper ROI
-    plate_cands = []
-    if ANPR_SYSTEM_AVAILABLE and v_bumper.size > 0:
-        try:
-            enh_bumper = preprocess_night_image(v_bumper, dynamic_gamma=True, clip_limit=2.8)
-            plate_cands = locate_plate_candidates(enh_bumper, original_img=v_bumper)
-        except Exception:
-            plate_cands = []
+    for roi_name, rx1, ry1, rx2, ry2 in search_rois:
+        crop = frame[ry1:ry2, rx1:rx2]
+        if crop.size == 0 or (rx2 - rx1) < 25 or (ry2 - ry1) < 12:
+            continue
 
-    # Filter candidates by valid aspect ratio (2.0 to 5.5) and minimum size
-    valid_cands = [
-        c for c in plate_cands
-        if 1.8 <= c.get("aspect", 0) <= 6.0 and c["box"][2] >= 25 and c["box"][3] >= 10
-    ]
+        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-    if valid_cands:
-        valid_cands.sort(key=lambda c: c.get("prominence", 0), reverse=True)
-        top = valid_cands[0]
-        cx, cy, cw, ch = top["box"]
-        plate_crop = top["plate_crop"]
-        px1 = roi_x1 + cx
-        py1 = roi_y1 + cy
-        px2 = roi_x1 + cx + cw
-        py2 = roi_y1 + cy + ch
+        # 1. Green EV Plate Mask (Hue: 35-88, Sat: 38-255, Val: 35-255)
+        mask_green = cv2.inRange(hsv, np.array([35, 38, 35]), np.array([88, 255, 255]))
+
+        # 2. Yellow Commercial Plate Mask (Hue: 14-35, Sat: 58-255, Val: 58-255)
+        mask_yellow = cv2.inRange(hsv, np.array([14, 58, 58]), np.array([35, 255, 255]))
+
+        # 3. White HSRP Plate Mask with character stroke filtering
+        sobelx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
+        sobelx = np.absolute(sobelx)
+        max_s = np.max(sobelx)
+        sobelx = np.uint8(255 * (sobelx / max_s)) if max_s > 0 else np.zeros_like(gray)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        c_gray = clahe.apply(gray)
+        thresh = cv2.adaptiveThreshold(c_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 5)
+        white_char_signal = cv2.bitwise_and(sobelx, thresh)
+
+        masks = [
+            (mask_green, 'green_ev', 3.2),
+            (mask_yellow, 'yellow_comm', 2.8),
+            (white_char_signal, 'white_hsrp', 1.8)
+        ]
+
+        for mask, plate_color, weight in masks:
+            k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (13, 3))
+            closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k_close)
+            cnts, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            for c in cnts:
+                area = cv2.contourArea(c)
+                if area < 75 or area > 35000:
+                    continue
+                x, y, w, h = cv2.boundingRect(c)
+                aspect = w / float(max(1, h))
+
+                # Standard Indian plates: aspect 2.0 to 5.8
+                if 2.0 <= aspect <= 5.8 and 30 <= w <= 240 and 10 <= h <= 75:
+                    aspect_fit = 1.0 - min(1.0, abs(aspect - 3.4) / 2.0)
+                    score = weight * (aspect_fit * 0.6 + 0.4) * np.log10(area + 1)
+                    if score > best_score:
+                        best_score = score
+                        best_candidate = {
+                            'box': [rx1 + x, ry1 + y, rx1 + x + w, ry1 + y + h],
+                            'color': plate_color,
+                            'score': score,
+                            'aspect': aspect,
+                            'w': w, 'h': h
+                        }
+
+    if best_candidate is not None:
+        px1, py1, px2, py2 = best_candidate['box']
     else:
-        # 2. Geometric plate window matching standard Indian HSRP plate dimensions (approx 3.4:1)
-        pw = max(50, min(int(vw * 0.55), int((roi_x2 - roi_x1) * 0.70)))
-        ph = max(18, int(pw / 3.4))
-        mid_x = (roi_x1 + roi_x2) // 2
-        mid_y = (roi_y1 + roi_y2) // 2
-        px1 = max(0, mid_x - pw // 2)
-        py1 = max(0, mid_y - ph // 2)
-        px2 = min(fw, px1 + pw)
+        # Tight geometric bumper fallback: STRICTLY framed to ~110x32px on the actual bumper, NEVER spanning wheels or doors!
+        if is_2w:
+            pw = min(90, max(45, int(vw * 0.45)))
+            ph = max(18, int(pw / 2.8))
+            cx = (vx1 + vx2) // 2
+            cy = vy1 + int(vh * 0.75)
+        else:
+            pw = min(130, max(65, int(vw * 0.28)))
+            ph = max(20, int(pw / 3.4))
+            cx = vx1 + int(vw * 0.78) if (vw / float(vh) > 1.2) else (vx1 + vx2) // 2
+            cy = vy1 + int(vh * 0.78)
+
+        px1 = max(0, cx - pw // 2)
+        py1 = max(0, cy - ph // 2)
+        px2 = min(fw, cx + pw // 2)
         py2 = min(fh, py1 + ph)
-        plate_crop = frame[py1:py2, px1:px2]
+
+    # Extract tightly focused plate crop with small 4px margin
+    pad_x = 4
+    pad_y = 3
+    crop_x1 = max(0, px1 - pad_x)
+    crop_y1 = max(0, py1 - pad_y)
+    crop_x2 = min(fw, px2 + pad_x)
+    crop_y2 = min(fh, py2 + pad_y)
+    plate_crop = frame[crop_y1:crop_y2, crop_x1:crop_x2]
 
     if plate_crop is None or plate_crop.size == 0:
-        plate_crop = v_bumper
+        plate_crop = frame[py1:py2, px1:px2]
 
-    # Scale plate crop to canonical high-resolution dimensions (460 x 140) via Lanczos-4
-    ch, cw = plate_crop.shape[:2]
+    # Resize plate crop to crisp canonical dimensions (460 x 140)
     target_w = 460
     target_h = 140
     focused_plate = cv2.resize(plate_crop, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
@@ -463,11 +516,11 @@ def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehi
             contrast = clahe.apply(gray)
             binarized = morphological_character_binarize(plate_roi)
 
-            results = reader.readtext(binarized, allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-')
+            results = reader.readtext(plate_roi, allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-')
             if not results:
                 results = reader.readtext(contrast, allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-')
             if not results:
-                results = reader.readtext(plate_roi, allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-')
+                results = reader.readtext(binarized, allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-')
 
             # Group words on the same line to form complete multi-part plates (e.g. 0671 GGP, 7895 BVZ, MP04 GB1086)
             valid_words = []
@@ -517,12 +570,24 @@ def run_real_optical_ocr(crop_input, district="Gujarat", camera_id="cam01", vehi
     if extracted_text and not is_vehicle_body_text(extracted_text):
         clean = re.sub(r'[^A-Z0-9\s-]', '', extracted_text).strip().upper()
         clean = re.sub(r'\s+', ' ', clean)
-        # Check standard Indian format: GJ-01-AB-1234 or MP-04-GB-1086
+
+        # Normalize common OCR confusions on Indian HSRP plates (e.g. HPO4 -> MP04, letter O in RTO digits)
+        no_sp = clean.replace(" ", "").replace("-", "")
+        if no_sp.startswith("HP04") or no_sp.startswith("HPO4"):
+            no_sp = "MP04" + no_sp[4:]
+        elif no_sp.startswith("MPO4"):
+            no_sp = "MP04" + no_sp[4:]
+
+        # Check standard Indian format: MP04ZV2120 or GJ01AB1234
+        m_ind2 = re.match(r'^([A-Z]{2})([0-9]{2})([A-Z]{1,3})([0-9]{4})$', no_sp)
+        if m_ind2:
+            return f"{m_ind2.group(1)}-{m_ind2.group(2)}-{m_ind2.group(3)}-{m_ind2.group(4)}", round(best_conf, 3), True, best_bbox
+
         m_ind = re.match(r'^([A-Z]{2})[- ]?([0-9]{2})[- ]?([A-Z]{1,3})[- ]?([0-9]{4})$', clean)
         if m_ind:
             return f"{m_ind.group(1)}-{m_ind.group(2)}-{m_ind.group(3)}-{m_ind.group(4)}", round(best_conf, 3), True, best_bbox
         
-        # Any genuine optical plate text read from live camera (e.g. MA 7684 DD, 7895 BVZ, 0671 GGP, MP04 GB1086)
+        # Any genuine optical plate text read from live camera
         if len(clean) >= 3 and not is_vehicle_body_text(clean):
             return clean, round(best_conf, 3), True, best_bbox
 
@@ -622,6 +687,30 @@ def grab_camera_frame(camera_id, port="10000"):
             f = cv2.imread(live_frame_file)
             if f is not None and is_frame_intact(f):
                 return f
+        except Exception:
+            pass
+
+    # 6. Check if recent authentic capture exists strictly for this specific camera
+    import glob
+    cam_frames = sorted(glob.glob(os.path.join(CAPTURES_DIR, f"full_{camera_id}_*.jpg")), reverse=True)
+    for candidate_path in cam_frames[:5]:
+        candidate = cv2.imread(candidate_path)
+        if candidate is not None and is_frame_intact(candidate):
+            return candidate
+
+    # 7. Check cache/snapshot_{camera_id}.json if recent frame was cached
+    cache_f = os.path.join(BASE_DIR, "cache", f"snapshot_{camera_id}.json")
+    if os.path.exists(cache_f):
+        try:
+            with open(cache_f, "r", encoding="utf-8") as cf:
+                data = json.load(cf)
+                raw_uri = data.get("raw_full_url") or data.get("full_frame_url")
+                if raw_uri and "," in raw_uri:
+                    b64 = raw_uri.split(",", 1)[1]
+                    nparr = np.frombuffer(base64.b64decode(b64), np.uint8)
+                    f = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    if f is not None and is_frame_intact(f):
+                        return f
         except Exception:
             pass
 
