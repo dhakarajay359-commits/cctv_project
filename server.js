@@ -1223,25 +1223,6 @@ const server = http.createServer((req, res) => {
 
     const matchedCam = CAMERA_CATALOG.find(c => c.id.toLowerCase() === camId.toLowerCase()) || CAMERA_CATALOG[0];
 
-    const snapshotCacheDir = path.join(ROOT_DIR, 'cache');
-    const snapshotCacheFile = path.join(snapshotCacheDir, `snapshot_${matchedCam.id}.json`);
-
-    // 1. Instant cache check (very fresh < 5s only, and strictly matching camera)
-    if (fs.existsSync(snapshotCacheFile) && !isLivePull) {
-      try {
-        const stats = fs.statSync(snapshotCacheFile);
-        const ageMs = Date.now() - stats.mtimeMs;
-        if (ageMs < 5000) {
-          const cachedData = JSON.parse(fs.readFileSync(snapshotCacheFile, 'utf8'));
-          if (cachedData && cachedData.status === 'success' && cachedData.camera_id === matchedCam.id) {
-            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-            res.end(JSON.stringify(cachedData, null, 2));
-            return;
-          }
-        }
-      } catch(e){}
-    }
-
     const { execFile } = require('child_process');
     const scriptPath = path.join(ROOT_DIR, 'pull_cctv_snapshot.py');
     const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
@@ -1255,10 +1236,7 @@ const server = http.createServer((req, res) => {
     function sendSnapshotSuccess(parsed) {
       if (hasResponded || res.headersSent) return;
       hasResponded = true;
-      try {
-        if (!fs.existsSync(snapshotCacheDir)) fs.mkdirSync(snapshotCacheDir, { recursive: true });
-        fs.writeFileSync(snapshotCacheFile, JSON.stringify(parsed), 'utf8');
-      } catch(e){}
+      // 100% ephemeral in-memory response: NEVER store snapshots to disk!
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify(parsed, null, 2));
     }
@@ -1282,15 +1260,6 @@ const server = http.createServer((req, res) => {
           } catch(e){}
         }
         if (!hasResponded && !res.headersSent) {
-          if (fs.existsSync(snapshotCacheFile)) {
-            try {
-              const cached = JSON.parse(fs.readFileSync(snapshotCacheFile, 'utf8'));
-              if (cached && cached.status === 'success') {
-                sendSnapshotSuccess(cached);
-                return;
-              }
-            } catch(e){}
-          }
           res.writeHead(503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
           res.end(JSON.stringify({
             status: 'error',

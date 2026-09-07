@@ -21,9 +21,8 @@ from datetime import datetime
 import hashlib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CAPTURES_DIR = os.path.join(BASE_DIR, "captures")
-os.makedirs(CAPTURES_DIR, exist_ok=True)
 
+# 100% in-memory processing: zero files written to disk
 # Low-latency capture timeout for ffmpeg/OpenCV to avoid 30s hangs on buffering streams
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "timeout;2500000|stimeout;2500000"
 
@@ -679,41 +678,6 @@ def grab_camera_frame(camera_id, port="10000"):
                             return f
         except Exception:
             pass
-
-    # 5. Check if live frame was saved by backend vision worker for this specific camera
-    live_frame_file = os.path.join(BASE_DIR, "assets", "live_frames", f"{camera_id}.jpg")
-    if os.path.exists(live_frame_file):
-        try:
-            f = cv2.imread(live_frame_file)
-            if f is not None and is_frame_intact(f):
-                return f
-        except Exception:
-            pass
-
-    # 6. Check if recent authentic capture exists strictly for this specific camera
-    import glob
-    cam_frames = sorted(glob.glob(os.path.join(CAPTURES_DIR, f"full_{camera_id}_*.jpg")), reverse=True)
-    for candidate_path in cam_frames[:5]:
-        candidate = cv2.imread(candidate_path)
-        if candidate is not None and is_frame_intact(candidate):
-            return candidate
-
-    # 7. Check cache/snapshot_{camera_id}.json if recent frame was cached
-    cache_f = os.path.join(BASE_DIR, "cache", f"snapshot_{camera_id}.json")
-    if os.path.exists(cache_f):
-        try:
-            with open(cache_f, "r", encoding="utf-8") as cf:
-                data = json.load(cf)
-                raw_uri = data.get("raw_full_url") or data.get("full_frame_url")
-                if raw_uri and "," in raw_uri:
-                    b64 = raw_uri.split(",", 1)[1]
-                    nparr = np.frombuffer(base64.b64decode(b64), np.uint8)
-                    f = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    if f is not None and is_frame_intact(f):
-                        return f
-        except Exception:
-            pass
-
     return None
 
 
