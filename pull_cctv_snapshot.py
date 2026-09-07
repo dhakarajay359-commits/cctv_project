@@ -19,7 +19,6 @@ import time
 import base64
 from datetime import datetime
 import hashlib
-import threading
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -677,7 +676,22 @@ def grab_camera_frame(camera_id, port="10000"):
         except Exception:
             pass
 
-    # 3. Check local decrypted / cached segments for this specific camera (cache/segments/{camera_id})
+    # 3. Direct probe of camera's live local HLS stream endpoint
+    if port:
+        try:
+            stream_url = f"http://localhost:{port}/cctv-stream/{camera_id}/index.m3u8"
+            cap = cv2.VideoCapture(stream_url)
+            if cap.isOpened():
+                for _ in range(4):
+                    ret, f = cap.read()
+                    if ret and f is not None and is_frame_intact(f):
+                        cap.release()
+                        return f
+                cap.release()
+        except Exception:
+            pass
+
+    # 4. Check local decrypted / cached segments for this specific camera (cache/segments/{camera_id})
     seg_dir = os.path.join(BASE_DIR, "cache", "segments", camera_id)
     if os.path.exists(seg_dir):
         try:
@@ -696,16 +710,7 @@ def grab_camera_frame(camera_id, port="10000"):
                             return f
         except Exception:
             pass
-
-    # 5. Guaranteed Optical Road Stream Frame Generator (NEVER returns None!)
-    synth = np.zeros((1080, 1920, 3), dtype=np.uint8)
-    synth[:420, :] = (40, 48, 56)
-    synth[420:, :] = (32, 36, 42)
-    cv2.line(synth, (960, 420), (260, 1080), (210, 210, 210), 4)
-    cv2.line(synth, (960, 420), (1660, 1080), (210, 210, 210), 4)
-    for yd in range(430, 1060, 60):
-        cv2.line(synth, (960, yd), (960, min(1080, yd + 35)), (240, 210, 50), 3)
-    return synth
+    return None
 
 
 def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, is_fast_mode=False):
@@ -917,17 +922,15 @@ def process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, i
 
 def pull_frame_on_demand(camera_id, camera_name="Camera", district="Gujarat", lat=23.0, lng=72.5, port="10000"):
     frame = grab_camera_frame(camera_id, port)
-    if frame is None or frame.size == 0:
-        frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-        frame[420:, :] = (32, 36, 42)
+    if frame is None:
+        return {"status": "error", "message": f"No live video frame available for {camera_id}"}
     return process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, is_fast_mode=False)
 
 
 def pull_frame_fallback(camera_id, camera_name="Camera", district="Gujarat", lat=23.0, lng=72.5, port="10000"):
     frame = grab_camera_frame(camera_id, port)
-    if frame is None or frame.size == 0:
-        frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-        frame[420:, :] = (32, 36, 42)
+    if frame is None:
+        return {"status": "error", "message": f"No video frame available for {camera_id}"}
     return process_cctv_frame_anpr(frame, camera_id, camera_name, district, lat, lng, is_fast_mode=True)
 
 

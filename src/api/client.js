@@ -1422,37 +1422,7 @@ class NirikshanApiClient {
         return await res.json();
       }
     } catch(e) {}
-
-    const matched = (this.cameras || []).find(c => c.id.toLowerCase() === (camId || 'cam01').toLowerCase()) || {
-      id: camId || 'cam01',
-      name: 'Optical CCTV Node',
-      district: 'Gujarat'
-    };
-    const rto = (matched.district || '').includes('Junagadh') ? 'GJ-11' : ((matched.district || '').includes('Surat') ? 'GJ-05' : 'GJ-01');
-    return {
-      status: 'success',
-      camera_id: matched.id,
-      camera_name: matched.name,
-      district: matched.district || 'Gujarat',
-      lat: matched.lat || 23.0,
-      lng: matched.lng || 72.5,
-      timestamp: new Date().toISOString(),
-      plate: `${rto}-AV-8873`,
-      vehicle_type: 'car',
-      vehicle_label: 'FOUR-WHEELER (CAR)',
-      confidence: 0.85,
-      vehicles_count: 1,
-      vehicles: [{
-        index: 1,
-        vehicle_type: 'car',
-        label: 'FOUR-WHEELER (CAR)',
-        confidence: 0.85,
-        plate_visibility: 0.70,
-        plate: `${rto}-AV-8873`,
-        ocr_status: 'AUTHENTIC OPTICAL ANPR EXTRACTED',
-        is_primary: true
-      }]
-    };
+    return { status: 'error', message: 'Unable to fetch evidentiary snapshot' };
   }
 
   async deleteSnapshotFiles(urls) {
