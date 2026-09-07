@@ -218,28 +218,29 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
     is_two_wheeler = any(k in v_lower for k in ["two_wheeler", "motorcycle", "scooter", "bike"])
     is_auto = "rickshaw" in v_lower or "auto" in v_lower
 
-    # License plate mounting zones strictly on the lower bumper or license plate recess
+    # License plate mounting zones strictly on designated vehicle plate mounting zones
     if is_truck_bus:
-        y1_search = int(vh * 0.40)
-        y2_search = min(vh, int(vh * 0.96))
-        x1_search = int(vw * 0.12)
-        x2_search = int(vw * 0.88)
-    elif is_two_wheeler:
-        y1_search = int(vh * 0.40)
-        y2_search = min(vh, int(vh * 0.90))
-        x1_search = int(vw * 0.12)
-        x2_search = int(vw * 0.88)
-    elif is_auto:
-        y1_search = int(vh * 0.45)
-        y2_search = min(vh, int(vh * 0.90))
+        y1_search = int(vh * 0.55)
+        y2_search = min(vh, int(vh * 0.94))
         x1_search = int(vw * 0.15)
         x2_search = int(vw * 0.85)
+    elif is_two_wheeler:
+        # Front plate on scooter/motorcycle is mounted on the front apron bracket (never lower mudguard or wheel)
+        y1_search = int(vh * 0.46)
+        y2_search = min(vh, int(vh * 0.74))
+        x1_search = int(vw * 0.20)
+        x2_search = int(vw * 0.80)
+    elif is_auto:
+        y1_search = int(vh * 0.50)
+        y2_search = min(vh, int(vh * 0.84))
+        x1_search = int(vw * 0.18)
+        x2_search = int(vw * 0.82)
     else:
-        # Standard cars / passenger four-wheelers
-        y1_search = int(vh * 0.40)
-        y2_search = min(vh, int(vh * 0.98))
-        x1_search = int(vw * 0.12)
-        x2_search = int(vw * 0.88)
+        # Standard cars / passenger four-wheelers (bumper or tailgate center)
+        y1_search = int(vh * 0.55)
+        y2_search = min(vh, int(vh * 0.95))
+        x1_search = int(vw * 0.18)
+        x2_search = int(vw * 0.82)
 
     search_roi = veh_crop[y1_search:y2_search, x1_search:x2_search]
     if search_roi.size == 0:
@@ -251,9 +252,10 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
     gray = cv2.cvtColor(search_roi, cv2.COLOR_BGR2GRAY)
 
     # Multi-spectral masks: White (private), Yellow (commercial), Green (EV)
-    white_mask = cv2.inRange(hsv, np.array([0, 0, 150]), np.array([180, 65, 255]))
-    yellow_mask = cv2.inRange(hsv, np.array([10, 45, 60]), np.array([38, 255, 255]))
-    green_mask = cv2.inRange(hsv, np.array([35, 35, 30]), np.array([88, 255, 255]))
+    # Require genuine light plate reflective backing (V >= 125)
+    white_mask = cv2.inRange(hsv, np.array([0, 0, 135]), np.array([180, 50, 255]))
+    yellow_mask = cv2.inRange(hsv, np.array([12, 55, 100]), np.array([38, 255, 255]))
+    green_mask = cv2.inRange(hsv, np.array([35, 45, 75]), np.array([88, 255, 255]))
 
     combined_mask = cv2.bitwise_or(white_mask, cv2.bitwise_or(yellow_mask, green_mask))
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 3))
@@ -266,14 +268,17 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         cx, cy, cw, ch = cv2.boundingRect(c)
         aspect = cw / float(max(1, ch))
         area = cw * ch
-        if 1.6 <= aspect <= 5.8 and 24 <= cw <= max(60, int(rw * 0.85)) and 8 <= ch <= max(20, int(rh * 0.50)):
+        if 1.6 <= aspect <= 5.8 and 22 <= cw <= max(50, int(rw * 0.85)) and 8 <= ch <= max(20, int(rh * 0.50)):
             patch_g = gray[cy:cy+ch, cx:cx+cw]
             if patch_g.size > 0:
+                # Reject dark mudguards or shadow regions: plate background must be bright/reflective
+                if np.mean(patch_g) < 98:
+                    continue
                 core = patch_g[int(ch*0.15):int(ch*0.85), int(cw*0.08):int(cw*0.92)]
                 if core.size > 0:
                     sobelx = np.abs(cv2.Sobel(core, cv2.CV_32F, 1, 0, ksize=3))
                     sobel_m = float(np.mean(sobelx))
-                    if sobel_m >= 55.0:
+                    if sobel_m >= 45.0:
                         aspect_fit = 1.0 - min(1.0, abs(aspect - 3.2) / 3.0)
                         score = area * (sobel_m / 35.0) * (1.0 + aspect_fit * 1.5)
                         candidates.append((score, cx, cy, cw, ch))
@@ -333,13 +338,14 @@ def extract_license_plate_crop(veh_crop: np.ndarray, vehicle_type: str = "car") 
         cx1 = max(0, int(vw * 0.25))
         cx2 = min(vw, int(vw * 0.75))
     elif is_two_wheeler:
-        cy1 = max(0, int(vh * 0.60))
-        cy2 = min(vh, int(vh * 0.90))
-        cx1 = max(0, int(vw * 0.25))
-        cx2 = min(vw, int(vw * 0.75))
+        # Two-wheeler front plate bracket on apron/cowl (never the lower mudguard or crash guard)
+        cy1 = max(0, int(vh * 0.52))
+        cy2 = min(vh, int(vh * 0.74))
+        cx1 = max(0, int(vw * 0.24))
+        cx2 = min(vw, int(vw * 0.76))
     else:
-        cy1 = max(0, int(vh * 0.62))
-        cy2 = min(vh, int(vh * 0.94))
+        cy1 = max(0, int(vh * 0.65))
+        cy2 = min(vh, int(vh * 0.90))
         cx1 = max(0, int(vw * 0.22))
         cx2 = min(vw, int(vw * 0.78))
 
