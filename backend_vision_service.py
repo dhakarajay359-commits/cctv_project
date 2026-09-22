@@ -62,12 +62,20 @@ except ImportError:
     YOLO = None
 
 try:
-    from pull_cctv_snapshot import dynamic_locate_and_focus_plate, run_real_optical_ocr, enhance_frame_dip, enhance_plate_dip, resolve_jurisdiction_plate
+    from pull_cctv_snapshot import (
+        dynamic_locate_and_focus_plate,
+        run_real_optical_ocr,
+        enhance_frame_dip,
+        enhance_plate_dip,
+        resolve_jurisdiction_plate,
+        assemble_plate_ocr,   # Authoritative multi-row plate parser - same as snapshot modal
+    )
 except Exception:
     dynamic_locate_and_focus_plate = None
     run_real_optical_ocr = None
     enhance_frame_dip = lambda img: img
     enhance_plate_dip = lambda img: img
+    assemble_plate_ocr = None
 
 try:
     import easyocr
@@ -539,91 +547,96 @@ def run_vision_engine():
                     continue
 
                 frame = None
-                # Check for local video asset first (e.g. assets/cam31_traffic.mp4)
-                stream_prop = cam.get('stream_url', '')
-                local_asset = os.path.join(BASE_DIR, stream_prop.lstrip('/')) if stream_prop.startswith('/assets/') else os.path.join(BASE_DIR, 'assets', f"{cam_id}_traffic.mp4")
-                if os.path.exists(local_asset):
+
+                # ── DEDICATED LOCAL ASSET FRAME SELECTION ─────────────────────────────
+                # For cameras with known optimal frame offsets (cam32-cam35), skip the
+                # random multi-frame scan and jump DIRECTLY to the pinned frame.
+                # This guarantees the OCR always reads the same clear plate each cycle.
+                # For all other cams, fall through to the YOLO-guided best-frame scan.
+                CAM_PREF_OFFSETS = {
+                    'cam32': [0],
+                    'cam33': [100],
+                    'cam34': [150],
+                    'cam35': [300],
+                }
+
+                # Check for dedicated pinned-frame asset first
+                dedicated_asset = os.path.join(BASE_DIR, "assets", f"{cam_id}_traffic.mp4")
+                if os.path.exists(dedicated_asset) and cam_id.lower() in CAM_PREF_OFFSETS:
                     try:
-                        cap = cv2.VideoCapture(local_asset)
+                        cap = cv2.VideoCapture(dedicated_asset)
                         if cap.isOpened():
                             total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                            step = max(1, total_f // 8)
-                            candidate_offsets = [0] + [i * step for i in range(1, 8)]
-                            best_f = None
-                            best_prom = -1.0
-                            for c_off in candidate_offsets:
+                            target_offsets = [o for o in CAM_PREF_OFFSETS[cam_id.lower()] if o < total_f]
+                            if not target_offsets:
+                                target_offsets = [0]
+                            for c_off in target_offsets:
                                 cap.set(cv2.CAP_PROP_POS_FRAMES, min(c_off, max(0, total_f - 4)))
                                 ret, f = cap.read()
                                 if ret and f is not None and is_frame_intact(f):
-                                    if best_f is None:
-                                        best_f = f
-                                    if yolo_m is not None:
-                                        try:
-                                            res_chk = yolo_m(f, imgsz=640, conf=0.20, classes=[2, 3, 5, 7], verbose=False)
-                                            for box in res_chk[0].boxes:
-                                                conf_b = float(box.conf.item())
-                                                x1, y1, x2, y2 = [int(v) for v in box.xyxy[0].tolist()]
-                                                bw, bh = x2 - x1, y2 - y1
-                                                area = bw * bh
-                                                if area < 10000:
-                                                    continue
-                                                h, w = f.shape[:2]
-                                                prom = float(area) * conf_b * ((y2 / float(h)) ** 1.6)
-                                                if prom > best_prom:
-                                                    best_prom = prom
-                                                    best_f = f
-                                        except Exception:
-                                            pass
-                            frame = best_f
-                            cap.release()
-                    except Exception:
-                        pass
-                elif is_camera_stream_ready(cam_id):
-                    stream_url = f"{API_BASE}/cctv-stream/{cam_id}/index.m3u8"
-                    cap = cv2.VideoCapture(
-                        stream_url,
-                        cv2.CAP_FFMPEG,
-                        [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 2000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 2000]
-                    )
-                    if cap.isOpened():
-                        # Read past partial NAL units until clean, intact frame is decoded
-                        for _ in range(8):
-                            ret, f = cap.read()
-                            if ret and f is not None and is_frame_intact(f):
-                                frame = f
-                                break
+                                    frame = f
+                                    logger.debug(f"[{cam_id.upper()}] Pinned frame {c_off}/{total_f} selected from dedicated asset")
+                                    break
                         cap.release()
+                    except Exception as e:
+                        logger.debug(f"[{cam_id.upper()}] Dedicated pinned-frame read failed: {e}")
 
-                # If camera has its own dedicated local asset (cam32-cam35), read strictly from it
+                # For non-dedicated cams: YOLO-guided best-prominence frame scan
                 if frame is None:
-                    dedicated_asset = os.path.join(BASE_DIR, "assets", f"{cam_id}_traffic.mp4")
-                    if os.path.exists(dedicated_asset):
+                    stream_prop = cam.get('stream_url', '')
+                    local_asset = os.path.join(BASE_DIR, stream_prop.lstrip('/')) if stream_prop.startswith('/assets/') else os.path.join(BASE_DIR, 'assets', f"{cam_id}_traffic.mp4")
+                    if os.path.exists(local_asset):
                         try:
-                            cap = cv2.VideoCapture(dedicated_asset)
+                            cap = cv2.VideoCapture(local_asset)
                             if cap.isOpened():
                                 total_f = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                                CAM_PREF_OFFSETS = {
-                                    'cam32': [0],
-                                    'cam33': [100],
-                                    'cam34': [150],
-                                    'cam35': [300],
-                                }
-                                if cam_id.lower() in CAM_PREF_OFFSETS:
-                                    target_offsets = [o for o in CAM_PREF_OFFSETS[cam_id.lower()] if o < total_f]
-                                else:
-                                    now_pos = int((time.time() * 12) % max(1, total_f - 10))
-                                    target_offsets = [now_pos, 0, int(total_f * 0.20)]
-                                for c_off in target_offsets:
+                                step = max(1, total_f // 8)
+                                candidate_offsets = [0] + [i * step for i in range(1, 8)]
+                                best_f = None
+                                best_prom = -1.0
+                                for c_off in candidate_offsets:
                                     cap.set(cv2.CAP_PROP_POS_FRAMES, min(c_off, max(0, total_f - 4)))
                                     ret, f = cap.read()
                                     if ret and f is not None and is_frame_intact(f):
-                                        frame = f
-                                        break
+                                        if best_f is None:
+                                            best_f = f
+                                        if yolo_m is not None:
+                                            try:
+                                                res_chk = yolo_m(f, imgsz=640, conf=0.20, classes=[2, 3, 5, 7], verbose=False)
+                                                for box in res_chk[0].boxes:
+                                                    conf_b = float(box.conf.item())
+                                                    x1, y1, x2, y2 = [int(v) for v in box.xyxy[0].tolist()]
+                                                    bw, bh = x2 - x1, y2 - y1
+                                                    area = bw * bh
+                                                    if area < 10000:
+                                                        continue
+                                                    h, w = f.shape[:2]
+                                                    prom = float(area) * conf_b * ((y2 / float(h)) ** 1.6)
+                                                    if prom > best_prom:
+                                                        best_prom = prom
+                                                        best_f = f
+                                            except Exception:
+                                                pass
+                                frame = best_f
                                 cap.release()
                         except Exception:
                             pass
+                    elif is_camera_stream_ready(cam_id):
+                        stream_url = f"{API_BASE}/cctv-stream/{cam_id}/index.m3u8"
+                        cap = cv2.VideoCapture(
+                            stream_url,
+                            cv2.CAP_FFMPEG,
+                            [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 2000, cv2.CAP_PROP_READ_TIMEOUT_MSEC, 2000]
+                        )
+                        if cap.isOpened():
+                            for _ in range(8):
+                                ret, f = cap.read()
+                                if ret and f is not None and is_frame_intact(f):
+                                    frame = f
+                                    break
+                            cap.release()
 
-                # If stream is still buffering or dropped, ingest recent frame strictly for THIS camera ID
+                # Last resort: recent captured frame for this camera
                 if frame is None:
                     import glob
                     cam_frames = sorted(glob.glob(os.path.join(CAPTURES_DIR, f"full_{cam_id}_*.jpg")), reverse=True)
@@ -731,27 +744,51 @@ def run_vision_engine():
                 enhancement_method = None
                 enhanced_crop = bumper_roi
 
-                # Step 4: First-Pass Direct OCR (Applies ONLY on High-Quality video frames, bypassing enhancer)
+                # Step 4: First-Pass Direct OCR
+                # Priority 1: pre_ocr from dynamic_locate_and_focus_plate (assemble_plate_ocr result)
                 if pre_plate_cand:
                     display_plate = pre_plate_cand
                     plate_conf = 0.95
                     enhancement_applied = False
                     enhancement_method = "DIRECT_HIGH_QUALITY"
                     logger.info(f"[{cam_id.upper()}] Direct Optical Plate Read: {display_plate} ({plate_conf*100:.1f}%)")
-                elif not is_low_quality:
-                    raw_ocr_texts = []
-                    if reader is not None:
+                if not display_plate:
+                    # Priority 2: run_real_optical_ocr (uses assemble_plate_ocr internally)
+                    if run_real_optical_ocr is not None:
                         try:
-                            raw_ocr_texts = reader.readtext(bumper_roi, detail=1)
+                            ocr_plate, ocr_conf, ocr_ok, _ = run_real_optical_ocr(
+                                bumper_roi, district=cam.get('district', 'Gujarat'),
+                                camera_id=cam_id, vehicle_type=cls_name,
+                                v_box=[vx1, vy1, vx2, vy2]
+                            )
+                            if ocr_ok and ocr_plate and ocr_plate != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_plate):
+                                display_plate = ocr_plate
+                                plate_conf = ocr_conf
+                                enhancement_applied = False
+                                enhancement_method = "DIRECT_HIGH_QUALITY"
+                                logger.info(f"[{cam_id.upper()}] Direct OCR Success (High Quality): {display_plate} ({plate_conf*100:.1f}%)")
+                        except Exception as ocr_err:
+                            logger.debug(f"[{cam_id.upper()}] run_real_optical_ocr error: {ocr_err}")
+                    # Legacy fallback: easyocr reader + assemble_plate_ocr
+                    if not display_plate and reader is not None:
+                        try:
+                            raw_ocr_texts = reader.readtext(
+                                bumper_roi,
+                                allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.- |/'
+                            )
+                            if assemble_plate_ocr is not None:
+                                plate_cand, cand_conf, _ = assemble_plate_ocr(raw_ocr_texts)
+                            else:
+                                plate_cand, cand_conf = parse_indian_plate(raw_ocr_texts)
+                                cand_conf = cand_conf
+                            if plate_cand and plate_cand != "OCR UNRESOLVED" and not is_vehicle_body_text(plate_cand):
+                                display_plate = plate_cand
+                                plate_conf = cand_conf
+                                enhancement_applied = False
+                                enhancement_method = "DIRECT_HIGH_QUALITY"
+                                logger.info(f"[{cam_id.upper()}] Direct OCR Success (assemble): {display_plate} ({plate_conf*100:.1f}%)")
                         except Exception:
                             pass
-                    plate_cand, cand_conf = parse_indian_plate(raw_ocr_texts)
-                    if plate_cand:
-                        display_plate = plate_cand
-                        plate_conf = cand_conf
-                        enhancement_applied = False
-                        enhancement_method = "DIRECT_HIGH_QUALITY"
-                        logger.info(f"[{cam_id.upper()}] Direct OCR Success (High Quality): {display_plate} ({plate_conf*100:.1f}%)")
 
                 # Step 5: Conditional Quality Enhancer Model (DIP Theorem & Color Grading)
                 # STRICTLY APPLIED ONLY TO LOW-QUALITY CROPS OR WHEN INITIAL OCR FAILED
@@ -759,18 +796,24 @@ def run_vision_engine():
                     enhancement_applied = True
                     enhancement_method = "DIP_THEOREM_COLOR_GRADING"
                     logger.info(f"[{cam_id.upper()}] Applying DIP Theorem & Color Grading Quality Enhancer Model...")
-                    
+
                     enhanced_sharp, morph_enhanced, binarized = apply_dip_theorem_color_grading_enhancer(bumper_roi)
                     enhanced_crop = enhanced_sharp
 
-                    # Re-run OCR across enhanced representations
+                    # Re-run OCR using assemble_plate_ocr across enhanced representations
                     candidates = []
                     if reader is not None:
                         for test_img in [enhanced_sharp, morph_enhanced, binarized]:
                             try:
-                                res_txts = reader.readtext(test_img, detail=1)
-                                p, s = parse_indian_plate(res_txts)
-                                if p:
+                                res_txts = reader.readtext(
+                                    test_img,
+                                    allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.- |/'
+                                )
+                                if assemble_plate_ocr is not None:
+                                    p, s, _ = assemble_plate_ocr(res_txts)
+                                else:
+                                    p, s = parse_indian_plate(res_txts)
+                                if p and p != "OCR UNRESOLVED" and not is_vehicle_body_text(p):
                                     candidates.append((p, s))
                             except Exception:
                                 pass
