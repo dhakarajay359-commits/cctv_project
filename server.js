@@ -1397,42 +1397,68 @@ const server = http.createServer((req, res) => {
     const detectionId = parsedUrl.searchParams.get('detection_id');
     const isLivePull = parsedUrl.searchParams.get('live') === 'true' || req.method === 'POST';
 
-    // 1. If looking up by detectionId and NOT asking for a fresh on-demand pull
+    const matchedCam = CAMERA_CATALOG.find(c => c.id.toLowerCase() === camId.toLowerCase()) || CAMERA_CATALOG[0];
+
+    // Helper: build a detection response object from a detection record
+    function buildDetectionResponse(found, mode) {
+      const camIdLower = (found.cameraId || camId).toLowerCase();
+      const liveFrameUrl = `/assets/live_frames/${camIdLower}.jpg`;
+      const liveCropUrl = `/assets/live_frames/crop_${camIdLower}_raw.jpg`;
+      const liveEnhUrl = `/assets/live_frames/crop_${camIdLower}_enhanced.jpg`;
+      const fullUrl = found.full_frame_url || liveFrameUrl;
+      const cropUrl = found.crop_url || liveCropUrl;
+      const enhUrl = found.enhanced_crop_url || liveEnhUrl;
+      return {
+        status: 'success',
+        mode: mode || 'recorded_sighting',
+        detection_id: found.detectionId,
+        camera_id: found.cameraId,
+        camera_name: found.cameraName,
+        region: found.region,
+        latitude: found.latitude,
+        longitude: found.longitude,
+        timestamp: found.timestamp,
+        vehicle_id: found.vehicleId,
+        plate: found.plate,
+        vehicle_type: found.vehicleType,
+        confidence: found.confidence,
+        full_frame_url: fullUrl,
+        crop_url: cropUrl,
+        enhanced_crop_url: enhUrl,
+        snapshot_url: fullUrl,
+        suspect_match: found.suspect_match,
+        is_suspect: found.is_suspect,
+        bounding_box: found.bounding_box,
+        enhancement_method: found.enhancement_method
+      };
+    }
+
+    // 1. If looking up by detectionId and NOT asking for a fresh live pull
     if (detectionId && !isLivePull) {
       const found = DETECTION_HISTORY.find(d => d.detectionId === detectionId);
       if (found) {
-        const fullExists = found.full_frame_url && fs.existsSync(path.join(ROOT_DIR, found.full_frame_url.replace(/^\//, '')));
-        const cropExists = found.crop_url && fs.existsSync(path.join(ROOT_DIR, found.crop_url.replace(/^\//, '')));
-        if (fullExists && cropExists) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-          res.end(JSON.stringify({
-            status: 'success',
-            mode: 'recorded_sighting',
-            detection_id: found.detectionId,
-            camera_id: found.cameraId,
-            camera_name: found.cameraName,
-            region: found.region,
-            latitude: found.latitude,
-            longitude: found.longitude,
-            timestamp: found.timestamp,
-            vehicle_id: found.vehicleId,
-            plate: found.plate,
-            vehicle_type: found.vehicleType,
-            confidence: found.confidence,
-            full_frame_url: found.full_frame_url,
-            crop_url: found.crop_url,
-            enhanced_crop_url: found.enhanced_crop_url || found.crop_url,
-            suspect_match: found.suspect_match,
-            is_suspect: found.is_suspect
-          }, null, 2));
-          return;
-        }
-        // Recorded files not on disk: fall through to instant live pull!
+        // Always respond immediately from cached detection — no Python needed
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify(buildDetectionResponse(found, 'recorded_sighting'), null, 2));
+        return;
       }
     }
 
-    const matchedCam = CAMERA_CATALOG.find(c => c.id.toLowerCase() === camId.toLowerCase()) || CAMERA_CATALOG[0];
+    // 2. If no detectionId but camera is known — check if we have a recent detection for that camera
+    if (!detectionId && !isLivePull) {
+      const recentForCam = DETECTION_HISTORY.find(d => (d.cameraId || '').toLowerCase() === camId.toLowerCase());
+      if (recentForCam) {
+        // Check if live frame file already exists (fastest path — no Python)
+        const liveFramePath = path.join(ROOT_DIR, 'assets', 'live_frames', `${camId.toLowerCase()}.jpg`);
+        if (fs.existsSync(liveFramePath)) {
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify(buildDetectionResponse(recentForCam, 'live_frame_cache'), null, 2));
+          return;
+        }
+      }
+    }
 
+    // 3. Fall through to Python script (live pull or no cached data)
     const { execFile } = require('child_process');
     const scriptPath = path.join(ROOT_DIR, 'pull_cctv_snapshot.py');
     const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
@@ -1446,16 +1472,28 @@ const server = http.createServer((req, res) => {
     function sendSnapshotSuccess(parsed) {
       if (hasResponded || res.headersSent) return;
       hasResponded = true;
-      // 100% ephemeral in-memory response: NEVER store snapshots to disk!
       res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
       res.end(JSON.stringify(parsed, null, 2));
     }
+
+    // Emergency fallback: serve from detection history if Python takes too long
+    const emergencyTimer = setTimeout(() => {
+      if (!hasResponded && !res.headersSent) {
+        const fallbackDet = DETECTION_HISTORY.find(d => (d.cameraId || '').toLowerCase() === matchedCam.id.toLowerCase());
+        if (fallbackDet) {
+          hasResponded = true;
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          res.end(JSON.stringify(buildDetectionResponse(fallbackDet, 'detection_cache'), null, 2));
+        }
+      }
+    }, 28000);
 
     let fallbackLaunched = false;
     function runFallbackCapture() {
       if (fallbackLaunched || hasResponded || res.headersSent) return;
       fallbackLaunched = true;
-      execFile(pyCmd, [...args, '--fallback'], { cwd: ROOT_DIR, timeout: 20000, maxBuffer: 25 * 1024 * 1024 }, (fbErr, fbStdout) => {
+      execFile(pyCmd, [...args, '--fallback'], { cwd: ROOT_DIR, timeout: 30000, maxBuffer: 25 * 1024 * 1024 }, (fbErr, fbStdout) => {
+        clearTimeout(emergencyTimer);
         if (!fbErr && fbStdout && fbStdout.trim()) {
           try {
             const jsonStart = fbStdout.indexOf('{');
@@ -1469,19 +1507,28 @@ const server = http.createServer((req, res) => {
             }
           } catch(e){}
         }
+        // Last resort: serve from detection history
         if (!hasResponded && !res.headersSent) {
-          res.writeHead(503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-          res.end(JSON.stringify({
-            status: 'error',
-            message: `Optical video sensor stream for ${matchedCam.name} is currently buffering.`,
-            camera_id: matchedCam.id
-          }));
+          const fallbackDet = DETECTION_HISTORY.find(d => (d.cameraId || '').toLowerCase() === matchedCam.id.toLowerCase());
+          if (fallbackDet) {
+            hasResponded = true;
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify(buildDetectionResponse(fallbackDet, 'detection_cache'), null, 2));
+          } else if (!hasResponded && !res.headersSent) {
+            res.writeHead(503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify({
+              status: 'error',
+              message: `Optical video sensor stream for ${matchedCam.name} is currently buffering.`,
+              camera_id: matchedCam.id
+            }));
+          }
         }
       });
     }
 
-    // 2. Primary dynamic real-time frame pull directly from live camera feed
-    execFile(pyCmd, args, { cwd: ROOT_DIR, timeout: 35000, maxBuffer: 30 * 1024 * 1024 }, (err, stdout, stderr) => {
+    // Primary dynamic real-time frame pull from live camera feed
+    execFile(pyCmd, args, { cwd: ROOT_DIR, timeout: 60000, maxBuffer: 30 * 1024 * 1024 }, (err, stdout, stderr) => {
+      clearTimeout(emergencyTimer);
       if (!err && stdout && stdout.trim()) {
         try {
           const jsonStart = stdout.indexOf('{');
@@ -1504,6 +1551,8 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+
+
 
   // POST /api/cctv/clear-snapshot — Purges all snapshot data & ensures 0 bytes storage acquired in DB/disk
   if (pathname === '/api/cctv/clear-snapshot') {
