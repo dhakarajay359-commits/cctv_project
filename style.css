@@ -6648,6 +6648,8 @@ video,
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
 
 .login-hero-img {
@@ -6655,14 +6657,23 @@ video,
   height: 100%;
   object-fit: cover;
   object-position: center 35%;
-  filter: brightness(0.9) contrast(1.05);
-  transform: scale(1.02);
+  filter: brightness(0.82) contrast(1.08) saturate(1.1);
+  transform: scale(1.04);
+  display: block;
+  position: absolute;
+  inset: 0;
 }
 
 .login-backdrop-tint {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.22) 40%, rgba(15, 23, 42, 0.72) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 15, 30, 0.55) 0%,
+    rgba(10, 15, 30, 0.25) 38%,
+    rgba(10, 15, 30, 0.78) 100%
+  );
+  z-index: 1;
 }
 
 .login-top-header {
@@ -6691,8 +6702,8 @@ video,
 .gov-title-sm {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #0f172a;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-top: 0.4rem;
@@ -6701,8 +6712,8 @@ video,
 .gov-title-lg {
   font-size: 1.18rem;
   font-weight: 800;
-  color: #0a0f1d;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.85);
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9), 0 3px 12px rgba(0, 0, 0, 0.7);
   letter-spacing: -0.01em;
 }
 

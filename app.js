@@ -6677,21 +6677,53 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
             const freshD = new Date(fresh.timestamp);
             evTimestampText.textContent = `${freshD.toLocaleTimeString()} IST (REAL-TIME LIVE PULL)`;
           }
-          if (evPlateText) evPlateText.textContent = fresh.plate || activePlate;
+
+          // Resolve the authoritative plate from the live-pull response
+          const freshPlate = (fresh.vehicles && fresh.vehicles.length > 0)
+            ? (fresh.vehicles[0].plate || fresh.plate || activePlate)
+            : (fresh.plate || activePlate);
+
+          if (freshPlate && freshPlate !== 'OCR UNRESOLVED' && !freshPlate.includes('UNRESOLVED')) {
+            activePlate = freshPlate;
+            // ── PLATE SYNC: write authoritative plate back to main detections list ──
+            const dets = window.apiClient?.detections || [];
+            let synced = false;
+            if (detectionId) {
+              const rec = dets.find(d => d.detectionId === detectionId);
+              if (rec) { rec.plate = activePlate; rec.vehicleId = activePlate; synced = true; }
+            }
+            if (!synced) {
+              const rec = dets.find(d => d.cameraId === activeCamId);
+              if (rec) { rec.plate = activePlate; rec.vehicleId = activePlate; }
+            }
+            // Patch the table row immediately without a full re-render
+            document.querySelectorAll('#detectionsTableBody tr').forEach(row => {
+              const idCell = row.querySelector('td:first-child strong');
+              if (detectionId && idCell && idCell.textContent.trim() === detectionId) {
+                const plateCell = row.querySelectorAll('td')[4];
+                if (plateCell) {
+                  const strongEl = plateCell.querySelector('strong');
+                  if (strongEl) strongEl.textContent = activePlate;
+                }
+              }
+            });
+          }
+
+          if (evPlateText) evPlateText.textContent = activePlate;
           if (evCropBadge) evCropBadge.textContent = fresh.vehicle_label || 'PRIMARY TARGET';
           if (evOcrStatusText) evOcrStatusText.textContent = fresh.primary_vehicle?.ocr_status || 'REAL OPTICAL SIGHTING';
 
           if (fresh.vehicles && fresh.vehicles.length > 0) {
             renderVehicleChips(fresh.vehicles);
             activeVeh = fresh.vehicles[0];
-            if (evPlateText) evPlateText.textContent = activeVeh.plate || fresh.plate || activePlate;
+            if (evPlateText) evPlateText.textContent = activeVeh.plate || activePlate;
             if (evCropBadge) evCropBadge.textContent = activeVeh.label;
             if (evOcrStatusText) evOcrStatusText.textContent = activeVeh.ocr_status || 'REAL OPTICAL SIGHTING';
             if (evCropImg && activeVeh.crop_url) evCropImg.src = activeVeh.crop_url;
           } else {
             renderVehicleChips([]);
             activeVeh = null;
-            if (evPlateText) evPlateText.textContent = fresh.plate || 'MONITORING ACTIVE TRAFFIC';
+            if (evPlateText) evPlateText.textContent = activePlate || 'MONITORING ACTIVE TRAFFIC';
             if (evCropBadge) evCropBadge.textContent = 'MONITORING';
             if (evOcrStatusText) evOcrStatusText.textContent = 'NO VEHICLE IN FOV';
             if (evCropImg) evCropImg.src = fresh.crop_url || fresh.full_frame_url;
@@ -6738,6 +6770,36 @@ window.openEvidentiarySnapshotModal = async function(detectionId, camId) {
         if (snapshotData.plate) {
           activePlate = snapshotData.plate;
         }
+
+        // ── PLATE SYNC ──────────────────────────────────────────────────────────
+        // The snapshot's OCR is the authoritative source. Write the resolved plate
+        // back into window.apiClient.detections so the main detection list and the
+        // modal always show the SAME number — no discrepancy between the two views.
+        if (activePlate && activePlate !== 'OCR UNRESOLVED' && !activePlate.includes('UNRESOLVED')) {
+          const dets = window.apiClient?.detections || [];
+          // Update by detectionId (exact match) or by cameraId (most-recent for cam)
+          let synced = false;
+          if (detectionId) {
+            const rec = dets.find(d => d.detectionId === detectionId);
+            if (rec) { rec.plate = activePlate; rec.vehicleId = activePlate; synced = true; }
+          }
+          if (!synced) {
+            const rec = dets.find(d => d.cameraId === activeCamId);
+            if (rec) { rec.plate = activePlate; rec.vehicleId = activePlate; }
+          }
+          // Also sync the row in the rendered table immediately (no full re-render needed)
+          document.querySelectorAll('#detectionsTableBody tr').forEach(row => {
+            const idCell = row.querySelector('td:first-child strong');
+            if (detectionId && idCell && idCell.textContent.trim() === detectionId) {
+              const plateCell = row.querySelectorAll('td')[4];
+              if (plateCell) {
+                const strongEl = plateCell.querySelector('strong');
+                if (strongEl) strongEl.textContent = activePlate;
+              }
+            }
+          });
+        }
+        // ────────────────────────────────────────────────────────────────────────
 
         stylePlateDisplay(activePlate);
         if (evCameraName) evCameraName.textContent = `${snapshotData.camera_name || matchedCam.name} (${activeCamId.toUpperCase()})`;

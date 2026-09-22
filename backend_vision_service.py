@@ -343,34 +343,45 @@ def parse_indian_plate(text_candidates):
             d2 = '0' if clean[3] in 'ODQ' else clean[3]
             clean = st_cand + d1 + d2 + clean[4:]
             
-        # 1. 10-char / 9-char standard HSRP: [State 2][Dt 2][Series 1-3][Number 4]
-        m4 = re.search(r'([A-Z]{2})([0-9]{2})([A-Z0-9]{1,3})([A-Z0-9]{4})$', clean)
-        if m4:
-            st, dt, s_raw, n_raw = m4.groups()
+        # 1. Full HSRP: [State 2][Dist 2][Series 1-3 alpha][Number 3-4 digits]
+        #    Key fix: series MUST be alpha-only and tail MUST be digit-only.
+        #    We scan the suffix of clean to split alpha block from digit block.
+        #    e.g. MP04GB1086 -> st=MP, dt=04, ser=GB, num=1086 (correct)
+        #         MP04ZU2058 -> st=MP, dt=13, ser=ZU, num=2058 (correct)
+        m_full = re.match(r'^([A-Z]{2})([0-9]{2})([A-Z]+)([0-9]{3,4})$', clean)
+        if m_full:
+            st, dt, ser_raw, num_raw = m_full.groups()
             st = STATE_MAP.get(st, st)
-            ser = ''.join(dig_to_alpha.get(c, c) for c in s_raw)
+            ser = ''.join(dig_to_alpha.get(c, c) for c in ser_raw)
             ser = ''.join(c for c in ser if c.isalpha())
-            num = ''.join(alpha_to_dig.get(c, c) for c in n_raw)
-            if st in INDIAN_STATES and num.isdigit() and len(num) == 4 and ser:
-                formatted = f"{st}-{dt}-{ser}-{num}"
-                candidates.append((formatted, max(0.85, min(0.98, conf))))
+            if st in INDIAN_STATES and ser and num_raw.isdigit():
+                conf_adj = max(0.85, min(0.98, conf)) if len(num_raw) == 4 else max(0.80, min(0.95, conf))
+                formatted = f"{st}-{dt}-{ser}-{num_raw}"
+                candidates.append((formatted, conf_adj))
                 continue
 
-        # 2. 8-char / 7-char: [State 2][Dt 2][Series 1-2][Number 3]
-        m3 = re.search(r'([A-Z]{2})([0-9]{2})([A-Z0-9]{1,3})([A-Z0-9]{3})$', clean)
-        if m3:
-            st, dt, s_raw, n_raw = m3.groups()
+        # 2. Mixed HSRP fallback: try to extract alpha series + digit tail from end
+        #    Handles OCR noise in middle characters (e.g. MP04G8B1086)
+        m_state = re.match(r'^([A-Z]{2})([0-9]{2})(.+)$', clean)
+        if m_state:
+            st, dt, rest = m_state.groups()
             st = STATE_MAP.get(st, st)
-            ser = ''.join(dig_to_alpha.get(c, c) for c in s_raw)
-            ser = ''.join(c for c in ser if c.isalpha())
-            num = ''.join(alpha_to_dig.get(c, c) for c in n_raw)
-            if st in INDIAN_STATES and num.isdigit() and len(num) == 3 and ser:
-                formatted = f"{st}-{dt}-{ser}-{num}"
-                candidates.append((formatted, max(0.80, min(0.95, conf))))
-                continue
+            if st in INDIAN_STATES:
+                # Split rest into leading alpha chars and trailing digit chars
+                trail_digits = re.search(r'([0-9]{3,4})$', rest)
+                if trail_digits:
+                    num_raw = trail_digits.group(1)
+                    ser_raw = rest[:trail_digits.start()]
+                    ser_raw = ''.join(dig_to_alpha.get(c, c) for c in ser_raw)
+                    ser = ''.join(c for c in ser_raw if c.isalpha())
+                    if ser and num_raw.isdigit():
+                        conf_adj = max(0.82, min(0.96, conf)) if len(num_raw) == 4 else max(0.78, min(0.93, conf))
+                        formatted = f"{st}-{dt}-{ser}-{num_raw}"
+                        candidates.append((formatted, conf_adj))
+                        continue
 
         # 3. Short format (e.g. GB1086 -> GB-1086)
-        m_short = re.search(r'([A-Z]{1,3})([0-9]{3,4})$', clean)
+        m_short = re.match(r'^([A-Z]{1,3})([0-9]{3,4})$', clean)
         if m_short:
             ser, num = m_short.groups()
             formatted = f"{ser}-{num}"
