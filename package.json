@@ -1,0 +1,25 @@
+{
+  "name": "nirikshan-cctv-platform",
+  "version": "2.4.0",
+  "description": "Unified State CCTV Intelligence & Surveillance Analytics Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo \"Build completed: Static asset structure ready\""
+  },
+  "keywords": [
+    "cctv",
+    "surveillance",
+    "gis",
+    "smart-city",
+    "anpr",
+    "webrtc",
+    "render-blueprint"
+  ],
+  "author": "Nirikshan Engineering Directorate",
+  "license": "Proprietary",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

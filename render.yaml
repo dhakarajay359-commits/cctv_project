@@ -1,0 +1,48 @@
+# Render Blueprint Specification (Infrastructure as Code)
+# Docs: https://render.com/docs/blueprint-spec
+# Deploy: Link this repository in Render Dashboard -> Blueprints -> New Blueprint Instance
+
+services:
+  # =========================================================================
+  # NIRIKSHAN MASTER CCTV COMMAND & ANALYTICS DASHBOARD (Web Service)
+  # =========================================================================
+  - type: web
+    name: nirikshan-cctv-dashboard
+    runtime: node
+    plan: free
+    region: singapore # Choose closest region: singapore, oregon, frankfurt, ohio
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: PLATFORM_NAME
+        value: NIRIKSHAN State CCTV Intelligence
+      - key: STATE_CODE
+        value: GJ-IN
+
+  # =========================================================================
+  # OPTIONAL ALTERNATIVE: High-Speed Static Site CDN Deployment
+  # Uncomment the block below if you prefer a pure CDN Static Site on Render
+  # =========================================================================
+  # - type: static
+  #   name: nirikshan-static-cdn
+  #   plan: free
+  #   buildCommand: ""
+  #   staticPublishPath: .
+  #   pullRequestPreviewsEnabled: true
+  #   headers:
+  #     - path: /*
+  #       name: X-Frame-Options
+  #       value: SAMEORIGIN
+  #     - path: /*
+  #       name: X-Content-Type-Options
+  #       value: nosniff
+  #   routes:
+  #     - type: rewrite
+  #       source: /*
+  #       destination: /index.html
