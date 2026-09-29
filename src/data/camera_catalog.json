@@ -614,5 +614,21 @@
     "direction": "Westbound (Commercial Traffic Hub)",
     "fov_angle": 115,
     "onboarded_at": "2026-09-04T00:23:00.000Z"
+  },
+  {
+    "id": "CAM-PROP-772",
+    "name": "New Node: Bustling City Commercial Junction (Blind Zone Elimination)",
+    "district": "Ahmedabad (Urban)",
+    "department_id": "dept-police",
+    "lat": 23.037459,
+    "lng": 72.574,
+    "type": "ip",
+    "vendor": "4K Ultra-Starlight ANPR + PTZ",
+    "status": "online",
+    "resolution": "4K",
+    "stream_url": "webrtc://edge-324.nirikshan.gov.in/live/stream1",
+    "hls_url": "webrtc://edge-324.nirikshan.gov.in/live/stream1",
+    "retention_days": 15,
+    "onboarded_at": "2026-09-28T13:52:06.393Z"
   }
 ]

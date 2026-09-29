@@ -535,8 +535,12 @@ def run_vision_engine():
             watchlist = fetch_watchlist()
             active_suspect_plates = [re.sub(r'[^A-Z0-9]', '', s.get('plate', '')).upper() for s in watchlist if s.get('plate')]
 
+            # Priority: cameras with dedicated real traffic video assets first, then other cameras
+            dedicated_cams = {'cam33', 'cam34', 'cam35', 'cam32'}
+            sorted_cameras = sorted(cameras, key=lambda c: 0 if (c.get('id', '').lower() in dedicated_cams) else 1)
+
             # Iterate over the live cameras
-            for cam in cameras:
+            for cam in sorted_cameras:
                 cam_id = cam.get('id')
                 if not cam_id:
                     continue
@@ -554,10 +558,10 @@ def run_vision_engine():
                 # This guarantees the OCR always reads the same clear plate each cycle.
                 # For all other cams, fall through to the YOLO-guided best-frame scan.
                 CAM_PREF_OFFSETS = {
-                    'cam32': [0],
-                    'cam33': [100],
-                    'cam34': [150],
-                    'cam35': [300],
+                    'cam32': [0, 30],
+                    'cam33': [115, 100],
+                    'cam34': [375, 360],
+                    'cam35': [416, 420],
                 }
 
                 # Check for dedicated pinned-frame asset first
@@ -696,183 +700,210 @@ def run_vision_engine():
                 if detected_count == 0:
                     continue
 
-                # Sort vehicles by prominence (nearest/largest vehicle first)
-                detected_vehicles.sort(key=lambda v: v["prominence"], reverse=True)
-                top_v = detected_vehicles[0]
-                vx1, vy1, vx2, vy2 = top_v["box"]
-                cls_name = top_v["type"]
-                display_label = top_v["label"]
-                conf = top_v["confidence"]
+                # Process all detected vehicles in this frame (up to 3 prominent vehicles)
+                processed_vehicles_in_frame = []
+                for target_v in detected_vehicles[:3]:
+                    vx1, vy1, vx2, vy2 = target_v["box"]
+                    cls_name = target_v["type"]
+                    display_label = target_v["label"]
+                    conf = target_v["confidence"]
 
-                # Step 2: Extract bumper / license plate region strictly focused on license plate mounting position
-                vh, vw = vy2 - vy1, vx2 - vy1
-                is_2w = cls_name in ["two_wheeler", "motorcycle", "bicycle"]
-                veh_cx = (vx1 + vx2) // 2
-                veh_cy = vy1 + int(vh * (0.75 if is_2w else 0.77))
-                pw = max(28, min(int(vw * 0.26), 150))
-                ph = max(10, int(pw / 3.1))
-                px1 = max(0, veh_cx - pw // 2)
-                py1 = max(0, veh_cy - ph // 2)
-                px2 = min(sharp_frame.shape[1], veh_cx + pw // 2)
-                py2 = min(sharp_frame.shape[0], py1 + ph)
-                bumper_roi = sharp_frame[py1:py2, px1:px2]
-                if bumper_roi.size == 0:
-                    bumper_roi = sharp_frame[vy1:vy2, vx1:vx2]
-                plate_box = (px1, py1, px2, py2)
+                    # Step 2: Extract bumper / license plate region strictly focused on license plate mounting position
+                    vh, vw = vy2 - vy1, vx2 - vy1
+                    is_2w = cls_name in ["two_wheeler", "motorcycle", "bicycle"]
+                    veh_cx = (vx1 + vx2) // 2
+                    veh_cy = vy1 + int(vh * (0.75 if is_2w else 0.77))
+                    pw = max(28, min(int(vw * 0.26), 150))
+                    ph = max(10, int(pw / 3.1))
+                    px1 = max(0, veh_cx - pw // 2)
+                    py1 = max(0, veh_cy - ph // 2)
+                    px2 = min(sharp_frame.shape[1], veh_cx + pw // 2)
+                    py2 = min(sharp_frame.shape[0], py1 + ph)
+                    bumper_roi = sharp_frame[py1:py2, px1:px2]
+                    if bumper_roi.size == 0:
+                        bumper_roi = sharp_frame[vy1:vy2, vx1:vx2]
+                    plate_box = (px1, py1, px2, py2)
 
-                pre_plate_cand = None
-                try:
-                    from pull_cctv_snapshot import dynamic_locate_and_focus_plate
-                    f_plate, p_box, _, has_p, p_vis, pre_ocr = dynamic_locate_and_focus_plate(
-                        sharp_frame, vehicle_boxes=[[vx1, vy1, vx2, vy2]], vehicle_type=cls_name
-                    )
-                    if f_plate is not None and f_plate.size > 0:
-                        bumper_roi = f_plate
-                        plate_box = p_box
-                        if pre_ocr and pre_ocr != "OCR UNRESOLVED" and not is_vehicle_body_text(pre_ocr):
-                            pre_plate_cand = pre_ocr
-                except Exception:
-                    pass
+                    pre_plate_cand = None
+                    try:
+                        from pull_cctv_snapshot import dynamic_locate_and_focus_plate
+                        f_plate, p_box, _, has_p, p_vis, pre_ocr = dynamic_locate_and_focus_plate(
+                            sharp_frame, vehicle_boxes=[[vx1, vy1, vx2, vy2]], vehicle_type=cls_name
+                        )
+                        if f_plate is not None and f_plate.size > 0:
+                            bumper_roi = f_plate
+                            plate_box = p_box
+                            if pre_ocr and pre_ocr != "OCR UNRESOLVED" and not is_vehicle_body_text(pre_ocr):
+                                pre_plate_cand = pre_ocr
+                    except Exception:
+                        pass
 
-                # Step 3: Evaluate Plate Quality
-                is_low_quality, quality_meta = assess_plate_quality(bumper_roi)
-                logger.info(f"[{cam_id.upper()}] Plate quality assessment: {quality_meta['quality']} (lap_var={quality_meta['laplacian_var']}, contrast={quality_meta['contrast']})")
+                    # Step 3: Evaluate Plate Quality
+                    is_low_quality, quality_meta = assess_plate_quality(bumper_roi)
+                    logger.info(f"[{cam_id.upper()}] Plate quality assessment ({display_label}): {quality_meta['quality']} (lap_var={quality_meta['laplacian_var']}, contrast={quality_meta['contrast']})")
 
-                display_plate = ""
-                plate_conf = 0.0
-                enhancement_applied = False
-                enhancement_method = None
-                enhanced_crop = bumper_roi
-
-                # Step 4: First-Pass Direct OCR
-                # Priority 1: pre_ocr from dynamic_locate_and_focus_plate (assemble_plate_ocr result)
-                if pre_plate_cand:
-                    display_plate = pre_plate_cand
-                    plate_conf = 0.95
+                    display_plate = ""
+                    plate_conf = 0.0
                     enhancement_applied = False
-                    enhancement_method = "DIRECT_HIGH_QUALITY"
-                    logger.info(f"[{cam_id.upper()}] Direct Optical Plate Read: {display_plate} ({plate_conf*100:.1f}%)")
-                if not display_plate:
-                    # Priority 2: run_real_optical_ocr (uses assemble_plate_ocr internally)
-                    if run_real_optical_ocr is not None:
-                        try:
-                            ocr_plate, ocr_conf, ocr_ok, _ = run_real_optical_ocr(
-                                bumper_roi, district=cam.get('district', 'Gujarat'),
-                                camera_id=cam_id, vehicle_type=cls_name,
-                                v_box=[vx1, vy1, vx2, vy2]
-                            )
-                            if ocr_ok and ocr_plate and ocr_plate != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_plate):
-                                display_plate = ocr_plate
-                                plate_conf = ocr_conf
-                                enhancement_applied = False
-                                enhancement_method = "DIRECT_HIGH_QUALITY"
-                                logger.info(f"[{cam_id.upper()}] Direct OCR Success (High Quality): {display_plate} ({plate_conf*100:.1f}%)")
-                        except Exception as ocr_err:
-                            logger.debug(f"[{cam_id.upper()}] run_real_optical_ocr error: {ocr_err}")
-                    # Legacy fallback: easyocr reader + assemble_plate_ocr
-                    if not display_plate and reader is not None:
-                        try:
-                            raw_ocr_texts = reader.readtext(
-                                bumper_roi,
-                                allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.- |/'
-                            )
-                            if assemble_plate_ocr is not None:
-                                plate_cand, cand_conf, _ = assemble_plate_ocr(raw_ocr_texts)
-                            else:
-                                plate_cand, cand_conf = parse_indian_plate(raw_ocr_texts)
-                                cand_conf = cand_conf
-                            if plate_cand and plate_cand != "OCR UNRESOLVED" and not is_vehicle_body_text(plate_cand):
-                                display_plate = plate_cand
-                                plate_conf = cand_conf
-                                enhancement_applied = False
-                                enhancement_method = "DIRECT_HIGH_QUALITY"
-                                logger.info(f"[{cam_id.upper()}] Direct OCR Success (assemble): {display_plate} ({plate_conf*100:.1f}%)")
-                        except Exception:
-                            pass
+                    enhancement_method = None
+                    enhanced_crop = bumper_roi
 
-                # Step 5: Conditional Quality Enhancer Model (DIP Theorem & Color Grading)
-                # STRICTLY APPLIED ONLY TO LOW-QUALITY CROPS OR WHEN INITIAL OCR FAILED
-                if not display_plate:
-                    enhancement_applied = True
-                    enhancement_method = "DIP_THEOREM_COLOR_GRADING"
-                    logger.info(f"[{cam_id.upper()}] Applying DIP Theorem & Color Grading Quality Enhancer Model...")
-
-                    enhanced_sharp, morph_enhanced, binarized = apply_dip_theorem_color_grading_enhancer(bumper_roi)
-                    enhanced_crop = enhanced_sharp
-
-                    # Re-run OCR using assemble_plate_ocr across enhanced representations
-                    candidates = []
-                    if reader is not None:
-                        for test_img in [enhanced_sharp, morph_enhanced, binarized]:
+                    # Step 4: First-Pass Direct OCR
+                    if pre_plate_cand:
+                        display_plate = pre_plate_cand
+                        plate_conf = 0.95
+                        enhancement_applied = False
+                        enhancement_method = "DIRECT_HIGH_QUALITY"
+                        logger.info(f"[{cam_id.upper()}] Direct Optical Plate Read: {display_plate} ({plate_conf*100:.1f}%)")
+                    if not display_plate:
+                        if run_real_optical_ocr is not None:
                             try:
-                                res_txts = reader.readtext(
-                                    test_img,
+                                ocr_plate, ocr_conf, ocr_ok, _ = run_real_optical_ocr(
+                                    bumper_roi, district=cam.get('district', 'Gujarat'),
+                                    camera_id=cam_id, vehicle_type=cls_name,
+                                    v_box=[vx1, vy1, vx2, vy2]
+                                )
+                                if ocr_ok and ocr_plate and ocr_plate != "OCR UNRESOLVED" and not is_vehicle_body_text(ocr_plate):
+                                    display_plate = ocr_plate
+                                    plate_conf = ocr_conf
+                                    enhancement_applied = False
+                                    enhancement_method = "DIRECT_HIGH_QUALITY"
+                                    logger.info(f"[{cam_id.upper()}] Direct OCR Success (High Quality): {display_plate} ({plate_conf*100:.1f}%)")
+                            except Exception as ocr_err:
+                                logger.debug(f"[{cam_id.upper()}] run_real_optical_ocr error: {ocr_err}")
+                        if not display_plate and reader is not None:
+                            try:
+                                raw_ocr_texts = reader.readtext(
+                                    bumper_roi,
                                     allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.- |/'
                                 )
                                 if assemble_plate_ocr is not None:
-                                    p, s, _ = assemble_plate_ocr(res_txts)
+                                    plate_cand, cand_conf, _ = assemble_plate_ocr(raw_ocr_texts)
                                 else:
-                                    p, s = parse_indian_plate(res_txts)
-                                if p and p != "OCR UNRESOLVED" and not is_vehicle_body_text(p):
-                                    candidates.append((p, s))
+                                    plate_cand, cand_conf = parse_indian_plate(raw_ocr_texts)
+                                if plate_cand and plate_cand != "OCR UNRESOLVED" and not is_vehicle_body_text(plate_cand):
+                                    display_plate = plate_cand
+                                    plate_conf = cand_conf
+                                    enhancement_applied = False
+                                    enhancement_method = "DIRECT_HIGH_QUALITY"
+                                    logger.info(f"[{cam_id.upper()}] Direct OCR Success (assemble): {display_plate} ({plate_conf*100:.1f}%)")
                             except Exception:
                                 pass
 
-                    if candidates:
-                        candidates.sort(key=lambda x: x[1], reverse=True)
-                        display_plate, plate_conf = candidates[0]
-                        logger.info(f"[{cam_id.upper()}] OCR Success AFTER DIP Enhancement: {display_plate} ({plate_conf*100:.1f}%)")
-                    else:
-                        # DO NOT GENERATE DUMMY / SYNTHETIC PLATE NUMBERS!
-                        display_plate = "OCR UNRESOLVED"
-                        plate_conf = 0.0
-                        logger.info(f"[{cam_id.upper()}] CCTV quality degraded; plate unreadable. Zero dummy data emitted.")
+                    # Step 5: Conditional Quality Enhancer Model
+                    if not display_plate:
+                        enhancement_applied = True
+                        enhancement_method = "DIP_THEOREM_COLOR_GRADING"
+                        enhanced_sharp, morph_enhanced, binarized = apply_dip_theorem_color_grading_enhancer(bumper_roi)
+                        enhanced_crop = enhanced_sharp
+
+                        candidates = []
+                        if reader is not None:
+                            for test_img in [enhanced_sharp, morph_enhanced, binarized]:
+                                try:
+                                    res_txts = reader.readtext(
+                                        test_img,
+                                        allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ.- |/'
+                                    )
+                                    if assemble_plate_ocr is not None:
+                                        p, s, _ = assemble_plate_ocr(res_txts)
+                                    else:
+                                        p, s = parse_indian_plate(res_txts)
+                                    if p and p != "OCR UNRESOLVED" and not is_vehicle_body_text(p):
+                                        candidates.append((p, s))
+                                        break
+                                except Exception:
+                                    pass
+
+                        if candidates:
+                            candidates.sort(key=lambda x: x[1], reverse=True)
+                            display_plate, plate_conf = candidates[0]
+                            logger.info(f"[{cam_id.upper()}] OCR Success AFTER DIP Enhancement: {display_plate} ({plate_conf*100:.1f}%)")
+                        else:
+                            display_plate = "OCR UNRESOLVED"
+                            plate_conf = 0.0
+
+                    processed_vehicles_in_frame.append({
+                        "vehicle_type": cls_name,
+                        "label": display_label,
+                        "confidence": round(conf, 3),
+                        "plate": display_plate,
+                        "plate_conf": round(plate_conf, 3),
+                        "box": [vx1, vy1, vx2, vy2],
+                        "plate_box": list(plate_box),
+                        "bumper_roi": bumper_roi,
+                        "enhanced_crop": enhanced_crop,
+                        "enhancement_applied": enhancement_applied,
+                        "enhancement_method": enhancement_method,
+                        "quality_meta": quality_meta
+                    })
+
+                # Extract all unique resolved plate numbers detected in this frame
+                all_frame_plates = [v["plate"] for v in processed_vehicles_in_frame if v["plate"] != "OCR UNRESOLVED"]
 
                 # Save raw and enhanced crops to disk for UI visualization
                 live_dir = os.path.join(BASE_DIR, "assets", "live_frames")
                 os.makedirs(live_dir, exist_ok=True)
                 try:
                     cv2.imwrite(os.path.join(live_dir, f"{cam_id}.jpg"), frame)
-                    cv2.imwrite(os.path.join(live_dir, f"crop_{cam_id}_raw.jpg"), bumper_roi)
-                    cv2.imwrite(os.path.join(live_dir, f"crop_{cam_id}_enhanced.jpg"), enhanced_crop)
+                    if processed_vehicles_in_frame:
+                        cv2.imwrite(os.path.join(live_dir, f"crop_{cam_id}_raw.jpg"), processed_vehicles_in_frame[0]["bumper_roi"])
+                        cv2.imwrite(os.path.join(live_dir, f"crop_{cam_id}_enhanced.jpg"), processed_vehicles_in_frame[0]["enhanced_crop"])
                 except Exception:
                     pass
 
-                # Check against active suspect watchlist only if plate is resolved
-                if display_plate != "OCR UNRESOLVED":
-                    assigned_vehicle_id = display_plate
-                    norm_plate = re.sub(r'[^A-Z0-9]', '', display_plate).upper()
-                    for target in active_suspect_plates:
-                        ratio = difflib.SequenceMatcher(None, norm_plate, target).ratio()
-                        if ratio >= 0.80 or target == norm_plate:
-                            assigned_vehicle_id = target
-                            logger.warning(f"🚨 [WATCHLIST HIT ON {cam_id.upper()}] Detected plate {display_plate} matches target {target}")
-                            break
-                else:
-                    assigned_vehicle_id = f"VEH-{cls_name.upper()}-{cam_id.upper()}-{int(time.time()*10)%10000:04d}"
+                # Post each detected vehicle to the platform so ALL detected vehicles appear on the main page!
+                for p_idx, p_veh in enumerate(processed_vehicles_in_frame):
+                    v_plate = p_veh["plate"]
+                    v_cls = p_veh["vehicle_type"]
+                    v_label = p_veh["label"]
+                    v_conf = p_veh["confidence"]
+                    p_conf = p_veh["plate_conf"]
 
-                # Post genuine telemetry with verified vehicle box and bumper plate box
-                payload = {
-                    "camera_id": cam_id,
-                    "vehicle_id": assigned_vehicle_id,
-                    "plate": display_plate,
-                    "vehicle_type": cls_name,
-                    "vehicle_label": display_label,
-                    "confidence": round(plate_conf if display_plate != "OCR UNRESOLVED" else 0.0, 3),
-                    "vehicle_confidence": round(conf, 3),
-                    "bounding_box": [vx1, vy1, vx2, vy2],
-                    "plate_box": list(plate_box),
-                    "crop_url": f"/assets/live_frames/crop_{cam_id}_raw.jpg",
-                    "enhanced_crop_url": f"/assets/live_frames/crop_{cam_id}_enhanced.jpg",
-                    "snapshot_url": f"/assets/live_frames/{cam_id}.jpg",
-                    "full_frame_url": f"/assets/live_frames/{cam_id}.jpg",
-                    "enhancement_applied": enhancement_applied,
-                    "enhancement_method": enhancement_method,
-                    "quality_status": quality_meta.get("quality", "UNKNOWN"),
-                    "source": "cctv_yolo_detector"
-                }
-                post_detection(payload)
-                logger.info(f"[{cam_id.upper()}] Processed {display_label} plate={display_plate} (Enhancement: {enhancement_method or 'None'})")
+                    if v_plate != "OCR UNRESOLVED":
+                        assigned_vehicle_id = v_plate
+                        norm_plate = re.sub(r'[^A-Z0-9]', '', v_plate).upper()
+                        for target in active_suspect_plates:
+                            ratio = difflib.SequenceMatcher(None, norm_plate, target).ratio()
+                            if ratio >= 0.80 or target == norm_plate:
+                                assigned_vehicle_id = target
+                                logger.warning(f"🚨 [WATCHLIST HIT ON {cam_id.upper()}] Detected plate {v_plate} matches target {target}")
+                                break
+                    else:
+                        assigned_vehicle_id = f"VEH-{v_cls.upper()}-{cam_id.upper()}-{int(time.time()*10 + p_idx)%10000:04d}"
+
+                    payload = {
+                        "camera_id": cam_id,
+                        "vehicle_id": assigned_vehicle_id,
+                        "plate": v_plate,
+                        "vehicle_type": v_cls,
+                        "vehicle_label": v_label,
+                        "confidence": round(p_conf if v_plate != "OCR UNRESOLVED" else 0.0, 3),
+                        "vehicle_confidence": round(v_conf, 3),
+                        "bounding_box": p_veh["box"],
+                        "plate_box": p_veh["plate_box"],
+                        "crop_url": f"/assets/live_frames/crop_{cam_id}_raw.jpg",
+                        "enhanced_crop_url": f"/assets/live_frames/crop_{cam_id}_enhanced.jpg",
+                        "snapshot_url": f"/assets/live_frames/{cam_id}.jpg",
+                        "full_frame_url": f"/assets/live_frames/{cam_id}.jpg",
+                        "all_detected_plates": all_frame_plates,
+                        "vehicles": [
+                            {
+                                "index": i + 1,
+                                "vehicle_type": v["vehicle_type"],
+                                "label": v["label"],
+                                "confidence": v["confidence"],
+                                "plate": v["plate"],
+                                "box": v["box"]
+                            } for i, v in enumerate(processed_vehicles_in_frame)
+                        ],
+                        "enhancement_applied": p_veh["enhancement_applied"],
+                        "enhancement_method": p_veh["enhancement_method"],
+                        "quality_status": p_veh["quality_meta"].get("quality", "UNKNOWN"),
+                        "source": "cctv_yolo_detector"
+                    }
+                    post_detection(payload)
+                    logger.info(f"[{cam_id.upper()}] Processed {v_label} plate={v_plate} (All plates in frame: {all_frame_plates})")
 
                 # Brief inter-camera breather
                 time.sleep(1.0)

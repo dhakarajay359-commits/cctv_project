@@ -1402,6 +1402,12 @@ class NirikshanApiClient {
           if (callback) callback('watchlist_updated', w);
         } catch(err) {}
       });
+      es.addEventListener('suspect_removed', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (callback) callback('suspect_removed', data);
+        } catch(err) {}
+      });
       es.addEventListener('detections_cleared', (e) => {
         try {
           if (callback) callback('detections_cleared', {});

@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": "SUSP-MULHPVQP",
+    "plate": "MP01ZK6184",
+    "vehicle_type": "Vehicle",
+    "crime": "AARM",
+    "fir": "FIR-VERIFIED",
+    "suspect_name": "AJAY",
+    "priority": "CRITICAL",
+    "registered_at": "2026-09-28T16:57:10.897Z"
+  },
+  {
+    "id": "SUSP-MUK4WBPV",
+    "plate": "MP-04-GB-1086",
+    "vehicle_type": "Vehicle",
+    "crime": "Interstate Contraband Transport",
+    "fir": "FIR-PENDING",
+    "suspect_name": "Commercial Cargo Suspect",
+    "priority": "CRITICAL",
+    "registered_at": "2026-09-27T18:10:30.355Z"
+  },
+  {
+    "id": "SUSP-MUI93DHM",
+    "plate": "GJ-01-LO-5043",
+    "vehicle_type": "Vehicle",
+    "crime": "AARM",
+    "fir": "FIR-VERIFIED",
+    "suspect_name": "AJAY",
+    "priority": "CRITICAL",
+    "registered_at": "2026-09-26T10:32:25.354Z"
+  }
+]

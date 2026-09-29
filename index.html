@@ -867,6 +867,7 @@
 
         <div class="drawer-actions-row">
           <button class="action-btn primary" id="detailPullStreamBtn"><i class="fa-solid fa-play"></i> Pull On-Demand WebRTC Relay</button>
+          <button class="action-btn" id="detailPlaybackBtn" style="background: rgba(16, 185, 129, 0.15); border-color: #059669; color: #10b981; font-weight: 700;"><i class="fa-solid fa-clock-rotate-left"></i> Check Recordings</button>
           <button class="action-btn" id="detailExportDossierBtn"><i class="fa-solid fa-file-arrow-down"></i> Export Node Dossier</button>
         </div>
       </div>
@@ -1087,7 +1088,22 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 140px; gap: 0.6rem; align-items: end;">
             <div>
               <label style="font-size: 0.7rem; color: #475569; font-weight: 700;">Vehicle Registration Plate:</label>
-              <input type="text" id="targetRegPlate" class="custom-input" placeholder="e.g. GJ-01-AB-1234, MP.04 GB.1086" required style="font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;">
+              <input type="text" id="targetRegPlate" class="custom-input" placeholder="e.g. MP-04-SJ-2353, MP-13-ZU-2058" required style="font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;">
+              <div style="margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;">
+                <span style="font-size: 0.64rem; color: #64748b; font-weight: 700;">Live Optical Targets:</span>
+                <button type="button" class="quick-plate-btn" data-plate="MP-04-GB-1086" data-cam="cam33" data-type="Heavy Commercial (Truck)" data-name="Ashok Leyland Truck" style="font-size: 0.62rem; padding: 2px 6px; background: #fef3c7; border: 1px solid #fde68a; color: #92400e; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); font-weight: 700;">
+                  🚛 MP-04-GB-1086 (Truck • cam33)
+                </button>
+                <button type="button" class="quick-plate-btn" data-plate="MP-01-ZK-6184" data-cam="cam34" data-type="Four-Wheeler (Car)" data-name="Swift Dzire Sedan" style="font-size: 0.62rem; padding: 2px 6px; background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); font-weight: 700;">
+                  🚗 MP-01-ZK-6184 (Swift Dzire • cam34)
+                </button>
+                <button type="button" class="quick-plate-btn" data-plate="MP-01-4851" data-cam="cam35" data-type="Heavy Commercial (Truck)" data-name="Commercial Carrier" style="font-size: 0.62rem; padding: 2px 6px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); font-weight: 700;">
+                  🚛 MP-01-4851 (Carrier • cam35)
+                </button>
+                <button type="button" class="quick-plate-btn" data-plate="MH-02-EE-7762" data-cam="cam32" data-type="Four-Wheeler (Car)" data-name="Urban Car" style="font-size: 0.62rem; padding: 2px 6px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); font-weight: 700;">
+                  🚗 MH-02-EE-7762 (Car • cam32)
+                </button>
+              </div>
             </div>
             <div>
               <label style="font-size: 0.7rem; color: #475569; font-weight: 700;">Suspect / Driver Name:</label>
@@ -1357,6 +1373,11 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
                 <option value="raw">⚡ Raw Unenhanced Feed</option>
               </select>
 
+              <!-- CCTV Historical Recording & Playback Mode Toggle -->
+              <button type="button" class="player-ctrl-btn" id="btnTogglePlaybackMode" title="Check Past CCTV Recording / Playback" style="width: auto; padding: 0 10px; font-size: 0.74rem; font-weight: 700; color: #10b981; border: 1px solid #059669; background: rgba(16, 185, 129, 0.15); border-radius: 4px;">
+                <i class="fa-solid fa-clock-rotate-left"></i> <span id="btnTogglePlaybackModeText">Check Recording</span>
+              </button>
+
               <button type="button" class="player-ctrl-btn" id="btnLiveCctvFreeze" title="Freeze Frame / Focus Suspect Plate" style="width: auto; padding: 0 10px; font-size: 0.75rem; font-weight: 700; color: #ef4444; border-color: #dc2626; display: none;">
                 <i class="fa-solid fa-crosshairs"></i> <span id="btnLiveCctvFreezeText">Focus Plate</span>
               </button>
@@ -1368,6 +1389,72 @@ Dwarka Coastal Guard Checkpost,Devbhumi Dwarka,dept-police,22.2420,68.9710,Bosch
               </button>
               <button type="button" class="player-ctrl-btn" id="btnLiveCctvFullscreen" title="Toggle Fullscreen">
                 <i class="fa-solid fa-expand"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-Time Optical Plate Detection Quick-Selector Chips -->
+          <div id="livePlateDetectionBar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem; background: #0b1329; border: 1px solid rgba(0, 242, 254, 0.35); border-radius: 6px; padding: 0.45rem 0.85rem; gap: 0.6rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase; display: flex; align-items: center; gap: 5px;">
+                <i class="fa-solid fa-crosshairs"></i> Optical Plates In Scene:
+              </span>
+              <div id="livePlateChipsContainer" style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;"></div>
+            </div>
+            <span style="font-size: 0.68rem; color: #10b981; font-family: var(--font-mono); font-weight: 700;">
+              <i class="fa-solid fa-shield-halved"></i> LIVE OPTICAL TRACKING ACTIVE
+            </span>
+          </div>
+
+          <!-- CCTV NVR Historical Recording & DVR Scrubber Controller (Hidden until Check Recording is clicked) -->
+          <div id="liveCctvPlaybackBar" style="display: none; margin-top: 0.6rem; background: #0b1329; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; padding: 0.65rem 0.9rem; box-shadow: 0 2px 10px rgba(0,0,0,0.4);">
+            <!-- Time Offset Selection Row -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                <span style="font-size: 0.7rem; font-weight: 700; color: #10b981; text-transform: uppercase; display: flex; align-items: center; gap: 5px;">
+                  <i class="fa-solid fa-clock-rotate-left"></i> Recorded Time:
+                </span>
+                <button type="button" class="action-btn time-preset-btn active" data-offset="300" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; background: #0284c7; color: #fff; border-radius: 3px; font-weight: 700; border: none; cursor: pointer;">-5 Min</button>
+                <button type="button" class="action-btn time-preset-btn" data-offset="900" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; background: #1e293b; color: #94a3b8; border-radius: 3px; font-weight: 600; border: 1px solid #334155; cursor: pointer;">-15 Min</button>
+                <button type="button" class="action-btn time-preset-btn" data-offset="1800" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; background: #1e293b; color: #94a3b8; border-radius: 3px; font-weight: 600; border: 1px solid #334155; cursor: pointer;">-30 Min</button>
+                <button type="button" class="action-btn time-preset-btn" data-offset="3600" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; background: #1e293b; color: #94a3b8; border-radius: 3px; font-weight: 600; border: 1px solid #334155; cursor: pointer;">-1 Hour</button>
+                <button type="button" class="action-btn time-preset-btn" data-offset="custom" id="btnCustomRecordingTime" style="padding: 0.2rem 0.55rem; font-size: 0.68rem; background: #1e293b; color: #94a3b8; border-radius: 3px; font-weight: 600; border: 1px solid #334155; cursor: pointer;"><i class="fa-solid fa-calendar-days"></i> Custom Time</button>
+                <input type="datetime-local" id="playbackCustomDatetime" style="display: none; background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-size: 0.68rem; font-family: var(--font-mono); padding: 2px 6px; border-radius: 3px; outline: none;">
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span id="recordingBlockInfo" style="font-size: 0.68rem; color: #10b981; font-family: var(--font-mono); font-weight: 700;"><i class="fa-solid fa-database"></i> 15-DAY NVR RING-BUFFER</span>
+                <button type="button" id="btnReturnToLive" style="padding: 0.25rem 0.65rem; font-size: 0.7rem; font-weight: 800; background: #dc2626; color: #fff; border: none; border-radius: 3px; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 0 8px rgba(220,38,38,0.5);">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #fff;"></span> RETURN TO LIVE
+                </button>
+              </div>
+            </div>
+            
+            <!-- Timeline Scrubber Controls Row -->
+            <div style="display: flex; align-items: center; gap: 0.55rem;">
+              <button type="button" class="player-ctrl-btn" id="playbackPlayPauseBtn" title="Play / Pause" style="width: 32px; height: 32px; background: #1e293b; border-color: #334155; color: #fff;">
+                <i class="fa-solid fa-pause"></i>
+              </button>
+              <button type="button" class="player-ctrl-btn" id="playbackRewind10Btn" title="Rewind 10s" style="width: 38px; height: 30px; background: #1e293b; border-color: #334155; color: #38bdf8; font-size: 0.72rem; padding: 0;">
+                <i class="fa-solid fa-rotate-left"></i> 10s
+              </button>
+              <button type="button" class="player-ctrl-btn" id="playbackForward10Btn" title="Forward 10s" style="width: 38px; height: 30px; background: #1e293b; border-color: #334155; color: #38bdf8; font-size: 0.72rem; padding: 0;">
+                <i class="fa-solid fa-rotate-right"></i> 10s
+              </button>
+              
+              <!-- Range seek scrubber -->
+              <div style="flex: 1; display: flex; align-items: center; margin: 0 4px;">
+                <input type="range" class="cctv-scrubber-range" id="playbackScrubber" min="0" max="100" value="0" step="0.1" style="width: 100%;">
+              </div>
+              
+              <!-- Current time / duration display -->
+              <span class="scrub-time" id="playbackTimeDisplay" style="font-size: 0.72rem; min-width: 85px; text-align: right;">00:00 / 00:00</span>
+              
+              <!-- Speed multiplier -->
+              <button type="button" class="player-ctrl-btn speed-btn" id="playbackSpeedBtn" title="Change Playback Speed" style="padding: 0 8px; font-size: 0.7rem; font-family: var(--font-mono); height: 30px; background: #1e293b; border-color: #334155; color: #e2e8f0;">1.0x</button>
+              
+              <!-- Export Clip -->
+              <button type="button" class="player-ctrl-btn" id="playbackExportBtn" title="Export Recorded Video Clip" style="padding: 0 8px; font-size: 0.7rem; height: 30px; background: rgba(56, 189, 248, 0.15); border-color: #0284c7; color: #38bdf8;">
+                <i class="fa-solid fa-download"></i> Export
               </button>
             </div>
           </div>

@@ -5767,6 +5767,18 @@ video,
   animation: platePulseGlow 1.2s infinite alternate;
 }
 
+.live-target-box.plate-focused:not(.suspect) {
+  border: 2.5px solid #00f2fe;
+  background: rgba(0, 242, 254, 0.16);
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.85), inset 0 0 8px rgba(0, 242, 254, 0.45);
+  animation: plateCyanPulseGlow 1.2s infinite alternate;
+}
+
+@keyframes plateCyanPulseGlow {
+  0% { box-shadow: 0 0 14px rgba(0, 242, 254, 0.5), inset 0 0 6px rgba(0, 242, 254, 0.25); border-color: #00f2fe; }
+  100% { box-shadow: 0 0 30px rgba(0, 242, 254, 0.95), inset 0 0 12px rgba(0, 242, 254, 0.65); border-color: #38bdf8; }
+}
+
 @keyframes platePulseGlow {
   0% { box-shadow: 0 0 14px rgba(239, 68, 68, 0.6), inset 0 0 6px rgba(239, 68, 68, 0.3); border-color: #ef4444; }
   100% { box-shadow: 0 0 32px rgba(239, 68, 68, 1.0), inset 0 0 14px rgba(239, 68, 68, 0.8); border-color: #f87171; }
@@ -5815,7 +5827,7 @@ video,
   pointer-events: auto;
   cursor: pointer;
   z-index: 15;
-  transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: left 0.28s ease-out, top 0.28s ease-out, width 0.28s ease-out, height 0.28s ease-out, opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   will-change: left, top, width, height;
   display: flex;
   align-items: flex-start;
@@ -5878,6 +5890,91 @@ video,
   background: #15803d;
   border-color: #22c55e;
   color: #ffffff;
+}
+
+/* Pedestrian / Person Object Detection Styling */
+.live-plate-reticle.type-person {
+  border: 1.8px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.45);
+}
+
+.live-plate-reticle.type-person:hover {
+  border-color: #fbbf24;
+  background: rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.75);
+}
+
+.live-plate-reticle.type-person .bbox-corner {
+  border-color: #f59e0b;
+}
+
+.live-plate-reticle.type-person .plate-reticle-badge {
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.live-plate-reticle.type-person.active-focused {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.22);
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.95);
+}
+
+.live-plate-reticle.type-person.active-focused .bbox-corner {
+  border-color: #22c55e;
+}
+
+.live-plate-reticle.type-person.active-focused .plate-reticle-badge {
+  background: #15803d;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+.live-target-box.type-person {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.7) !important;
+}
+
+.live-target-box.type-person .bbox-corner {
+  border-color: #f59e0b !important;
+}
+
+.live-plate-chip.chip-person {
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.live-plate-chip.chip-person:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.live-plate-chip.chip-person.active {
+  background: #d97706;
+  border-color: #fbbf24;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
+.live-plate-chip.chip-vehicle {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.live-plate-chip.chip-vehicle:hover {
+  border-color: #00f2fe;
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.18);
+}
+
+.live-plate-chip.chip-vehicle.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
 }
 
 .live-plate-chip {
@@ -7058,3 +7155,207 @@ video,
   color: #ffffff;
   border-color: rgba(244, 63, 94, 0.6);
 }
+
+/* =========================================================================
+   RECENT SIGHTING CAMERA BEACON & LIVE CCTV FEED HIGHLIGHT STYLES
+   ========================================================================= */
+
+@keyframes recentRadarExpand {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.95;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.85);
+  }
+  50% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+    box-shadow: 0 0 0 35px rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes recentBeaconGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.95), 0 0 40px rgba(245, 158, 11, 0.4), 0 4px 12px rgba(0, 0, 0, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(239, 68, 68, 1), 0 0 55px rgba(245, 158, 11, 0.8), 0 4px 16px rgba(0, 0, 0, 0.8);
+    transform: scale(1.08);
+  }
+}
+
+.recent-caught-pin-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible !important;
+}
+
+.recent-caught-radar-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  margin-left: -22px;
+  border-radius: 50%;
+  border: 2px solid #ef4444;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.25) 0%, rgba(245, 158, 11, 0.08) 70%, transparent 100%);
+  pointer-events: none;
+  animation: recentRadarExpand 2s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+}
+
+.recent-caught-radar-ring.ring-2 {
+  animation-delay: 0.65s;
+}
+
+.recent-caught-radar-ring.ring-3 {
+  animation-delay: 1.3s;
+}
+
+.recent-caught-core {
+  position: relative;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 3px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+  animation: recentBeaconGlow 2s infinite ease-in-out;
+  transition: transform 0.2s ease;
+}
+
+.recent-caught-core:hover {
+  transform: scale(1.18) !important;
+}
+
+.recent-caught-callout {
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.96);
+  border: 1.5px solid #ef4444;
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7), 0 0 16px rgba(239, 68, 68, 0.65);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 25;
+}
+
+.recent-caught-callout::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 5px 0 5px;
+  border-style: solid;
+  border-color: #ef4444 transparent transparent transparent;
+}
+
+.recent-caught-callout .live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+  animation: radarPing 1s infinite;
+}
+
+.recent-caught-callout .live-badge-tag {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 9px;
+  padding: 1.5px 6px;
+  border-radius: 3px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Intermediate past checkpoints on map */
+.waypoint-past-pin {
+  background: #1e293b;
+  border: 2px solid #94a3b8;
+  color: #cbd5e1;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.waypoint-past-pin:hover {
+  transform: scale(1.15);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+/* CCTV Video Wall Live Camera Highlighting */
+.wall-feed-cell.camera-caught-highlight {
+  border: 3px solid #ef4444 !important;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.9), inset 0 0 18px rgba(239, 68, 68, 0.4) !important;
+  animation: boloWallPulse 1.2s infinite ease-in-out !important;
+  z-index: 20;
+}
+
+.live-caught-pinned-banner {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 30;
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-weight: 800;
+  font-size: 0.74rem;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+.live-caught-pinned-banner .pinned-tag {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fef08a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
