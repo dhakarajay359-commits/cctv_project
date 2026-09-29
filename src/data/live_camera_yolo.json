@@ -1,0 +1,3535 @@
+{
+  "cam01": [
+    {
+      "id": "cam01_det_1",
+      "track_id": 1,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.3,
+      "confidence_pct": "30%",
+      "box": {
+        "left": 53.54,
+        "top": 54.63,
+        "width": 3.02,
+        "height": 5.0
+      }
+    },
+    {
+      "id": "cam01_det_2",
+      "track_id": 2,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 81.46,
+        "top": 59.81,
+        "width": 1.93,
+        "height": 3.61
+      }
+    },
+    {
+      "id": "cam01_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.17,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 72.29,
+        "top": 58.52,
+        "width": 5.78,
+        "height": 16.2
+      }
+    }
+  ],
+  "cam02": [
+    {
+      "id": "cam02_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.65,
+      "confidence_pct": "64%",
+      "box": {
+        "left": 0.0,
+        "top": 28.61,
+        "width": 2.92,
+        "height": 9.44
+      }
+    },
+    {
+      "id": "cam02_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.18,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 25.42,
+        "top": 29.81,
+        "width": 2.19,
+        "height": 14.72
+      }
+    },
+    {
+      "id": "cam02_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.16,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 25.47,
+        "top": 29.81,
+        "width": 2.19,
+        "height": 10.19
+      }
+    }
+  ],
+  "cam04": [
+    {
+      "id": "cam04_det_1",
+      "track_id": 1,
+      "type": "TRUCK / COMMERCIAL",
+      "category": "vehicle",
+      "icon": "fa-truck",
+      "confidence": 0.76,
+      "confidence_pct": "75%",
+      "box": {
+        "left": 37.97,
+        "top": 46.76,
+        "width": 46.67,
+        "height": 42.87
+      }
+    },
+    {
+      "id": "cam04_det_2",
+      "track_id": 2,
+      "type": "BUS (TRANSIT)",
+      "category": "vehicle",
+      "icon": "fa-bus",
+      "confidence": 0.5,
+      "confidence_pct": "49%",
+      "box": {
+        "left": 0.0,
+        "top": 5.65,
+        "width": 35.83,
+        "height": 20.09
+      }
+    },
+    {
+      "id": "cam04_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.4,
+      "confidence_pct": "40%",
+      "box": {
+        "left": 88.39,
+        "top": 28.61,
+        "width": 1.77,
+        "height": 7.59
+      }
+    },
+    {
+      "id": "cam04_det_4",
+      "track_id": 4,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.39,
+      "confidence_pct": "39%",
+      "box": {
+        "left": 12.24,
+        "top": 20.65,
+        "width": 9.95,
+        "height": 8.43
+      }
+    },
+    {
+      "id": "cam04_det_5",
+      "track_id": 5,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.31,
+      "confidence_pct": "31%",
+      "box": {
+        "left": 45.05,
+        "top": 16.48,
+        "width": 4.06,
+        "height": 4.91
+      }
+    },
+    {
+      "id": "cam04_det_6",
+      "track_id": 6,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.27,
+      "confidence_pct": "27%",
+      "box": {
+        "left": 60.16,
+        "top": 19.07,
+        "width": 2.92,
+        "height": 6.2
+      }
+    },
+    {
+      "id": "cam04_det_7",
+      "track_id": 7,
+      "type": "BUS (TRANSIT)",
+      "category": "vehicle",
+      "icon": "fa-bus",
+      "confidence": 0.24,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 8.8,
+        "top": 8.24,
+        "width": 27.19,
+        "height": 16.67
+      }
+    },
+    {
+      "id": "cam04_det_8",
+      "track_id": 8,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 43.54,
+        "top": 19.26,
+        "width": 5.36,
+        "height": 8.33
+      }
+    }
+  ],
+  "cam05": [
+    {
+      "id": "cam05_det_1",
+      "track_id": 1,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.61,
+      "confidence_pct": "60%",
+      "box": {
+        "left": 26.51,
+        "top": 44.26,
+        "width": 3.85,
+        "height": 6.02
+      }
+    },
+    {
+      "id": "cam05_det_2",
+      "track_id": 2,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.4,
+      "confidence_pct": "40%",
+      "box": {
+        "left": 1.46,
+        "top": 48.15,
+        "width": 8.18,
+        "height": 8.52
+      }
+    },
+    {
+      "id": "cam05_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.33,
+      "confidence_pct": "33%",
+      "box": {
+        "left": 54.32,
+        "top": 34.44,
+        "width": 4.53,
+        "height": 10.74
+      }
+    },
+    {
+      "id": "cam05_det_4",
+      "track_id": 4,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.32,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 23.07,
+        "top": 48.7,
+        "width": 1.82,
+        "height": 3.43
+      }
+    },
+    {
+      "id": "cam05_det_5",
+      "track_id": 5,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.26,
+      "confidence_pct": "25%",
+      "box": {
+        "left": 13.96,
+        "top": 39.91,
+        "width": 3.85,
+        "height": 5.93
+      }
+    },
+    {
+      "id": "cam05_det_6",
+      "track_id": 6,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.24,
+      "confidence_pct": "24%",
+      "box": {
+        "left": 29.95,
+        "top": 39.72,
+        "width": 3.02,
+        "height": 3.24
+      }
+    },
+    {
+      "id": "cam05_det_7",
+      "track_id": 7,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.24,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 22.92,
+        "top": 42.31,
+        "width": 2.86,
+        "height": 5.0
+      }
+    },
+    {
+      "id": "cam05_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.23,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 76.88,
+        "top": 73.33,
+        "width": 3.85,
+        "height": 15.46
+      }
+    },
+    {
+      "id": "cam05_det_9",
+      "track_id": 9,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 22.92,
+        "top": 43.7,
+        "width": 2.66,
+        "height": 3.89
+      }
+    },
+    {
+      "id": "cam05_det_10",
+      "track_id": 10,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 85.73,
+        "top": 71.11,
+        "width": 14.22,
+        "height": 28.06
+      }
+    },
+    {
+      "id": "cam05_det_11",
+      "track_id": 11,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.18,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 22.92,
+        "top": 41.39,
+        "width": 3.44,
+        "height": 5.28
+      }
+    },
+    {
+      "id": "cam05_det_12",
+      "track_id": 12,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.18,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 87.6,
+        "top": 71.48,
+        "width": 12.34,
+        "height": 18.7
+      }
+    }
+  ],
+  "cam08": [
+    {
+      "id": "cam08_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.73,
+      "confidence_pct": "73%",
+      "box": {
+        "left": 0.0,
+        "top": 56.85,
+        "width": 5.0,
+        "height": 9.26
+      }
+    },
+    {
+      "id": "cam08_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.73,
+      "confidence_pct": "73%",
+      "box": {
+        "left": 71.3,
+        "top": 50.28,
+        "width": 5.26,
+        "height": 15.19
+      }
+    },
+    {
+      "id": "cam08_det_3",
+      "track_id": 3,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.62,
+      "confidence_pct": "62%",
+      "box": {
+        "left": 32.71,
+        "top": 50.28,
+        "width": 9.9,
+        "height": 22.59
+      }
+    },
+    {
+      "id": "cam08_det_4",
+      "track_id": 4,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.61,
+      "confidence_pct": "61%",
+      "box": {
+        "left": 22.03,
+        "top": 53.06,
+        "width": 4.84,
+        "height": 11.48
+      }
+    },
+    {
+      "id": "cam08_det_5",
+      "track_id": 5,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.56,
+      "confidence_pct": "56%",
+      "box": {
+        "left": 38.59,
+        "top": 29.63,
+        "width": 2.03,
+        "height": 9.17
+      }
+    },
+    {
+      "id": "cam08_det_6",
+      "track_id": 6,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.51,
+      "confidence_pct": "51%",
+      "box": {
+        "left": 25.78,
+        "top": 33.15,
+        "width": 2.08,
+        "height": 8.7
+      }
+    },
+    {
+      "id": "cam08_det_7",
+      "track_id": 7,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.44,
+      "confidence_pct": "44%",
+      "box": {
+        "left": 21.41,
+        "top": 60.09,
+        "width": 5.42,
+        "height": 11.94
+      }
+    },
+    {
+      "id": "cam08_det_8",
+      "track_id": 8,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.37,
+      "confidence_pct": "36%",
+      "box": {
+        "left": 71.3,
+        "top": 78.61,
+        "width": 9.53,
+        "height": 21.39
+      }
+    },
+    {
+      "id": "cam08_det_9",
+      "track_id": 9,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.37,
+      "confidence_pct": "36%",
+      "box": {
+        "left": 22.03,
+        "top": 53.06,
+        "width": 3.65,
+        "height": 9.72
+      }
+    },
+    {
+      "id": "cam08_det_10",
+      "track_id": 10,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.34,
+      "confidence_pct": "34%",
+      "box": {
+        "left": 72.66,
+        "top": 83.06,
+        "width": 7.45,
+        "height": 16.94
+      }
+    },
+    {
+      "id": "cam08_det_11",
+      "track_id": 11,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.34,
+      "confidence_pct": "33%",
+      "box": {
+        "left": 65.47,
+        "top": 57.69,
+        "width": 16.61,
+        "height": 29.44
+      }
+    },
+    {
+      "id": "cam08_det_12",
+      "track_id": 12,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.33,
+      "confidence_pct": "33%",
+      "box": {
+        "left": 23.18,
+        "top": 25.74,
+        "width": 6.72,
+        "height": 9.07
+      }
+    },
+    {
+      "id": "cam08_det_13",
+      "track_id": 13,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.29,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 78.44,
+        "top": 26.85,
+        "width": 6.88,
+        "height": 11.67
+      }
+    },
+    {
+      "id": "cam08_det_14",
+      "track_id": 14,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.23,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 78.44,
+        "top": 26.85,
+        "width": 6.82,
+        "height": 11.85
+      }
+    },
+    {
+      "id": "cam08_det_15",
+      "track_id": 15,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.23,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 71.46,
+        "top": 72.59,
+        "width": 7.76,
+        "height": 18.43
+      }
+    },
+    {
+      "id": "cam08_det_16",
+      "track_id": 16,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.22,
+      "confidence_pct": "22%",
+      "box": {
+        "left": 84.01,
+        "top": 26.85,
+        "width": 3.23,
+        "height": 3.8
+      }
+    },
+    {
+      "id": "cam08_det_17",
+      "track_id": 17,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.21,
+      "confidence_pct": "21%",
+      "box": {
+        "left": 0.0,
+        "top": 61.39,
+        "width": 1.3,
+        "height": 6.94
+      }
+    },
+    {
+      "id": "cam08_det_18",
+      "track_id": 18,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 19.11,
+        "top": 31.67,
+        "width": 2.19,
+        "height": 3.43
+      }
+    },
+    {
+      "id": "cam08_det_19",
+      "track_id": 19,
+      "type": "BICYCLE / CYCLIST",
+      "category": "vehicle",
+      "icon": "fa-bicycle",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 21.51,
+        "top": 61.57,
+        "width": 5.16,
+        "height": 9.91
+      }
+    },
+    {
+      "id": "cam08_det_20",
+      "track_id": 20,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.2,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 18.96,
+        "top": 27.31,
+        "width": 2.86,
+        "height": 7.5
+      }
+    },
+    {
+      "id": "cam08_det_21",
+      "track_id": 21,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.2,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 65.1,
+        "top": 12.13,
+        "width": 1.2,
+        "height": 3.7
+      }
+    },
+    {
+      "id": "cam08_det_22",
+      "track_id": 22,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 43.33,
+        "top": 9.54,
+        "width": 2.29,
+        "height": 4.07
+      }
+    },
+    {
+      "id": "cam08_det_23",
+      "track_id": 23,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.18,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 71.93,
+        "top": 72.13,
+        "width": 7.14,
+        "height": 11.48
+      }
+    },
+    {
+      "id": "cam08_det_24",
+      "track_id": 24,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 19.11,
+        "top": 27.31,
+        "width": 2.76,
+        "height": 4.35
+      }
+    },
+    {
+      "id": "cam08_det_25",
+      "track_id": 25,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.17,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 71.2,
+        "top": 50.19,
+        "width": 4.79,
+        "height": 10.93
+      }
+    },
+    {
+      "id": "cam08_det_26",
+      "track_id": 26,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 73.44,
+        "top": 85.46,
+        "width": 6.09,
+        "height": 14.54
+      }
+    },
+    {
+      "id": "cam08_det_27",
+      "track_id": 27,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.16,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 21.67,
+        "top": 62.69,
+        "width": 3.8,
+        "height": 9.26
+      }
+    },
+    {
+      "id": "cam08_det_28",
+      "track_id": 28,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 84.06,
+        "top": 25.28,
+        "width": 3.59,
+        "height": 5.28
+      }
+    },
+    {
+      "id": "cam08_det_29",
+      "track_id": 29,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 95.21,
+        "top": 30.0,
+        "width": 4.74,
+        "height": 6.85
+      }
+    }
+  ],
+  "cam10": [
+    {
+      "id": "cam10_det_1",
+      "track_id": 1,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.78,
+      "confidence_pct": "77%",
+      "box": {
+        "left": 72.4,
+        "top": 79.54,
+        "width": 7.4,
+        "height": 20.37
+      }
+    },
+    {
+      "id": "cam10_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.71,
+      "confidence_pct": "70%",
+      "box": {
+        "left": 44.22,
+        "top": 67.69,
+        "width": 7.5,
+        "height": 27.41
+      }
+    },
+    {
+      "id": "cam10_det_3",
+      "track_id": 3,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.7,
+      "confidence_pct": "70%",
+      "box": {
+        "left": 0.0,
+        "top": 29.07,
+        "width": 7.55,
+        "height": 15.28
+      }
+    },
+    {
+      "id": "cam10_det_4",
+      "track_id": 4,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.65,
+      "confidence_pct": "65%",
+      "box": {
+        "left": 2.81,
+        "top": 68.89,
+        "width": 5.62,
+        "height": 15.93
+      }
+    },
+    {
+      "id": "cam10_det_5",
+      "track_id": 5,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.65,
+      "confidence_pct": "64%",
+      "box": {
+        "left": 33.39,
+        "top": 51.67,
+        "width": 6.04,
+        "height": 17.59
+      }
+    },
+    {
+      "id": "cam10_det_6",
+      "track_id": 6,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.63,
+      "confidence_pct": "62%",
+      "box": {
+        "left": 87.76,
+        "top": 37.78,
+        "width": 10.83,
+        "height": 22.13
+      }
+    },
+    {
+      "id": "cam10_det_7",
+      "track_id": 7,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.58,
+      "confidence_pct": "57%",
+      "box": {
+        "left": 46.72,
+        "top": 13.89,
+        "width": 2.55,
+        "height": 9.54
+      }
+    },
+    {
+      "id": "cam10_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.52,
+      "confidence_pct": "51%",
+      "box": {
+        "left": 0.26,
+        "top": 46.76,
+        "width": 6.3,
+        "height": 16.94
+      }
+    },
+    {
+      "id": "cam10_det_9",
+      "track_id": 9,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.51,
+      "confidence_pct": "50%",
+      "box": {
+        "left": 82.34,
+        "top": 17.04,
+        "width": 6.35,
+        "height": 9.63
+      }
+    },
+    {
+      "id": "cam10_det_10",
+      "track_id": 10,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.48,
+      "confidence_pct": "47%",
+      "box": {
+        "left": 67.34,
+        "top": 36.48,
+        "width": 3.49,
+        "height": 9.72
+      }
+    },
+    {
+      "id": "cam10_det_11",
+      "track_id": 11,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.36,
+      "confidence_pct": "36%",
+      "box": {
+        "left": 33.39,
+        "top": 51.67,
+        "width": 5.78,
+        "height": 12.31
+      }
+    },
+    {
+      "id": "cam10_det_12",
+      "track_id": 12,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.28,
+      "confidence_pct": "27%",
+      "box": {
+        "left": 0.21,
+        "top": 46.67,
+        "width": 6.09,
+        "height": 12.22
+      }
+    },
+    {
+      "id": "cam10_det_13",
+      "track_id": 13,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.26,
+      "confidence_pct": "25%",
+      "box": {
+        "left": 67.24,
+        "top": 41.76,
+        "width": 3.49,
+        "height": 11.85
+      }
+    },
+    {
+      "id": "cam10_det_14",
+      "track_id": 14,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.25,
+      "confidence_pct": "24%",
+      "box": {
+        "left": 2.4,
+        "top": 58.61,
+        "width": 6.25,
+        "height": 21.39
+      }
+    },
+    {
+      "id": "cam10_det_15",
+      "track_id": 15,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.25,
+      "confidence_pct": "24%",
+      "box": {
+        "left": 2.6,
+        "top": 61.67,
+        "width": 6.04,
+        "height": 12.31
+      }
+    },
+    {
+      "id": "cam10_det_16",
+      "track_id": 16,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.24,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 84.22,
+        "top": 33.33,
+        "width": 5.94,
+        "height": 19.81
+      }
+    },
+    {
+      "id": "cam10_det_17",
+      "track_id": 17,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.22,
+      "confidence_pct": "22%",
+      "box": {
+        "left": 20.31,
+        "top": 36.02,
+        "width": 5.21,
+        "height": 14.35
+      }
+    },
+    {
+      "id": "cam10_det_18",
+      "track_id": 18,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.22,
+      "confidence_pct": "21%",
+      "box": {
+        "left": 82.4,
+        "top": 17.41,
+        "width": 4.38,
+        "height": 9.17
+      }
+    },
+    {
+      "id": "cam10_det_19",
+      "track_id": 19,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 76.04,
+        "top": 13.43,
+        "width": 2.03,
+        "height": 8.52
+      }
+    },
+    {
+      "id": "cam10_det_20",
+      "track_id": 20,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 96.67,
+        "top": 35.65,
+        "width": 3.28,
+        "height": 23.61
+      }
+    },
+    {
+      "id": "cam10_det_21",
+      "track_id": 21,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 46.98,
+        "top": 3.89,
+        "width": 5.21,
+        "height": 5.83
+      }
+    },
+    {
+      "id": "cam10_det_22",
+      "track_id": 22,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 96.77,
+        "top": 36.57,
+        "width": 3.18,
+        "height": 22.41
+      }
+    },
+    {
+      "id": "cam10_det_23",
+      "track_id": 23,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 82.5,
+        "top": 11.94,
+        "width": 2.24,
+        "height": 6.57
+      }
+    },
+    {
+      "id": "cam10_det_24",
+      "track_id": 24,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.17,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 91.93,
+        "top": 15.93,
+        "width": 8.02,
+        "height": 11.39
+      }
+    },
+    {
+      "id": "cam10_det_25",
+      "track_id": 25,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 1.09,
+        "top": 43.06,
+        "width": 10.31,
+        "height": 13.24
+      }
+    },
+    {
+      "id": "cam10_det_26",
+      "track_id": 26,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 32.81,
+        "top": 59.72,
+        "width": 6.04,
+        "height": 14.91
+      }
+    }
+  ],
+  "cam11": [
+    {
+      "id": "cam11_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.76,
+      "confidence_pct": "76%",
+      "box": {
+        "left": 28.85,
+        "top": 28.52,
+        "width": 9.48,
+        "height": 13.8
+      }
+    },
+    {
+      "id": "cam11_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.71,
+      "confidence_pct": "70%",
+      "box": {
+        "left": 22.76,
+        "top": 40.56,
+        "width": 4.48,
+        "height": 16.48
+      }
+    },
+    {
+      "id": "cam11_det_3",
+      "track_id": 3,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.49,
+      "confidence_pct": "49%",
+      "box": {
+        "left": 0.0,
+        "top": 52.96,
+        "width": 13.33,
+        "height": 42.41
+      }
+    },
+    {
+      "id": "cam11_det_4",
+      "track_id": 4,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.44,
+      "confidence_pct": "43%",
+      "box": {
+        "left": 89.74,
+        "top": 24.63,
+        "width": 4.32,
+        "height": 8.06
+      }
+    },
+    {
+      "id": "cam11_det_5",
+      "track_id": 5,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.31,
+      "confidence_pct": "31%",
+      "box": {
+        "left": 0.0,
+        "top": 30.74,
+        "width": 2.5,
+        "height": 11.94
+      }
+    },
+    {
+      "id": "cam11_det_6",
+      "track_id": 6,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.29,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 0.0,
+        "top": 33.98,
+        "width": 2.45,
+        "height": 8.43
+      }
+    },
+    {
+      "id": "cam11_det_7",
+      "track_id": 7,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.23,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 13.65,
+        "top": 26.2,
+        "width": 4.17,
+        "height": 9.63
+      }
+    },
+    {
+      "id": "cam11_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.21,
+      "confidence_pct": "21%",
+      "box": {
+        "left": 46.56,
+        "top": 70.56,
+        "width": 7.6,
+        "height": 16.2
+      }
+    },
+    {
+      "id": "cam11_det_9",
+      "track_id": 9,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 37.71,
+        "top": 30.93,
+        "width": 8.91,
+        "height": 14.35
+      }
+    },
+    {
+      "id": "cam11_det_10",
+      "track_id": 10,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 83.23,
+        "top": 9.44,
+        "width": 4.84,
+        "height": 6.39
+      }
+    },
+    {
+      "id": "cam11_det_11",
+      "track_id": 11,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 77.34,
+        "top": 6.39,
+        "width": 4.69,
+        "height": 6.2
+      }
+    }
+  ],
+  "cam13": [
+    {
+      "id": "cam13_det_1",
+      "track_id": 1,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.6,
+      "confidence_pct": "60%",
+      "box": {
+        "left": 15.0,
+        "top": 27.5,
+        "width": 11.2,
+        "height": 7.69
+      }
+    },
+    {
+      "id": "cam13_det_2",
+      "track_id": 2,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.59,
+      "confidence_pct": "59%",
+      "box": {
+        "left": 58.39,
+        "top": 19.26,
+        "width": 7.6,
+        "height": 5.83
+      }
+    },
+    {
+      "id": "cam13_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.31,
+      "confidence_pct": "30%",
+      "box": {
+        "left": 50.21,
+        "top": 34.91,
+        "width": 2.24,
+        "height": 8.98
+      }
+    },
+    {
+      "id": "cam13_det_4",
+      "track_id": 4,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.25,
+      "confidence_pct": "24%",
+      "box": {
+        "left": 73.91,
+        "top": 21.94,
+        "width": 23.44,
+        "height": 21.2
+      }
+    },
+    {
+      "id": "cam13_det_5",
+      "track_id": 5,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.24,
+      "confidence_pct": "24%",
+      "box": {
+        "left": 48.8,
+        "top": 34.91,
+        "width": 3.7,
+        "height": 9.26
+      }
+    },
+    {
+      "id": "cam13_det_6",
+      "track_id": 6,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.2,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 70.78,
+        "top": 20.09,
+        "width": 2.66,
+        "height": 6.02
+      }
+    },
+    {
+      "id": "cam13_det_7",
+      "track_id": 7,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 80.47,
+        "top": 22.04,
+        "width": 16.3,
+        "height": 19.63
+      }
+    },
+    {
+      "id": "cam13_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.17,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 45.78,
+        "top": 18.61,
+        "width": 1.2,
+        "height": 4.44
+      }
+    },
+    {
+      "id": "cam13_det_9",
+      "track_id": 9,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 30.89,
+        "top": 15.0,
+        "width": 6.72,
+        "height": 5.74
+      }
+    },
+    {
+      "id": "cam13_det_10",
+      "track_id": 10,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 91.61,
+        "top": 61.02,
+        "width": 6.56,
+        "height": 17.13
+      }
+    },
+    {
+      "id": "cam13_det_11",
+      "track_id": 11,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 30.16,
+        "top": 15.28,
+        "width": 4.69,
+        "height": 5.09
+      }
+    },
+    {
+      "id": "cam13_det_12",
+      "track_id": 12,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 20.78,
+        "top": 27.13,
+        "width": 5.42,
+        "height": 4.63
+      }
+    }
+  ],
+  "cam14": [
+    {
+      "id": "cam14_det_1",
+      "track_id": 1,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.72,
+      "confidence_pct": "72%",
+      "box": {
+        "left": 44.11,
+        "top": 76.11,
+        "width": 11.82,
+        "height": 23.15
+      }
+    },
+    {
+      "id": "cam14_det_2",
+      "track_id": 2,
+      "type": "TRUCK / COMMERCIAL",
+      "category": "vehicle",
+      "icon": "fa-truck",
+      "confidence": 0.52,
+      "confidence_pct": "51%",
+      "box": {
+        "left": 55.73,
+        "top": 76.94,
+        "width": 17.66,
+        "height": 22.96
+      }
+    },
+    {
+      "id": "cam14_det_3",
+      "track_id": 3,
+      "type": "BUS (TRANSIT)",
+      "category": "vehicle",
+      "icon": "fa-bus",
+      "confidence": 0.48,
+      "confidence_pct": "47%",
+      "box": {
+        "left": 55.42,
+        "top": 77.04,
+        "width": 17.97,
+        "height": 22.59
+      }
+    },
+    {
+      "id": "cam14_det_4",
+      "track_id": 4,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.28,
+      "confidence_pct": "27%",
+      "box": {
+        "left": 24.64,
+        "top": 88.7,
+        "width": 5.05,
+        "height": 9.26
+      }
+    },
+    {
+      "id": "cam14_det_5",
+      "track_id": 5,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.22,
+      "confidence_pct": "21%",
+      "box": {
+        "left": 23.54,
+        "top": 88.8,
+        "width": 7.86,
+        "height": 10.37
+      }
+    },
+    {
+      "id": "cam14_det_6",
+      "track_id": 6,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 35.16,
+        "top": 33.43,
+        "width": 10.16,
+        "height": 7.96
+      }
+    },
+    {
+      "id": "cam14_det_7",
+      "track_id": 7,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.18,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 89.48,
+        "top": 63.52,
+        "width": 3.59,
+        "height": 9.72
+      }
+    },
+    {
+      "id": "cam14_det_8",
+      "track_id": 8,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 73.85,
+        "top": 61.2,
+        "width": 5.52,
+        "height": 10.19
+      }
+    },
+    {
+      "id": "cam14_det_9",
+      "track_id": 9,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 37.08,
+        "top": 83.06,
+        "width": 5.0,
+        "height": 16.85
+      }
+    },
+    {
+      "id": "cam14_det_10",
+      "track_id": 10,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 88.07,
+        "top": 63.61,
+        "width": 5.36,
+        "height": 9.91
+      }
+    }
+  ],
+  "cam15": [
+    {
+      "id": "cam15_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.32,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 69.53,
+        "top": 46.3,
+        "width": 20.47,
+        "height": 43.89
+      }
+    },
+    {
+      "id": "cam15_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.31,
+      "confidence_pct": "30%",
+      "box": {
+        "left": 49.06,
+        "top": 80.28,
+        "width": 7.71,
+        "height": 18.8
+      }
+    },
+    {
+      "id": "cam15_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.2,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 57.29,
+        "top": 52.5,
+        "width": 6.77,
+        "height": 23.98
+      }
+    },
+    {
+      "id": "cam15_det_4",
+      "track_id": 4,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 20.21,
+        "top": 76.02,
+        "width": 7.19,
+        "height": 14.54
+      }
+    }
+  ],
+  "cam16": [
+    {
+      "id": "cam16_det_1",
+      "track_id": 1,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.64,
+      "confidence_pct": "64%",
+      "box": {
+        "left": 52.14,
+        "top": 25.74,
+        "width": 7.29,
+        "height": 7.5
+      }
+    },
+    {
+      "id": "cam16_det_2",
+      "track_id": 2,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.39,
+      "confidence_pct": "39%",
+      "box": {
+        "left": 74.11,
+        "top": 28.43,
+        "width": 7.92,
+        "height": 9.26
+      }
+    },
+    {
+      "id": "cam16_det_3",
+      "track_id": 3,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.32,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 38.33,
+        "top": 28.06,
+        "width": 1.88,
+        "height": 5.83
+      }
+    },
+    {
+      "id": "cam16_det_4",
+      "track_id": 4,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.28,
+      "confidence_pct": "27%",
+      "box": {
+        "left": 84.79,
+        "top": 31.39,
+        "width": 6.72,
+        "height": 8.8
+      }
+    },
+    {
+      "id": "cam16_det_5",
+      "track_id": 5,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.26,
+      "confidence_pct": "25%",
+      "box": {
+        "left": 23.7,
+        "top": 18.7,
+        "width": 3.07,
+        "height": 4.81
+      }
+    },
+    {
+      "id": "cam16_det_6",
+      "track_id": 6,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.25,
+      "confidence_pct": "25%",
+      "box": {
+        "left": 40.62,
+        "top": 32.31,
+        "width": 2.4,
+        "height": 7.31
+      }
+    },
+    {
+      "id": "cam16_det_7",
+      "track_id": 7,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.24,
+      "confidence_pct": "24%",
+      "box": {
+        "left": 25.57,
+        "top": 25.09,
+        "width": 3.39,
+        "height": 7.78
+      }
+    },
+    {
+      "id": "cam16_det_8",
+      "track_id": 8,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 64.58,
+        "top": 21.02,
+        "width": 6.2,
+        "height": 12.5
+      }
+    },
+    {
+      "id": "cam16_det_9",
+      "track_id": 9,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 84.38,
+        "top": 28.61,
+        "width": 7.45,
+        "height": 11.48
+      }
+    }
+  ],
+  "cam17": [
+    {
+      "id": "cam17_det_1",
+      "track_id": 1,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.18,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 3.75,
+        "top": 21.11,
+        "width": 2.34,
+        "height": 4.26
+      }
+    }
+  ],
+  "cam18": [
+    {
+      "id": "cam18_det_1",
+      "track_id": 1,
+      "type": "TRUCK / COMMERCIAL",
+      "category": "vehicle",
+      "icon": "fa-truck",
+      "confidence": 0.9,
+      "confidence_pct": "90%",
+      "box": {
+        "left": 0.0,
+        "top": 9.72,
+        "width": 28.52,
+        "height": 85.69
+      }
+    },
+    {
+      "id": "cam18_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.68,
+      "confidence_pct": "68%",
+      "box": {
+        "left": 49.3,
+        "top": 50.42,
+        "width": 4.92,
+        "height": 17.64
+      }
+    },
+    {
+      "id": "cam18_det_3",
+      "track_id": 3,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.65,
+      "confidence_pct": "64%",
+      "box": {
+        "left": 48.91,
+        "top": 58.61,
+        "width": 5.55,
+        "height": 11.53
+      }
+    },
+    {
+      "id": "cam18_det_4",
+      "track_id": 4,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.58,
+      "confidence_pct": "57%",
+      "box": {
+        "left": 54.06,
+        "top": 51.25,
+        "width": 3.98,
+        "height": 11.11
+      }
+    },
+    {
+      "id": "cam18_det_5",
+      "track_id": 5,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.55,
+      "confidence_pct": "54%",
+      "box": {
+        "left": 59.38,
+        "top": 59.03,
+        "width": 3.98,
+        "height": 8.75
+      }
+    },
+    {
+      "id": "cam18_det_6",
+      "track_id": 6,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.48,
+      "confidence_pct": "48%",
+      "box": {
+        "left": 54.22,
+        "top": 58.19,
+        "width": 3.44,
+        "height": 7.92
+      }
+    },
+    {
+      "id": "cam18_det_7",
+      "track_id": 7,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.42,
+      "confidence_pct": "42%",
+      "box": {
+        "left": 0.0,
+        "top": 32.64,
+        "width": 3.28,
+        "height": 17.78
+      }
+    },
+    {
+      "id": "cam18_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.33,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 58.59,
+        "top": 52.36,
+        "width": 5.0,
+        "height": 14.58
+      }
+    },
+    {
+      "id": "cam18_det_9",
+      "track_id": 9,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.29,
+      "confidence_pct": "29%",
+      "box": {
+        "left": 61.88,
+        "top": 50.97,
+        "width": 6.88,
+        "height": 12.78
+      }
+    },
+    {
+      "id": "cam18_det_10",
+      "track_id": 10,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.29,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 61.02,
+        "top": 50.14,
+        "width": 7.73,
+        "height": 13.75
+      }
+    },
+    {
+      "id": "cam18_det_11",
+      "track_id": 11,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.28,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 53.59,
+        "top": 51.11,
+        "width": 4.45,
+        "height": 14.31
+      }
+    },
+    {
+      "id": "cam18_det_12",
+      "track_id": 12,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.27,
+      "confidence_pct": "26%",
+      "box": {
+        "left": 58.59,
+        "top": 57.36,
+        "width": 4.61,
+        "height": 10.14
+      }
+    },
+    {
+      "id": "cam18_det_13",
+      "track_id": 13,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.25,
+      "confidence_pct": "25%",
+      "box": {
+        "left": 58.75,
+        "top": 52.08,
+        "width": 4.3,
+        "height": 11.81
+      }
+    },
+    {
+      "id": "cam18_det_14",
+      "track_id": 14,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 72.03,
+        "top": 59.44,
+        "width": 8.2,
+        "height": 22.36
+      }
+    },
+    {
+      "id": "cam18_det_15",
+      "track_id": 15,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.2,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 71.09,
+        "top": 46.39,
+        "width": 20.47,
+        "height": 35.42
+      }
+    },
+    {
+      "id": "cam18_det_16",
+      "track_id": 16,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 68.44,
+        "top": 54.03,
+        "width": 2.42,
+        "height": 3.47
+      }
+    }
+  ],
+  "cam27": [
+    {
+      "id": "cam27_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.33,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 30.23,
+        "top": 85.83,
+        "width": 9.77,
+        "height": 14.06
+      }
+    },
+    {
+      "id": "cam27_det_2",
+      "track_id": 2,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 57.97,
+        "top": 4.17,
+        "width": 5.7,
+        "height": 4.79
+      }
+    }
+  ],
+  "cam30": [
+    {
+      "id": "cam30_det_1",
+      "track_id": 1,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.78,
+      "confidence_pct": "78%",
+      "box": {
+        "left": 90.0,
+        "top": 44.26,
+        "width": 9.95,
+        "height": 8.89
+      }
+    },
+    {
+      "id": "cam30_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.66,
+      "confidence_pct": "66%",
+      "box": {
+        "left": 16.25,
+        "top": 47.5,
+        "width": 3.33,
+        "height": 13.24
+      }
+    },
+    {
+      "id": "cam30_det_3",
+      "track_id": 3,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.5,
+      "confidence_pct": "50%",
+      "box": {
+        "left": 16.2,
+        "top": 47.87,
+        "width": 14.95,
+        "height": 14.54
+      }
+    },
+    {
+      "id": "cam30_det_4",
+      "track_id": 4,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.49,
+      "confidence_pct": "49%",
+      "box": {
+        "left": 6.98,
+        "top": 51.76,
+        "width": 4.64,
+        "height": 12.69
+      }
+    },
+    {
+      "id": "cam30_det_5",
+      "track_id": 5,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.47,
+      "confidence_pct": "46%",
+      "box": {
+        "left": 16.51,
+        "top": 34.63,
+        "width": 11.35,
+        "height": 11.48
+      }
+    },
+    {
+      "id": "cam30_det_6",
+      "track_id": 6,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.45,
+      "confidence_pct": "44%",
+      "box": {
+        "left": 53.8,
+        "top": 51.2,
+        "width": 7.19,
+        "height": 9.35
+      }
+    },
+    {
+      "id": "cam30_det_7",
+      "track_id": 7,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.44,
+      "confidence_pct": "44%",
+      "box": {
+        "left": 28.49,
+        "top": 40.83,
+        "width": 11.3,
+        "height": 14.07
+      }
+    },
+    {
+      "id": "cam30_det_8",
+      "track_id": 8,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.42,
+      "confidence_pct": "42%",
+      "box": {
+        "left": 71.77,
+        "top": 43.7,
+        "width": 8.18,
+        "height": 9.72
+      }
+    },
+    {
+      "id": "cam30_det_9",
+      "track_id": 9,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.37,
+      "confidence_pct": "37%",
+      "box": {
+        "left": 22.45,
+        "top": 48.61,
+        "width": 8.8,
+        "height": 13.61
+      }
+    },
+    {
+      "id": "cam30_det_10",
+      "track_id": 10,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.37,
+      "confidence_pct": "36%",
+      "box": {
+        "left": 2.6,
+        "top": 36.2,
+        "width": 11.56,
+        "height": 8.06
+      }
+    },
+    {
+      "id": "cam30_det_11",
+      "track_id": 11,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.34,
+      "confidence_pct": "34%",
+      "box": {
+        "left": 33.33,
+        "top": 27.87,
+        "width": 2.97,
+        "height": 3.7
+      }
+    },
+    {
+      "id": "cam30_det_12",
+      "track_id": 12,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.34,
+      "confidence_pct": "33%",
+      "box": {
+        "left": 6.2,
+        "top": 47.5,
+        "width": 5.52,
+        "height": 6.94
+      }
+    },
+    {
+      "id": "cam30_det_13",
+      "track_id": 13,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.32,
+      "confidence_pct": "31%",
+      "box": {
+        "left": 28.54,
+        "top": 40.83,
+        "width": 11.61,
+        "height": 8.61
+      }
+    },
+    {
+      "id": "cam30_det_14",
+      "track_id": 14,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.31,
+      "confidence_pct": "30%",
+      "box": {
+        "left": 26.56,
+        "top": 37.78,
+        "width": 8.28,
+        "height": 9.44
+      }
+    },
+    {
+      "id": "cam30_det_15",
+      "track_id": 15,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.29,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 27.81,
+        "top": 30.83,
+        "width": 5.26,
+        "height": 5.74
+      }
+    },
+    {
+      "id": "cam30_det_16",
+      "track_id": 16,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.28,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 26.56,
+        "top": 40.93,
+        "width": 5.1,
+        "height": 6.3
+      }
+    },
+    {
+      "id": "cam30_det_17",
+      "track_id": 17,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.27,
+      "confidence_pct": "27%",
+      "box": {
+        "left": 65.78,
+        "top": 43.52,
+        "width": 14.22,
+        "height": 9.91
+      }
+    },
+    {
+      "id": "cam30_det_18",
+      "track_id": 18,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.26,
+      "confidence_pct": "26%",
+      "box": {
+        "left": 84.27,
+        "top": 42.69,
+        "width": 2.19,
+        "height": 8.24
+      }
+    },
+    {
+      "id": "cam30_det_19",
+      "track_id": 19,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.23,
+      "confidence_pct": "23%",
+      "box": {
+        "left": 34.27,
+        "top": 44.35,
+        "width": 6.98,
+        "height": 12.41
+      }
+    },
+    {
+      "id": "cam30_det_20",
+      "track_id": 20,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.21,
+      "confidence_pct": "21%",
+      "box": {
+        "left": 82.71,
+        "top": 49.07,
+        "width": 6.56,
+        "height": 11.39
+      }
+    },
+    {
+      "id": "cam30_det_21",
+      "track_id": 21,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 16.82,
+        "top": 34.26,
+        "width": 11.04,
+        "height": 8.8
+      }
+    },
+    {
+      "id": "cam30_det_22",
+      "track_id": 22,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 55.31,
+        "top": 46.57,
+        "width": 3.91,
+        "height": 12.31
+      }
+    },
+    {
+      "id": "cam30_det_23",
+      "track_id": 23,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 53.33,
+        "top": 48.06,
+        "width": 7.71,
+        "height": 11.67
+      }
+    },
+    {
+      "id": "cam30_det_24",
+      "track_id": 24,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 83.33,
+        "top": 42.5,
+        "width": 3.12,
+        "height": 8.98
+      }
+    },
+    {
+      "id": "cam30_det_25",
+      "track_id": 25,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.19,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 59.27,
+        "top": 44.07,
+        "width": 2.34,
+        "height": 7.04
+      }
+    },
+    {
+      "id": "cam30_det_26",
+      "track_id": 26,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.18,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 81.35,
+        "top": 44.72,
+        "width": 1.93,
+        "height": 6.48
+      }
+    },
+    {
+      "id": "cam30_det_27",
+      "track_id": 27,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.18,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 0.05,
+        "top": 46.85,
+        "width": 11.61,
+        "height": 9.72
+      }
+    },
+    {
+      "id": "cam30_det_28",
+      "track_id": 28,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 23.23,
+        "top": 31.02,
+        "width": 10.1,
+        "height": 8.61
+      }
+    },
+    {
+      "id": "cam30_det_29",
+      "track_id": 29,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 81.77,
+        "top": 44.26,
+        "width": 2.03,
+        "height": 7.22
+      }
+    },
+    {
+      "id": "cam30_det_30",
+      "track_id": 30,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.17,
+      "confidence_pct": "17%",
+      "box": {
+        "left": 49.01,
+        "top": 39.44,
+        "width": 10.78,
+        "height": 10.19
+      }
+    },
+    {
+      "id": "cam30_det_31",
+      "track_id": 31,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 48.96,
+        "top": 39.26,
+        "width": 9.22,
+        "height": 5.83
+      }
+    },
+    {
+      "id": "cam30_det_32",
+      "track_id": 32,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.16,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 23.33,
+        "top": 31.11,
+        "width": 9.84,
+        "height": 5.56
+      }
+    },
+    {
+      "id": "cam30_det_33",
+      "track_id": 33,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.15,
+      "confidence_pct": "15%",
+      "box": {
+        "left": 27.19,
+        "top": 36.3,
+        "width": 6.98,
+        "height": 5.09
+      }
+    }
+  ],
+  "cam32": [
+    {
+      "id": "cam32_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.9,
+      "confidence_pct": "90%",
+      "box": {
+        "left": 2.58,
+        "top": 9.17,
+        "width": 63.59,
+        "height": 87.36
+      }
+    },
+    {
+      "id": "cam32_det_2",
+      "track_id": 2,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.83,
+      "confidence_pct": "82%",
+      "box": {
+        "left": 70.16,
+        "top": 18.33,
+        "width": 14.22,
+        "height": 43.19
+      }
+    },
+    {
+      "id": "cam32_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.64,
+      "confidence_pct": "64%",
+      "box": {
+        "left": 2.11,
+        "top": 16.94,
+        "width": 7.89,
+        "height": 18.75
+      }
+    },
+    {
+      "id": "cam32_det_4",
+      "track_id": 4,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.61,
+      "confidence_pct": "61%",
+      "box": {
+        "left": 68.75,
+        "top": 32.08,
+        "width": 16.72,
+        "height": 38.33
+      }
+    },
+    {
+      "id": "cam32_det_5",
+      "track_id": 5,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.59,
+      "confidence_pct": "58%",
+      "box": {
+        "left": 57.89,
+        "top": 20.69,
+        "width": 9.3,
+        "height": 16.94
+      }
+    },
+    {
+      "id": "cam32_det_6",
+      "track_id": 6,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.45,
+      "confidence_pct": "45%",
+      "box": {
+        "left": 56.88,
+        "top": 22.08,
+        "width": 3.75,
+        "height": 8.33
+      }
+    },
+    {
+      "id": "cam32_det_7",
+      "track_id": 7,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.42,
+      "confidence_pct": "42%",
+      "box": {
+        "left": 59.22,
+        "top": 31.53,
+        "width": 10.47,
+        "height": 28.47
+      }
+    },
+    {
+      "id": "cam32_det_8",
+      "track_id": 8,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.3,
+      "confidence_pct": "30%",
+      "box": {
+        "left": 0.0,
+        "top": 30.0,
+        "width": 7.27,
+        "height": 40.56
+      }
+    },
+    {
+      "id": "cam32_det_9",
+      "track_id": 9,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.28,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 57.97,
+        "top": 20.56,
+        "width": 10.7,
+        "height": 25.56
+      }
+    },
+    {
+      "id": "cam32_det_10",
+      "track_id": 10,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.27,
+      "confidence_pct": "27%",
+      "box": {
+        "left": 0.0,
+        "top": 12.22,
+        "width": 12.73,
+        "height": 19.03
+      }
+    },
+    {
+      "id": "cam32_det_11",
+      "track_id": 11,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.2,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 54.3,
+        "top": 18.89,
+        "width": 6.72,
+        "height": 8.75
+      }
+    },
+    {
+      "id": "cam32_det_12",
+      "track_id": 12,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.19,
+      "confidence_pct": "19%",
+      "box": {
+        "left": 58.05,
+        "top": 20.69,
+        "width": 12.58,
+        "height": 31.11
+      }
+    },
+    {
+      "id": "cam32_det_13",
+      "track_id": 13,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.17,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 56.95,
+        "top": 22.08,
+        "width": 3.75,
+        "height": 11.39
+      }
+    }
+  ],
+  "cam33": [
+    {
+      "id": "cam33_det_1",
+      "track_id": 1,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.9,
+      "confidence_pct": "90%",
+      "box": {
+        "left": 30.47,
+        "top": 36.81,
+        "width": 20.78,
+        "height": 62.36
+      }
+    },
+    {
+      "id": "cam33_det_2",
+      "track_id": 2,
+      "type": "TRUCK / COMMERCIAL",
+      "category": "vehicle",
+      "icon": "fa-truck",
+      "confidence": 0.81,
+      "confidence_pct": "81%",
+      "box": {
+        "left": 54.77,
+        "top": 21.94,
+        "width": 26.72,
+        "height": 60.28
+      }
+    },
+    {
+      "id": "cam33_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.79,
+      "confidence_pct": "79%",
+      "box": {
+        "left": 87.58,
+        "top": 33.47,
+        "width": 12.34,
+        "height": 65.69
+      }
+    },
+    {
+      "id": "cam33_det_4",
+      "track_id": 4,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.73,
+      "confidence_pct": "72%",
+      "box": {
+        "left": 80.55,
+        "top": 57.92,
+        "width": 8.12,
+        "height": 16.39
+      }
+    },
+    {
+      "id": "cam33_det_5",
+      "track_id": 5,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.69,
+      "confidence_pct": "68%",
+      "box": {
+        "left": 86.64,
+        "top": 64.72,
+        "width": 13.28,
+        "height": 34.86
+      }
+    },
+    {
+      "id": "cam33_det_6",
+      "track_id": 6,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.54,
+      "confidence_pct": "54%",
+      "box": {
+        "left": 49.84,
+        "top": 57.5,
+        "width": 5.62,
+        "height": 10.97
+      }
+    },
+    {
+      "id": "cam33_det_7",
+      "track_id": 7,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.49,
+      "confidence_pct": "48%",
+      "box": {
+        "left": 29.84,
+        "top": 62.78,
+        "width": 21.64,
+        "height": 36.81
+      }
+    },
+    {
+      "id": "cam33_det_8",
+      "track_id": 8,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.33,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 30.0,
+        "top": 79.44,
+        "width": 17.5,
+        "height": 20.28
+      }
+    },
+    {
+      "id": "cam33_det_9",
+      "track_id": 9,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.26,
+      "confidence_pct": "26%",
+      "box": {
+        "left": 50.94,
+        "top": 59.31,
+        "width": 4.69,
+        "height": 9.31
+      }
+    },
+    {
+      "id": "cam33_det_10",
+      "track_id": 10,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 44.92,
+        "top": 68.06,
+        "width": 7.81,
+        "height": 15.69
+      }
+    }
+  ],
+  "cam34": [
+    {
+      "id": "cam34_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.86,
+      "confidence_pct": "85%",
+      "box": {
+        "left": 15.39,
+        "top": 36.53,
+        "width": 39.77,
+        "height": 59.44
+      }
+    },
+    {
+      "id": "cam34_det_2",
+      "track_id": 2,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.69,
+      "confidence_pct": "69%",
+      "box": {
+        "left": 46.8,
+        "top": 39.17,
+        "width": 11.48,
+        "height": 32.5
+      }
+    },
+    {
+      "id": "cam34_det_3",
+      "track_id": 3,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.62,
+      "confidence_pct": "62%",
+      "box": {
+        "left": 76.72,
+        "top": 50.14,
+        "width": 12.66,
+        "height": 39.03
+      }
+    },
+    {
+      "id": "cam34_det_4",
+      "track_id": 4,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.6,
+      "confidence_pct": "59%",
+      "box": {
+        "left": 77.27,
+        "top": 40.0,
+        "width": 11.8,
+        "height": 42.64
+      }
+    },
+    {
+      "id": "cam34_det_5",
+      "track_id": 5,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.51,
+      "confidence_pct": "51%",
+      "box": {
+        "left": 63.59,
+        "top": 50.56,
+        "width": 5.86,
+        "height": 10.56
+      }
+    },
+    {
+      "id": "cam34_det_6",
+      "track_id": 6,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.5,
+      "confidence_pct": "49%",
+      "box": {
+        "left": 60.86,
+        "top": 51.67,
+        "width": 2.34,
+        "height": 9.72
+      }
+    },
+    {
+      "id": "cam34_det_7",
+      "track_id": 7,
+      "type": "CAR (SEDAN)",
+      "category": "vehicle",
+      "icon": "fa-car",
+      "confidence": 0.48,
+      "confidence_pct": "47%",
+      "box": {
+        "left": 69.3,
+        "top": 53.19,
+        "width": 2.97,
+        "height": 5.0
+      }
+    },
+    {
+      "id": "cam34_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.46,
+      "confidence_pct": "46%",
+      "box": {
+        "left": 0.0,
+        "top": 45.97,
+        "width": 11.33,
+        "height": 26.81
+      }
+    },
+    {
+      "id": "cam34_det_9",
+      "track_id": 9,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.39,
+      "confidence_pct": "38%",
+      "box": {
+        "left": 72.27,
+        "top": 47.78,
+        "width": 6.41,
+        "height": 13.89
+      }
+    },
+    {
+      "id": "cam34_det_10",
+      "track_id": 10,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.38,
+      "confidence_pct": "37%",
+      "box": {
+        "left": 76.95,
+        "top": 39.86,
+        "width": 12.27,
+        "height": 20.0
+      }
+    },
+    {
+      "id": "cam34_det_11",
+      "track_id": 11,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.35,
+      "confidence_pct": "35%",
+      "box": {
+        "left": 58.28,
+        "top": 50.97,
+        "width": 4.84,
+        "height": 11.39
+      }
+    },
+    {
+      "id": "cam34_det_12",
+      "track_id": 12,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.33,
+      "confidence_pct": "32%",
+      "box": {
+        "left": 52.42,
+        "top": 54.44,
+        "width": 5.62,
+        "height": 17.5
+      }
+    },
+    {
+      "id": "cam34_det_13",
+      "track_id": 13,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.29,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 63.2,
+        "top": 56.11,
+        "width": 3.36,
+        "height": 6.25
+      }
+    },
+    {
+      "id": "cam34_det_14",
+      "track_id": 14,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.29,
+      "confidence_pct": "28%",
+      "box": {
+        "left": 58.36,
+        "top": 56.67,
+        "width": 2.27,
+        "height": 6.81
+      }
+    },
+    {
+      "id": "cam34_det_15",
+      "track_id": 15,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.26,
+      "confidence_pct": "26%",
+      "box": {
+        "left": 58.28,
+        "top": 50.83,
+        "width": 3.2,
+        "height": 11.11
+      }
+    },
+    {
+      "id": "cam34_det_16",
+      "track_id": 16,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.22,
+      "confidence_pct": "22%",
+      "box": {
+        "left": 63.91,
+        "top": 57.08,
+        "width": 2.58,
+        "height": 5.42
+      }
+    },
+    {
+      "id": "cam34_det_17",
+      "track_id": 17,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.2,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 58.2,
+        "top": 55.69,
+        "width": 5.08,
+        "height": 7.36
+      }
+    },
+    {
+      "id": "cam34_det_18",
+      "track_id": 18,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.18,
+      "confidence_pct": "18%",
+      "box": {
+        "left": 77.11,
+        "top": 51.11,
+        "width": 10.78,
+        "height": 32.08
+      }
+    },
+    {
+      "id": "cam34_det_19",
+      "track_id": 19,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 60.78,
+        "top": 53.19,
+        "width": 2.58,
+        "height": 8.61
+      }
+    }
+  ],
+  "cam35": [
+    {
+      "id": "cam35_det_1",
+      "track_id": 1,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.9,
+      "confidence_pct": "89%",
+      "box": {
+        "left": 0.0,
+        "top": 62.36,
+        "width": 8.98,
+        "height": 18.33
+      }
+    },
+    {
+      "id": "cam35_det_2",
+      "track_id": 2,
+      "type": "TRUCK / COMMERCIAL",
+      "category": "vehicle",
+      "icon": "fa-truck",
+      "confidence": 0.89,
+      "confidence_pct": "88%",
+      "box": {
+        "left": 42.81,
+        "top": 11.25,
+        "width": 35.0,
+        "height": 70.69
+      }
+    },
+    {
+      "id": "cam35_det_3",
+      "track_id": 3,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.86,
+      "confidence_pct": "86%",
+      "box": {
+        "left": 18.75,
+        "top": 51.81,
+        "width": 11.33,
+        "height": 35.28
+      }
+    },
+    {
+      "id": "cam35_det_4",
+      "track_id": 4,
+      "type": "TWO-WHEELER (MOTORCYCLE)",
+      "category": "vehicle",
+      "icon": "fa-motorcycle",
+      "confidence": 0.79,
+      "confidence_pct": "78%",
+      "box": {
+        "left": 20.08,
+        "top": 70.69,
+        "width": 9.06,
+        "height": 25.28
+      }
+    },
+    {
+      "id": "cam35_det_5",
+      "track_id": 5,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.58,
+      "confidence_pct": "57%",
+      "box": {
+        "left": 9.45,
+        "top": 62.36,
+        "width": 2.66,
+        "height": 10.69
+      }
+    },
+    {
+      "id": "cam35_det_6",
+      "track_id": 6,
+      "type": "SUV (CROSSOVER)",
+      "category": "vehicle",
+      "icon": "fa-truck-pickup",
+      "confidence": 0.44,
+      "confidence_pct": "44%",
+      "box": {
+        "left": 91.09,
+        "top": 49.86,
+        "width": 7.03,
+        "height": 13.19
+      }
+    },
+    {
+      "id": "cam35_det_7",
+      "track_id": 7,
+      "type": "BUS (TRANSIT)",
+      "category": "vehicle",
+      "icon": "fa-bus",
+      "confidence": 0.37,
+      "confidence_pct": "37%",
+      "box": {
+        "left": 33.28,
+        "top": 53.47,
+        "width": 9.22,
+        "height": 20.69
+      }
+    },
+    {
+      "id": "cam35_det_8",
+      "track_id": 8,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.33,
+      "confidence_pct": "33%",
+      "box": {
+        "left": 77.58,
+        "top": 53.19,
+        "width": 2.66,
+        "height": 11.11
+      }
+    },
+    {
+      "id": "cam35_det_9",
+      "track_id": 9,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.31,
+      "confidence_pct": "31%",
+      "box": {
+        "left": 91.17,
+        "top": 49.86,
+        "width": 7.03,
+        "height": 13.06
+      }
+    },
+    {
+      "id": "cam35_det_10",
+      "track_id": 10,
+      "type": "AUTO RICKSHAW",
+      "category": "vehicle",
+      "icon": "fa-taxi",
+      "confidence": 0.21,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 28.28,
+        "top": 53.33,
+        "width": 6.64,
+        "height": 18.06
+      }
+    },
+    {
+      "id": "cam35_det_11",
+      "track_id": 11,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.2,
+      "confidence_pct": "20%",
+      "box": {
+        "left": 80.86,
+        "top": 54.44,
+        "width": 2.11,
+        "height": 8.06
+      }
+    },
+    {
+      "id": "cam35_det_12",
+      "track_id": 12,
+      "type": "PERSON (PEDESTRIAN)",
+      "category": "person",
+      "icon": "fa-person-walking",
+      "confidence": 0.16,
+      "confidence_pct": "16%",
+      "box": {
+        "left": 9.38,
+        "top": 62.22,
+        "width": 3.59,
+        "height": 12.36
+      }
+    }
+  ]
+}

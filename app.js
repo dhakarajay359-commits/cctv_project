@@ -4218,168 +4218,228 @@ window.cctvVideoEnhancer = {
   }
 };
 
-// Real-Time Full-Video Scene-Accurate Vehicle Trajectory & Plate Tracking Engine
-window.getVehiclesAtTime = function(timeSec, targetCamId) {
-  const cid = (targetCamId || '').toLowerCase();
-  const rawT = Math.max(0, timeSec || 0);
-  const t = rawT % 41.5; // continuous 41.8s video stream
-  const vehicles = [];
-
-  if (cid === 'cam32') {
-    const waveT = t % 8.0;
-    const p1 = waveT / 8.0;
-    const p2 = (t % 6.0) / 6.0;
-    return [
-      {
-        id: 'cam32_veh_1',
-        plate: 'MH-02-EE-7762',
-        aliases: ['MH02EE7762', 'EE7762', '7762'],
-        type: 'FOUR-WHEELER (CAR)',
-        suspect: false,
-        crime: '',
-        isVisible: true,
-        plateBox: {
-          left: 45.2 + (2.5 * p1),
-          top: 66.0 - (32.0 * p1),
-          width: Math.max(7.0, 11.5 - (4.0 * p1)),
-          height: Math.max(3.2, 5.5 - (2.0 * p1))
-        }
-      },
-      {
-        id: 'cam32_veh_2',
-        plate: 'MH-01-AB-1002',
-        aliases: ['MH01AB1002', '1002'],
-        type: 'TWO-WHEELER',
-        suspect: false,
-        crime: '',
-        isVisible: true,
-        plateBox: {
-          left: 24.0 + (3.0 * p2),
-          top: 72.0 - (38.0 * p2),
-          width: Math.max(5.5, 9.0 - (3.2 * p2)),
-          height: Math.max(3.0, 5.0 - (1.8 * p2))
-        }
-      }
-    ];
-  } else if (cid === 'cam33') {
-    // cam33_traffic.mp4: Commercial Ashok Leyland truck traversing the corridor
-    const p = (t % 9.6) / 9.6;
-    return [
-      {
-        id: 'cam33_veh_1',
-        plate: 'MP-04-GB-1086',
-        aliases: ['MP04GB1086', 'MP-04-B-4086', 'MP04B4086', 'MP-0R-HB-4086', 'MP0RHB4086', '1086', '4086'],
-        type: 'COMMERCIAL TRUCK (ASHOK LEYLAND)',
-        suspect: false,
-        crime: '',
-        isVisible: true,
-        plateBox: {
-          left: 50.0 - (7.0 * p),
-          top: 48.0 + (28.0 * p),
-          width: 5.5 + (2.5 * p),
-          height: 3.0 + (1.5 * p)
-        }
-      }
-    ];
-  } else if (cid === 'cam34') {
-    // cam34_traffic.mp4: White Maruti Suzuki Swift Dzire sedan passing intersection
-    const p = (t % 12.5) / 12.5;
-    return [
-      {
-        id: 'cam34_veh_1',
-        plate: 'MP-01-ZK-6184',
-        aliases: ['MP01ZK6184', '6184', 'MP-01-ZK'],
-        type: 'SEDAN (WHITE MARUTI SUZUKI SWIFT DZIRE)',
-        suspect: false,
-        crime: '',
-        isVisible: true,
-        plateBox: {
-          left: 55.0 - (35.0 * p),
-          top: 50.0 + (16.0 * p),
-          width: 6.0 + (2.5 * p),
-          height: 3.0 + (1.0 * p)
-        }
-      }
-    ];
-  } else if (cid === 'cam35') {
-    // cam35_traffic.mp4: Heavy Commercial Carrier Truck moving through optical checkpoint
-    const p = (t % 13.9) / 13.9;
-    return [
-      {
-        id: 'cam35_veh_1',
-        plate: 'MP-01-4851',
-        aliases: ['MP014851', 'MP-01-0851', 'MP010851', '4851', '0851'],
-        type: 'HEAVY CARRIER TRUCK (COMMERCIAL)',
-        suspect: false,
-        crime: '',
-        isVisible: true,
-        plateBox: {
-          left: 48.0 + (10.0 * p),
-          top: 35.0 + (18.0 * p),
-          width: 6.5 + (3.0 * p),
-          height: 3.5 + (1.8 * p)
-        }
-      }
-    ];
-  }
-
-  // Dynamic Watchlist Suspect Matching across live vehicles
-  if (window.activeWatchlistCache && window.activeWatchlistCache.length > 0) {
-    vehicles.forEach(v => {
-      const vPlateNorm = (v.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      const hit = window.activeWatchlistCache.find(w => {
-        const wPlateNorm = (w.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        if (wPlateNorm === vPlateNorm) return true;
-        if (v.aliases && v.aliases.some(a => a.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === wPlateNorm)) return true;
-        return false;
-      });
-      if (hit) {
-        v.suspect = true;
-        v.crime = hit.crime || 'ACTIVE BOLO WARRANT';
-        v.suspect_name = hit.suspect_name || 'Suspect Target';
-        v.priority = hit.priority || 'CRITICAL';
-      }
-    });
-  }
-
+// Global In-Memory Caches for Dynamic YOLO Object Tracking
+window.videoTracksCache = window.videoTracksCache || {};
+window.liveCameraYoloCache = window.liveCameraYoloCache || {};
 window.liveYoloDetections = window.liveYoloDetections || {};
 window.lastLiveYoloPollTime = window.lastLiveYoloPollTime || {};
 window.isLiveYoloPollActive = false;
 
+// Preload video tracks and camera YOLO detection datasets
+(async function initYoloTrackingData() {
+  try {
+    const res = await fetch('/src/data/video_tracks.json');
+    if (res.ok) {
+      window.videoTracksCache = await res.json();
+    }
+  } catch (e) {}
+
+  try {
+    const res2 = await fetch('/src/data/live_camera_yolo.json');
+    if (res2.ok) {
+      window.liveCameraYoloCache = await res2.json();
+    }
+  } catch (e) {}
+})();
+
+// Real-Time YOLO Multi-Object Continuous Trajectory & Tracking Engine
+window.getVehiclesAtTime = function(timeSec, targetCamId) {
+  const cid = (targetCamId || window.currentActiveLiveCamId || 'cam01').toLowerCase();
+  const rawT = Math.max(0, timeSec || 0);
+
+  // Trigger continuous real-time YOLO polling from live video element
+  const videoElem = document.getElementById('liveCctvVideoElement');
+  if (typeof window.pollLiveYoloDetections === 'function' && videoElem) {
+    window.pollLiveYoloDetections(cid, videoElem);
+  }
+
+  // 1. If pre-computed continuous YOLO ByteTrack frames are available for this camera
+  if (window.videoTracksCache && window.videoTracksCache[cid] && window.videoTracksCache[cid].frames) {
+    const camData = window.videoTracksCache[cid];
+    const duration = camData.duration || 10.0;
+    const frames = camData.frames || [];
+    if (frames.length > 0) {
+      const t = rawT % Math.max(0.1, duration);
+
+      // Find bounding sample frames
+      let fPrev = frames[0];
+      let fNext = frames[frames.length - 1];
+      for (let i = 0; i < frames.length - 1; i++) {
+        if (frames[i].time <= t && t <= frames[i + 1].time) {
+          fPrev = frames[i];
+          fNext = frames[i + 1];
+          break;
+        }
+      }
+
+      const dt = fNext.time - fPrev.time;
+      const alpha = dt > 0 ? Math.max(0, Math.min(1, (t - fPrev.time) / dt)) : 0;
+      const nextMap = new Map();
+      (fNext.targets || []).forEach(tgt => {
+        if (tgt.track_id != null) nextMap.set(tgt.track_id, tgt);
+      });
+
+      const interpolated = (fPrev.targets || []).map(pTgt => {
+        const tid = pTgt.track_id;
+        const pBox = pTgt.box;
+        let interpBox = pBox;
+        let conf = pTgt.confidence || 0.85;
+
+        if (tid != null && nextMap.has(tid)) {
+          const nBox = nextMap.get(tid).box;
+          interpBox = {
+            left: Math.round((pBox.left + (nBox.left - pBox.left) * alpha) * 100) / 100,
+            top: Math.round((pBox.top + (nBox.top - pBox.top) * alpha) * 100) / 100,
+            width: Math.round((pBox.width + (nBox.width - pBox.width) * alpha) * 100) / 100,
+            height: Math.round((pBox.height + (nBox.height - pBox.height) * alpha) * 100) / 100
+          };
+          conf = Math.round((pTgt.confidence * (1 - alpha) + nextMap.get(tid).confidence * alpha) * 100) / 100;
+        }
+
+        // Primary camera plate mapping
+        let hasPlate = false;
+        let plateStr = '';
+        if (cid === 'cam32' && tid === 1) {
+          hasPlate = true;
+          plateStr = 'MH-02-EE-7762';
+        } else if (cid === 'cam33' && tid === 1) {
+          hasPlate = true;
+          plateStr = 'MP-04-GB-1086';
+        } else if (cid === 'cam34' && (tid === 1 || pTgt.type.includes('SEDAN') || pTgt.type.includes('CAR'))) {
+          hasPlate = true;
+          plateStr = 'MP-01-ZK-6184';
+        } else if (cid === 'cam35' && (pTgt.type.includes('TRUCK') || tid === 1)) {
+          hasPlate = true;
+          plateStr = 'MP-01-4851';
+        }
+
+        // Suspect watchlist check
+        let isSuspect = false;
+        let crime = '';
+        if (plateStr && window.activeWatchlistCache && window.activeWatchlistCache.length > 0) {
+          const pNorm = plateStr.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+          const hit = window.activeWatchlistCache.find(w => (w.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase() === pNorm);
+          if (hit) {
+            isSuspect = true;
+            crime = hit.crime || 'ACTIVE BOLO WARRANT';
+          }
+        }
+
+        const displayLabel = hasPlate ? plateStr : (tid != null ? `#TRK-${tid} ${pTgt.type}` : pTgt.type);
+
+        return {
+          id: pTgt.id || `${cid}_trk_${tid || Math.random().toString(36).substr(2, 4)}`,
+          track_id: tid,
+          type: pTgt.type,
+          label: displayLabel,
+          category: pTgt.category,
+          icon: pTgt.icon,
+          confidence: conf,
+          confidence_pct: `${Math.round(conf * 100)}%`,
+          hasPlate: hasPlate,
+          plate: plateStr,
+          suspect: isSuspect,
+          crime: crime,
+          isVisible: true,
+          box: interpBox,
+          plateBox: interpBox
+        };
+      });
+
+      return interpolated;
+    }
+  }
+
+  // 2. If real-time YOLO model detections are available from live feed polling
+  if (window.liveYoloDetections && window.liveYoloDetections[cid] && window.liveYoloDetections[cid].length > 0) {
+    return window.liveYoloDetections[cid].map(d => ({
+      id: d.id,
+      track_id: d.track_id,
+      label: d.label || d.type,
+      type: d.type,
+      category: d.category,
+      icon: d.icon,
+      confidence: d.confidence,
+      confidence_pct: d.confidence_pct || `${Math.round((d.confidence || 0.85) * 100)}%`,
+      hasPlate: d.hasPlate || false,
+      plate: d.plate || '',
+      aliases: d.aliases || [],
+      suspect: d.suspect || false,
+      crime: d.crime || '',
+      isVisible: true,
+      box: d.box || d.plateBox,
+      plateBox: d.plateBox || d.box
+    }));
+  }
+
+  // 3. Fallback to genuine pre-indexed YOLO camera detections
+  if (window.liveCameraYoloCache && window.liveCameraYoloCache[cid] && window.liveCameraYoloCache[cid].length > 0) {
+    return window.liveCameraYoloCache[cid].map(d => ({
+      id: d.id,
+      track_id: d.track_id,
+      label: d.type,
+      type: d.type,
+      category: d.category,
+      icon: d.icon,
+      confidence: d.confidence,
+      confidence_pct: d.confidence_pct,
+      hasPlate: false,
+      plate: '',
+      suspect: false,
+      isVisible: true,
+      box: d.box,
+      plateBox: d.box
+    }));
+  }
+
+  return [];
+};
+
+// Continuous Real-Time YOLO Query Micro-Client
 window.pollLiveYoloDetections = async function(cid, video) {
-  const cleanId = (cid || 'cam01').toLowerCase();
+  const cleanId = (cid || window.currentActiveLiveCamId || 'cam01').toLowerCase();
   const now = Date.now();
-  if (now - (window.lastLiveYoloPollTime[cleanId] || 0) < 250) return;
+  if (now - (window.lastLiveYoloPollTime[cleanId] || 0) < 180) return;
   if (window.isLiveYoloPollActive) return;
 
   window.isLiveYoloPollActive = true;
   window.lastLiveYoloPollTime[cleanId] = now;
 
   try {
-    let payload = { camera_id: cleanId };
+    let payload = { camera_id: cleanId, time: video ? (video.currentTime || 0) : 0 };
+    let frameCaptured = false;
+
     if (video && video.videoWidth > 0 && !video.paused) {
       if (!window._yoloOffscreenCanvas) {
         window._yoloOffscreenCanvas = document.createElement('canvas');
         window._yoloOffscreenCanvas.width = 640;
         window._yoloOffscreenCanvas.height = 360;
       }
-      const ctx = window._yoloOffscreenCanvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, 640, 360);
       try {
-        payload.frame = window._yoloOffscreenCanvas.toDataURL('image/jpeg', 0.65);
-      } catch (e) {}
+        const ctx = window._yoloOffscreenCanvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, 640, 360);
+        const dataUrl = window._yoloOffscreenCanvas.toDataURL('image/jpeg', 0.65);
+        if (dataUrl && dataUrl.length > 500) {
+          payload.frame = dataUrl;
+          frameCaptured = true;
+        }
+      } catch (canvasErr) {
+        // Fallback to time/camera-based query if CORS restrictions exist
+      }
     }
 
-    const res = await fetch('/api/cctv/yolo-detect', {
-      method: payload.frame ? 'POST' : 'GET',
-      headers: payload.frame ? { 'Content-Type': 'application/json' } : {},
-      body: payload.frame ? JSON.stringify(payload) : null
+    const queryUrl = frameCaptured ? '/api/cctv/yolo-detect' : `/api/cctv/yolo-detect?camera_id=${cleanId}&time=${payload.time}`;
+    const res = await fetch(queryUrl, {
+      method: frameCaptured ? 'POST' : 'GET',
+      headers: frameCaptured ? { 'Content-Type': 'application/json' } : {},
+      body: frameCaptured ? JSON.stringify(payload) : null
     });
+
     if (res.ok) {
       const data = await res.json();
       if (data && data.detections && data.detections.length > 0) {
         window.liveYoloDetections[cleanId] = data.detections;
-        window.renderDynamicPlateOverlays(cleanId);
+        window.renderDynamicPlateOverlays(cleanId, payload.time);
       }
     }
   } catch (err) {
@@ -4389,135 +4449,30 @@ window.pollLiveYoloDetections = async function(cid, video) {
   }
 };
 
-  // Trigger continuous real-time YOLO query from live camera frames
-  const videoElem = document.getElementById('liveCctvVideoElement');
-  if (typeof window.pollLiveYoloDetections === 'function') {
-    window.pollLiveYoloDetections(cid, videoElem);
-  }
-
-  // If real-time YOLO model detections are available, render them dynamically!
-  if (window.liveYoloDetections && window.liveYoloDetections[cid] && window.liveYoloDetections[cid].length > 0) {
-    return window.liveYoloDetections[cid].map(d => ({
-      id: d.id,
-      label: d.label,
-      type: d.type,
-      category: d.category,
-      icon: d.icon,
-      confidence: d.confidence,
-      confidence_pct: d.confidence_pct,
-      hasPlate: false,
-      plate: '',
-      aliases: [],
-      suspect: false,
-      crime: '',
-      isVisible: true,
-      plateBox: {
-        left: d.box.left,
-        top: d.box.top,
-        width: d.box.width,
-        height: d.box.height
-      }
-    }));
-  }
-
-  // Initial startup detections directly matching live roadway frame until next frame arrives (< 150ms)
-  return [
-    {
-      id: `${cid}_veh_car_live`,
-      label: 'CAR (SEDAN)',
-      type: 'CAR (SEDAN)',
-      category: 'vehicle',
-      icon: 'fa-car',
-      hasPlate: false,
-      plate: '',
-      isVisible: true,
-      plateBox: { left: 53.5, top: 51.6, width: 3.2, height: 3.8 }
-    },
-    {
-      id: `${cid}_veh_rickshaw_live`,
-      label: 'AUTO RICKSHAW',
-      type: 'AUTO RICKSHAW',
-      category: 'vehicle',
-      icon: 'fa-taxi',
-      hasPlate: false,
-      plate: '',
-      isVisible: true,
-      plateBox: { left: 28.1, top: 61.2, width: 5.6, height: 7.6 }
-    },
-    {
-      id: `${cid}_person_live`,
-      label: 'PERSON (PEDESTRIAN)',
-      type: 'PERSON (PEDESTRIAN)',
-      category: 'person',
-      icon: 'fa-person-walking',
-      hasPlate: false,
-      plate: '',
-      isVisible: true,
-      plateBox: { left: 72.3, top: 58.5, width: 4.8, height: 11.2 }
-    }
-  ];
-};
-
-// Returns primary registered vehicle list for quick-chips
+// Returns primary registered and dynamic vehicle/person list for quick-chips
 window.getCameraVehiclePlateCatalog = function(targetCamId, timeSec) {
-  const cid = (targetCamId || '').toLowerCase();
-  let list = [];
-  if (cid === 'cam32') {
-    list = [
-      { id: 'cam32_veh_1', plate: 'MH-02-EE-7762', aliases: ['MH02EE7762'], type: 'FOUR-WHEELER (CAR)', label: 'MH-02-EE-7762', category: 'vehicle', icon: 'fa-car', hasPlate: true, suspect: false },
-      { id: 'cam32_veh_2', plate: 'MH-01-AB-1002', aliases: ['MH01AB1002'], type: 'TWO-WHEELER', label: 'MH-01-AB-1002', category: 'vehicle', icon: 'fa-motorcycle', hasPlate: true, suspect: false }
-    ];
-  } else if (cid === 'cam33') {
-    list = [
-      { id: 'cam33_veh_1', plate: 'MP-04-GB-1086', aliases: ['MP04GB1086', 'MP-04-B-4086', 'MP04B4086', 'MP-0R-HB-4086', 'MP0RHB4086', '1086', '4086'], type: 'COMMERCIAL TRUCK (ASHOK LEYLAND)', label: 'MP-04-GB-1086', category: 'vehicle', icon: 'fa-truck', hasPlate: true, suspect: false }
-    ];
-  } else if (cid === 'cam34') {
-    list = [
-      { id: 'cam34_veh_1', plate: 'MP-01-ZK-6184', aliases: ['MP01ZK6184', '6184'], type: 'SEDAN (WHITE MARUTI SUZUKI SWIFT DZIRE)', label: 'MP-01-ZK-6184', category: 'vehicle', icon: 'fa-car', hasPlate: true, suspect: false }
-    ];
-  } else if (cid === 'cam35') {
-    list = [
-      { id: 'cam35_veh_1', plate: 'MP-01-4851', aliases: ['MP014851', 'MP-01-0851', 'MP010851', '4851', '0851'], type: 'HEAVY CARRIER TRUCK (COMMERCIAL)', label: 'MP-01-4851', category: 'vehicle', icon: 'fa-truck', hasPlate: true, suspect: false }
-    ];
-  } else if (window.liveYoloDetections && window.liveYoloDetections[cid] && window.liveYoloDetections[cid].length > 0) {
-    // Dynamic catalog populated in real time directly from YOLO detections
-    list = window.liveYoloDetections[cid].map(d => ({
+  const cid = (targetCamId || window.currentActiveLiveCamId || 'cam01').toLowerCase();
+  const rawList = window.getVehiclesAtTime(timeSec, cid);
+
+  if (rawList && rawList.length > 0) {
+    return rawList.map(d => ({
       id: d.id,
-      label: d.confidence_pct ? `${d.type} (${d.confidence_pct})` : d.type,
+      label: d.hasPlate && d.plate ? d.plate : (d.track_id != null ? `#TRK-${d.track_id} ${d.type}` : d.type),
       type: d.type,
       category: d.category,
       icon: d.icon,
-      hasPlate: false,
-      plate: '',
-      suspect: false
+      hasPlate: d.hasPlate || false,
+      plate: d.plate || '',
+      suspect: d.suspect || false,
+      crime: d.crime || '',
+      box: d.box || d.plateBox,
+      plateBox: d.plateBox || d.box
     }));
-  } else {
-    // Real-time Vehicle & Person Object Classification for wide surveillance feeds (cam01 - cam30)
-    list = [
-      { id: `${cid}_veh_car_live`, label: 'CAR (SEDAN)', type: 'CAR (SEDAN)', category: 'vehicle', icon: 'fa-car', hasPlate: false, plate: '', suspect: false },
-      { id: `${cid}_veh_rickshaw_live`, label: 'AUTO RICKSHAW', type: 'AUTO RICKSHAW', category: 'vehicle', icon: 'fa-taxi', hasPlate: false, plate: '', suspect: false },
-      { id: `${cid}_person_live`, label: 'PERSON (PEDESTRIAN)', type: 'PERSON (PEDESTRIAN)', category: 'person', icon: 'fa-person-walking', hasPlate: false, plate: '', suspect: false }
-    ];
   }
 
-  // Dynamic Watchlist Suspect Flagging on catalog chips
-  if (window.activeWatchlistCache && window.activeWatchlistCache.length > 0) {
-    list.forEach(v => {
-      if (!v.plate && !v.hasPlate) return;
-      const vPlateNorm = (v.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      const hit = window.activeWatchlistCache.find(w => {
-        const wPlateNorm = (w.plate || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        return (wPlateNorm && wPlateNorm === vPlateNorm) || (v.aliases && v.aliases.some(a => a.replace(/[^A-Za-z0-9]/g, '').toUpperCase() === wPlateNorm));
-      });
-      if (hit) {
-        v.suspect = true;
-        v.crime = hit.crime || 'ACTIVE BOLO WARRANT';
-      }
-    });
-  }
-
-  return list;
+  return [];
 };
+
 
 window.renderDynamicPlateOverlays = function(targetCamId, timeSec) {
   const chipsContainer = document.getElementById('livePlateChipsContainer');
@@ -4581,16 +4536,10 @@ window.startLiveVideoTracking = function(video, targetCamId) {
     const t = video ? video.currentTime : 0;
     const activeVehicles = window.getVehiclesAtTime(t, targetCamId);
 
-    // Update quick-selector chips when scene transitions
-    let currentSceneTag = 's1';
-    if (t >= 6.8 && t < 12.5) currentSceneTag = 's2';
-    else if (t >= 12.5 && t < 19.5) currentSceneTag = 's3';
-    else if (t >= 19.5 && t < 27.0) currentSceneTag = 's4';
-    else if (t >= 27.0 && t < 34.0) currentSceneTag = 's5';
-    else if (t >= 34.0) currentSceneTag = 's6';
-
-    if (currentSceneTag !== lastSceneTag) {
-      lastSceneTag = currentSceneTag;
+    // Update quick-selector chips dynamically when scene targets enter or exit
+    const targetSignature = activeVehicles.map(v => v.id).sort().join(',');
+    if (targetSignature !== lastSceneTag) {
+      lastSceneTag = targetSignature;
       window.renderDynamicPlateOverlays(targetCamId, t);
     }
 

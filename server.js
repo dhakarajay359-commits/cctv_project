@@ -1852,9 +1852,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // GET /api/cctv/yolo-detect or POST /api/cctv/yolo-detect — Real-Time Dynamic YOLO Object Detection
-  if (pathname === '/api/cctv/yolo-detect' || pathname === '/api/cctv/detect') {
+  // GET /api/cctv/yolo-detect, /api/cctv/yolo-tracks or POST /api/cctv/yolo-detect — Real-Time Dynamic YOLO Object Tracking
+  if (pathname === '/api/cctv/yolo-detect' || pathname === '/api/cctv/detect' || pathname === '/api/cctv/yolo-tracks' || pathname === '/api/cctv/tracks') {
     const camId = (parsedUrl.searchParams.get('camera_id') || parsedUrl.searchParams.get('camId') || 'cam01').toLowerCase();
+    const isTracksReq = pathname.includes('track');
+    const proxyPath = (isTracksReq ? '/tracks' : '/detect') + (parsedUrl.search || `?camera_id=${encodeURIComponent(camId)}`);
 
     if (req.method === 'OPTIONS') {
       res.writeHead(200, {
@@ -1906,7 +1908,7 @@ const server = http.createServer((req, res) => {
     const getReq = http.request({
       hostname: '127.0.0.1',
       port: 10005,
-      path: `/detect?camera_id=${encodeURIComponent(camId)}`,
+      path: proxyPath,
       method: 'GET',
       timeout: 3000
     }, (yoloRes) => {
